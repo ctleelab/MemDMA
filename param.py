@@ -6,24 +6,29 @@ import re
 import sys
 
 # read the parameters file and return 3 tables
-#lis le fichier de paramètres en renvoir 3 tableaux
 #tab1 : correspondence between PDB name and Lipid name in the script
 #tab2 : Glycerol atoms by lipid type
 #tab3 : Dictionary of aliphatic atoms for each lipid type
+## naming 3 letter convenction DOPC --> DPC, DOPE --> DPE
+
 def set_params(filename):
-    lines = bfrg.read_file(filename)
-    searchRegex = re.compile("^#").search
-    limits = filterPick(lines, searchRegex)
-    tab_limits = limits_list(lines, limits)
-    lines_tab = split_list(lines, tab_limits)
-    tab1, tab2 = lines_tab[0], lines_tab[1]
+    lines = bfrg.read_file(filename) ##reads each line in the file and stores it as a list
+    searchRegex = re.compile("^#").search ##prepare a serach function for # 
+    limits = filterPick(lines, searchRegex) ##get the line numbers where # is found 
+    tab_limits = limits_list(lines, limits) ##pulls out the start and end of each sublist based on line number
+    lines_tab = split_list(lines, tab_limits) ##split the list based on the start and end of each sublist
+    tab1, tab2 = lines_tab[0], lines_tab[1] ##naming the different sublist as tab1, tab2
+    ##covert tables in dictionaries 
     dict_3L = dict_2columns(tab1)
     resname_glyc = dict_2columns(tab2)
-    lipid=dict_lipid(dict_3L)
+    #taking the lipid name of the lipid_atom naming 
+    lipid=dict_lipid(dict_3L) ##takes CHOL_ROH and return just CHOL
     return(dict_3L, resname_glyc, lipid)
+##Cailyn: dict3L polar head groups for each lipid, resname_glyc glyc for each lipid, 
 
 
 #return index of table matching with the regexpression
+#only pick lines that start with # 
 def filterPick(list, filter):
     return [ (i) for i, l in enumerate(list) for m in (filter(l),) if m]
 
@@ -47,6 +52,7 @@ def split_list(lines, limits_tab):
     return tab
 
 # transform 2 columns of file to a dictionary
+#run for each tab
 def dict_2columns(tab1):
     lipid_3L  = {}
     for i in tab1:

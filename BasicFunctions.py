@@ -16,11 +16,11 @@ def read_radius(filename):
     dico={}
     data = read_file(filename)
     for i in range(0, len(data)):
-        data[i]=data[i].strip()
-        if data[i] != "":
-            data[i]=data[i].split()
-            cle=data[i][0]+" "+data[i][1]
-            dico[cle]=float(data[i][2])
+        data[i]=data[i].strip() ##remove any leading/trailing whitespace
+        if data[i] != "": ##skip empty lines
+            data[i]=data[i].split() ##split the line based upon the whitespaces
+            cle=data[i][0]+" "+data[i][1] ##combine lipid and atom name 
+            dico[cle]=float(data[i][2]) ##then store the radius value to the lipid atom name {(DOP_D2A: raidus)}
     return dico
 
 #new 2016-08-18

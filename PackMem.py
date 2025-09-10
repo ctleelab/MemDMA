@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 #-*- coding: utf-8 -*-
 # Pg compute packing defects on membranes simulations
 # R. Gautier A. Bacle april 2016
@@ -14,6 +14,8 @@ import connected_component as cc
 import dico as d
 import BasicFunctions as bfrg
 import param as p
+import numpy as np
+import csv
 
 
 ##########################################################################################
@@ -85,9 +87,10 @@ if __name__ == '__main__':
             parser.print_usage()
             sys.exit()
         
+        ##Cailyn: determining the name of lipid top head beads and lipid glyc beads 
         DICT_3L, RESNAME_GLYC, LIPID = p.set_params(args.paramFile)
 
-        # determine packing defedct type (all/shallow/deep)
+        # determine packing defect type (all/shallow/deep)
         if args.pd_type == 'all':
             FlagPDtype = 0
         elif args.pd_type == 'shallow':
@@ -124,6 +127,7 @@ if __name__ == '__main__':
     yaxis_byatoms = []
     dicoMb = {}
     #dict[lipid type]=list of residue number
+    #Cailyn: this is building a dictionary of all lipid types, and the lipid numbers (dicoMB dictionary). In addiiton, a list of the atoms and their position in 3D. 
     for line_atom in pdblines:
         if line_atom[0:4] == "ATOM":
             res_name=line_atom[17:21].strip()
@@ -145,6 +149,7 @@ if __name__ == '__main__':
 
     #Residue_number problems
     # 1 nb > 9999
+    ##Cailyn: checks the total number of lipids in the system, as PDB format has a limit
     nb_res=0
     for key in dicoMb:
         nb_res+=len(dicoMb[key])
@@ -159,6 +164,7 @@ if __name__ == '__main__':
         print("Please, renumerate your residue_number to avoid this problem (for example using editconf Gromacs tool)")  
         sys.exit()
 
+    ##Cailyn: goes through the list that we created based on all atoms positions in the PDB file, and determines the min and max values for x,y,z 
     xmin, xmax, xmean = l.min_max(xaxis_byatoms)
     ymin, ymax, ymean = l.min_max(yaxis_byatoms)
     zmin, zmax, zmean = l.min_max(zaxis_byatoms)
@@ -168,6 +174,7 @@ if __name__ == '__main__':
     pdblines = pdb.modifyPDBdata(pdblines, dicoMb, startID, endID)
 
     ########## extract UPPER/LOWER leaflet ##########
+    ##Cailyn: get the z-coordinates for all glycerols, and does this for the upper and lower leaflet independently
     if args.indexFile == None:
         lower_leaflet = []
         lower_listZ = {}
@@ -178,6 +185,9 @@ if __name__ == '__main__':
                 # for the upper leaflet
                 atom_name = atm_line[12:16].strip()
                 res_name = atm_line[17:21].strip()
+                ##Cailyn:Z_coord is determine by the glycerol atom
+                ##Cailyn:This is where I would need to change the Z-coord, based on the mesh
+                ##Depending (x,y) coord will determin my Z, by referring to the mesh 
                 z_coord = float(atm_line[46:54])
                 if (atom_name == RESNAME_GLYC[res_name] and z_coord > zmean):
                     res_number = int(atm_line[startID:endID])
@@ -198,6 +208,12 @@ if __name__ == '__main__':
                                                     zmin - 1.0, m.SIZE * -1)
                     tmp.reverse()
                     lower_listZ[res_number] = tmp
+        ##Cailyn: adding to determined to set the mesh
+        with open(f"{FlagPDtype}_lowerLZ.csv", "w", newline="") as csvfile:
+            writer = csv.writer(csvfile)
+            for res_number, z_list in lower_listZ.items():
+                row = [res_number] + z_list  # first column = residue number, rest = Z-levels
+                writer.writerow(row)
     else:
         (lower_leaflet, upper_leaflet) = p.read_ndx(args.indexFile)
         lower_listZ = {}
@@ -221,10 +237,12 @@ if __name__ == '__main__':
                     tmp.reverse()
                     lower_listZ[res_number] = tmp
                 
-                
 
-    
+    ##Cailyn:######THIS IS WHERE THE 2D grid is created###########
+
     # create listX[xmin,xmax] and listY[ymin,ymax] 
+    ##Cailyn: making the grid slightly larger so it encompasses everything, since you're using integers you'll be rounding which can as a result no encompass the entire grid, so you add one 
+
     listX = l.create_list_ascend(int(xmin - 1.0), int(xmax + 1.0), m.SIZE)
     listY = l.create_list_ascend(int(ymin - 1.0), int(ymax + 1.0), m.SIZE)
 
@@ -239,24 +257,29 @@ if __name__ == '__main__':
     #for each atoms of lipids
     for atm_line in pdblines:
         if atm_line[0:4] == "ATOM":
+            ##Cailyn:extacting atomic data by looping through the atm_line
             coordtmp = []
             atom_name = atm_line[12:16].strip()
             res_name = atm_line[17:21].strip()
             res_id = int(atm_line[startID:endID])
             radius_res=m.get_radius(radius, res_name, atom_name)
+            #searchs up the atm and determines if aliphatic or not
             aliph_atom=m.get_aliphatic(aliphatic, res_name, atom_name)
             coordtmp.append(float(atm_line[30:38])) #X
             coordtmp.append(float(atm_line[38:46])) #Y
             coordtmp.append(float(atm_line[46:54])) #Z
+            ##Cailyn:add the atom data (computed above) into the matrix, either the upper or lower depending on which one it belongs to 
+            ##Cailyn:this code should account for if the matrix has a polar head group
             # ##################################### Upper leaflet ########################
             if res_id in upper_leaflet :
                 # limit the loop around dfZ
+                ##Cailyn: coordtmp[2] is pulling on the z-values 
                 dfZ = m.find_Z(coordtmp[2], upper_listZ[res_id])
                 if dfZ < (1. * v):
                     MatrixUp= m.fill_matrix(MatrixUp, coordtmp, res_id, res_name,
                                             atom_name,listX, listY, upper_listZ[res_id], 
                                             radius_res,FlagPDtype, aliph_atom)
-
+                      
             # #################################### lower leaflet #########################
             if res_id in lower_leaflet :
                 # limit the loop around dfZ
@@ -265,10 +288,15 @@ if __name__ == '__main__':
                     MatrixLo = m.fill_matrix(MatrixLo, coordtmp, res_id, res_name,
                                             atom_name, listX, listY, lower_listZ[res_id], 
                                             radius_res, FlagPDtype, aliph_atom)
-
+    MatrixUp_array = np.array(MatrixUp, dtype=str)
+    np.savetxt(f"{FlagPDtype}_MatrixUp.csv", MatrixUp_array, delimiter=",", fmt="%s")
+    
     ########################preliminary process only for shallow defect and problem of the edges 
     ### to eliminate shallow defects on edges first: binarize on all defects and storage edges coord
     # shallow PDefects (2)
+    ## Cailyn: The goal of this script is to find defects on the edge, independent if they are shallow or deep defects. That is why you see the upper and lower limits 
+    ## of the binarize_matrix_whithout0 function as -.01 to .99, as it will include 0 (deep defects)
+
     if FlagPDtype == 2:
         # binarization Matrices according defect type [XM][YM]
         Matrix_UpbinM = m.initialize_matrix2D(len(listX),len(listY),0.)
@@ -277,12 +305,14 @@ if __name__ == '__main__':
         Matrix_LobinM = m.binarize_matrix_whithout0(MatrixLo, Matrix_LobinM, -0.01, 0.99)
     
         # get temp packing defects 
+        ## Cailyn: the Matrix_labels_UpM will have labels for clusters within the matrix that signify defects. Zero's will be no defects. This was created by the code "M_labels = init_matrix_0(nrows,ncols)" which creates an empty matrix with zeros 
         Matrix_labels_UpM, root_labels_UpM, area_clusters_UpM, coor_clusters_UpM = \
             cc.get_connected_components(Matrix_UpbinM,len(listX),len(listY))
         Matrix_labels_LoM, root_labels_LoM, area_clusters_LoM, coor_clusters_LoM = \
             cc.get_connected_components(Matrix_LobinM,len(listX),len(listY))
 
         # get cluster on the edge
+        ##Cailyn: returns a list with w/bins that belong to a cluster but that land on the edges of the matrix 
         clust_edge_UpM=cc.get_clusters_on_the_edge(Matrix_labels_UpM,len(listX),len(listY))
         clust_edge_LoM=cc.get_clusters_on_the_edge(Matrix_labels_LoM,len(listX),len(listY))
         # print(clust_edge_UpM, clust_edge_LoM)
@@ -290,9 +320,13 @@ if __name__ == '__main__':
     ############################################## binarisation matrices ##################
     #print("PackingDefect generation")
     # matrix binarization
+    ##Cailyn: creates an empty matrix filled with zeros 
     Matrix_Upbin=m.initialize_matrix2D(len(listX),len(listY),0.)
     Matrix_Lobin=m.initialize_matrix2D(len(listX),len(listY),0.)
     # shallow PDefects (2)
+    ## Cailyn: only binarizing shallow defects 
+    ## Cailyn: defects (0) nondefects (1)
+
     if FlagPDtype == 2:
         Matrix_Upbin = m.binarize_matrix_whithout0(MatrixUp, Matrix_Upbin , 0, 0.99)
         Matrix_Lobin = m.binarize_matrix_whithout0(MatrixLo, Matrix_Lobin, 0, 0.99)
@@ -309,11 +343,14 @@ if __name__ == '__main__':
     if FlagPDtype == 2:
         #modify the binary matrix to take account edges (determined by all packing defects)
         #add the first coonected_component (edge
+        ## Cailyn: Why is this additional modify matrix only done for shallow defects?
         Matrix_Upbin = m.modify_matrix(Matrix_labels_UpM, Matrix_Upbin, clust_edge_UpM)
         Matrix_Lobin = m.modify_matrix(Matrix_labels_LoM, Matrix_Lobin, clust_edge_LoM)
 
     ############################################## packing defects determination  ########
-    # get packing defects 
+    # get packing defects
+    ## Cailyn: The second time the get_connected_components function is run for the FlagPDtype, it will only look at the boundaries since that is the only grids that are now zeros.
+    ## Cailyn: Those zeros since they are touching one another will be now grouped as the same cluster. 
     Matrix_labels_Up, root_labels_Up, area_clusters_Up, coor_clusters_Up = \
         cc.get_connected_components(Matrix_Upbin,len(listX),len(listY))
     Matrix_labels_Lo, root_labels_Lo, area_clusters_Lo, coor_clusters_Lo = \
@@ -324,6 +361,8 @@ if __name__ == '__main__':
     clust_edge_Lo = cc.get_clusters_on_the_edge(Matrix_labels_Lo,len(listX),len(listY))
 
     # count area of the edge
+    ## Cailyn: area_clusters_Up is a dictionary where cluster_number: area of cluster
+    ## Cailyn: adding up the clusters areas that exist on the edge 
     total_edge_Up = 0
     for key in clust_edge_Up:
         total_edge_Up += area_clusters_Up[key]
@@ -332,11 +371,14 @@ if __name__ == '__main__':
         total_edge_Lo += area_clusters_Lo[key]
     
     #clean dico defects (without edge)
+    ## Cailyn: By removing the clusters on the edges, you don't over count clusters that might wrap PBCs. 
+    ## Cailyn: delelting the clust_edge_Up keys from the area_cluster and coor_clusters dictionary because their area is now accounted for in the total_edge_Lo
     area_clusters_Up = d.del_key_dico(area_clusters_Up, clust_edge_Up)
     coor_clusters_Up = d.del_key_dico(coor_clusters_Up, clust_edge_Up)
     area_clusters_Lo = d.del_key_dico(area_clusters_Lo, clust_edge_Lo)
     coor_clusters_Lo = d.del_key_dico(coor_clusters_Lo, clust_edge_Lo)
    
+    ##Cailyn: does FlagPDtype == 1 or 0 give no NA values? 
     if FlagPDtype == 2:
         # Eliminate NA inside (deep not shallow defect)
         Matrix_labels_Lo, total_edge_Lo, clustPb_Lo = \
@@ -351,6 +393,7 @@ if __name__ == '__main__':
                                        area_clusters_Up, len(listX),len(listY))
         
         # reclean dico defects (without edge)
+        ##Cailyn: Since the area_cluster and clust_edge were remade, need to double check that the neither hold the clust_edge values
         area_clusters_Up = d.del_key_dico(area_clusters_Up, clust_edge_Up)
         coor_clusters_Up = d.del_key_dico(coor_clusters_Up, clust_edge_Up)
         area_clusters_Lo = d.del_key_dico(area_clusters_Lo, clust_edge_Lo)

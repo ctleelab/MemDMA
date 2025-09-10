@@ -131,7 +131,7 @@ def get_uniq_labels(nb_labels,list_equiv_labels):
         # is label in list_equiv_labels?
         is_label_in_list_equiv_labels = 0
         for tmp_list_labels in list_equiv_labels:
-            if label in tmp_list_labels:
+            if label in tmp_list_labels: 
                 # assign the root label to the current label
                 dico_uniq_labels[label] = tmp_list_labels[0]
                 is_label_in_list_equiv_labels = 1
@@ -302,6 +302,7 @@ def get_connected_components(M,nrows,ncols,val_bin=0):
     coor_clusters = {} # to store the coor (in the matrix) of the 1st element of each cluster
     for root_label in root_labels:
         area_clusters[root_label] = 0
+    ##Cailyn:sums up values (placement in the matrix) of the same cluster type
     for i in range(nrows):
         for j in range(ncols):
             if M_labels[i][j]:
@@ -321,7 +322,8 @@ def get_clusters_on_the_edge(M_labels,nrows,ncols):
     # check clusters on 1st & last row
     #print(M_labels[0])
     #print(M_labels[nrows-1])
-    clusters_on_the_edge += list(set([i for i in M_labels[0] if i != 0]))
+    ##Cailyn: add the clusters that occur on the first and last row 
+    clusters_on_the_edge += list(set([i for i in M_labels[0] if i != 0])) ##:Cailyn M_labels is the labeling for each grid 
     clusters_on_the_edge += list(set([i for i in M_labels[nrows-1] if i != 0]))
     # check clusters on 1st & last col
     for i in range(nrows):
@@ -331,7 +333,7 @@ def get_clusters_on_the_edge(M_labels,nrows,ncols):
             clusters_on_the_edge.append(M_labels[i][ncols-1])
     # get rid of duplicates & sort
     clusters_on_the_edge = sorted(list(set(clusters_on_the_edge)))
-    return clusters_on_the_edge
+    return clusters_on_the_edge ##Cailyn:This is a list
 
 def delete_NApoints_inside(clustPb, Matrix_labels, root_labels, area_clusters, nrows, ncols):
     #### supprimer les defauts totalament NA
@@ -347,7 +349,7 @@ def delete_NApoints_inside(clustPb, Matrix_labels, root_labels, area_clusters, n
     area_clusters = {} # to store the area of each cluster
     coor_clusters = {} # to store the coor (in the matrix) of the 1st element of each cluster
     for root_label in root_labels:
-        area_clusters[root_label] = 0
+        area_clusters[root_label] = 0 
     for i in range(nrows):
         for j in range(ncols):
             if Matrix_labels[i][j]:
