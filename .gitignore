@@ -4,5 +4,6 @@ pdb/
 testing/
 to_delete/
 ExplePackMem/
-.pdb
-.html
+*.pdb
+*.html
+.*txt
