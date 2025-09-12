@@ -21,6 +21,7 @@ import quadrilateral_mesh as qm
 import mesh_clean as m
 import util
 import grid_slicing as gs
+import preprocessing as pp 
 
 ##this chunk of code will only be run if the script is executed directly
 if __name__ == "__main__":
@@ -81,7 +82,7 @@ if __name__ == "__main__":
             print('ERROR : The distance for the -d option must be > 0')
             sys.exit()
         
-        pdblines = bfrg.read_file(args.filename) ##reads line of the pdb file and stores each line  
+        grolines = bfrg.read_file(args.filename) ##reads line of the pdb file and stores each line  
         radius = bfrg.read_radius(args.filesrad) ##creates a dictionary that stores lipid_atom:radius of atom
         aliphatic = bfrg.read_aliphatic(args.filesrad) ##creates a dictionary that stores lipid_atom: n vs a (polar vs aliphatic)
     except:
@@ -91,7 +92,7 @@ if __name__ == "__main__":
 
     #extract num_frame in pdb file (line MODEL) or 1 by default
     ##one per each pdb file, because you feed in pdb files one at a time 
-    num_frame=pdb.find_numframe(pdblines)
+    num_frame=pdb.find_numframe(grolines)
 
 
     ##tells you the column at which the residue number is stored for .gro files
@@ -111,8 +112,8 @@ if __name__ == "__main__":
     residue_coords_gl2 = {}
 
 
-    for i, line_atom in enumerate(pdblines):
-        if i > 1 and  i < (len(pdblines)-1): ##skips the first two lines of the .gro file
+    for i, line_atom in enumerate(grolines):
+        if i > 1 and  i < (len(grolines)-1): ##skips the first two lines of the .gro file
 
             #indexing like this in a gro file is not consistent, as values keeps increasing it changes the length of the index
             #will seperate based on the numbers_text
@@ -205,11 +206,11 @@ if __name__ == "__main__":
     # ##DOP --> DOE 
     # ##can tell the difference between DOPC vs DOPE lipids by DOPC(NC3) DOPE(NH3)s
     
-    # ##checking the format of pdblines before and after modification 
+    # ##checking the format of grolines before and after modification 
     # ##Note: in the future might want to try run PackMem with .gro files
-    # print("old pbd file:", pdblines[10:20])
-    # pdblines = pdb.modifyPDBdata(pdblines, dicoMb, startID, endID)
-    # print("new pdb file:", pdblines[10:20])
+    # print("old pbd file:", grolines[10:20])
+    # grolines = pdb.modifyPDBdata(grolines, dicoMb, startID, endID)
+    # print("new pdb file:", grolines[10:20])
 
 
     ################################################
@@ -247,121 +248,61 @@ if __name__ == "__main__":
 
     atom_ray_tracing_upper = {}
     atom_ray_tracing_lower = {}
+
     for triangle_num in centroid_triangles_u: 
         #iterates over the atoms
         print(triangle_num)
         #print(len(centroid_triangles_u)) #39156
-        for i, line_atom in enumerate(pdblines):
-            if i > 1 and i < (len(pdblines)-1):
-                #z-coord is dependent on which lipid the atom belong to 
-                #search function to find which atom the lipid belongs to 
-                res_name_number = line_atom[0:12].strip()
-                match = re.match(r"(\d+)([A-Za-z]+)", res_name_number)
-                if match:
-                    res_number = int(match.group(1))
-                    #res_name = int(match.group(2))
-                
-                #list of atom types 
-                list_types_atoms = util.list_types_atoms
+        atom_features = pp.atom_features(grolines, list_types_atoms,leaflet_residues_new)
+        for atom_number in atom_features:
+            if atom_features[atom_number][1] == "upper": ##check the value of the dictionary 
 
-                atm_name_number = str(line_atom[12:22].strip())
+                ##pull all necessary information 
+                normal_vector_triangle = np.array(norm_vector_triangles_up[triangle_num]) #grabs the normal vector for the current triangle grid
+                centroid_triangle = np.array(centroid_triangles_u[triangle_num])
 
-                #extracts atom name and number
-                for j in list_types_atoms:
-                    if atm_name_number.startswith(j):
-                        atm_name = j
-                        atom_number = atm_name_number[len(j):]
-                        break
-                
-
-                #extracts the coordinates of the atom
-                x_coord = float(line_atom[20:28].strip()) ##grabs the x coordinate
-                y_coord = float(line_atom[28:36].strip()) ##grabs the y coordinate
-                z_coord = float(line_atom[36:44].strip()) ##grabs the z coordinate
-
-                atom_coords = np.array([x_coord, y_coord, z_coord])
-
-                
-                #first determine if atom is in the upper or lower leaflet depending on its residue number
-                leaflet = gs.find_leaflet(res_number, leaflet_residues_new)
-
-                if leaflet == "upper": ##check the value of the dictionary 
-
-                    ##pull all necessary information 
-                    normal_vector_triangle = np.array(norm_vector_triangles_up[triangle_num]) #grabs the normal vector for the current triangle grid
-                    centroid_triangle = np.array(centroid_triangles_u[triangle_num])
-
-                    #project point onto plane, using the norm_vector_triangle as the direction vector
-                    w_vector = np.subtract(centroid_triangle, atom_coords) #vector from centroid of triangle to atom coord 
-                    scalar = np.dot(w_vector,normal_vector_triangle)
-                    n_contribution_in_w_vector = np.multiply(scalar, normal_vector_triangle)
-                    vector_orthogonal_normal = np.subtract(w_vector, n_contribution_in_w_vector)
+                #project point onto plane, using the norm_vector_triangle as the direction vector
+                w_vector = np.subtract(centroid_triangle, atom_features[atom_number][2]) #vector from centroid of triangle to atom coord 
+                scalar = np.dot(w_vector,normal_vector_triangle)
+                n_contribution_in_w_vector = np.multiply(scalar, normal_vector_triangle)
+                vector_orthogonal_normal = np.subtract(w_vector, n_contribution_in_w_vector)
 
 
-                    #for each trinangle I will have coords for each atom
-                    atom_ray_tracing_upper[triangle_num] = {}
-                    atom_ray_tracing_upper[triangle_num][atom_number] = vector_orthogonal_normal  #atom point projected onto traingle plane
+                #for each trinangle I will have coords for each atom
+                atom_ray_tracing_upper[triangle_num] = {}
+                atom_ray_tracing_upper[triangle_num][atom_number] = vector_orthogonal_normal  #atom point projected onto traingle plane
 
-                if leaflet == "lower":
-                    continue
+            if leaflet == "lower":
+                continue
 
 
     print("done with upper leaflet")
 
     for triangle_num in centroid_triangles_l: 
+        #iterates over the atoms
         print(triangle_num)
-        for i, line_atom in enumerate(pdblines):
-            if i > 1 and i < (len(pdblines)-1):
-                #z-coord is dependent on which lipid the atom belong to 
-                #search function to find which atom the lipid belongs to 
-                res_name_number = line_atom[0:12].strip()
-                match = re.match(r"(\d+)([A-Za-z]+)", res_name_number)
-                if match:
-                    res_number = int(match.group(1))
-                    #res_name = int(match.group(2))
-                
-                #list of atom types 
-                list_types_atoms = util.list_types_atoms
+        #print(len(centroid_triangles_u)) #39156
+        atom_features = pp.atom_features(grolines, list_types_atoms,leaflet_residues_new)
+        for atom_number in atom_features:
+            if atom_features[atom_number][1] == "lower": ##check the value of the dictionary 
 
-                atm_name_number = str(line_atom[12:22].strip())
+                ##pull all necessary information 
+                normal_vector_triangle = np.array(norm_vector_triangles_l[triangle_num]) #grabs the normal vector for the current triangle grid
+                centroid_triangle = np.array(centroid_triangles_l[triangle_num])
 
-                #extracts atom name and number
-                for j in list_types_atoms:
-                    if atm_name_number.startswith(j):
-                        atm_name = j
-                        atom_number = atm_name_number[len(j):]
-                        break
-                
-
-                #extracts the coordinates of the atom
-                x_coord = float(line_atom[20:28].strip()) ##grabs the x coordinate
-                y_coord = float(line_atom[28:36].strip()) ##grabs the y coordinate
-                z_coord = float(line_atom[36:44].strip()) ##grabs the z coordinate
-                atom_coords = np.array([x_coord, y_coord, z_coord])
-
-                
-                #first determine if atom is in the upper or lower leaflet depending on its residue number
-                leaflet = gs.find_leaflet(res_number, leaflet_residues_new)
+                #project point onto plane, using the norm_vector_triangle as the direction vector
+                w_vector = np.subtract(centroid_triangle, atom_features[atom_number][2]) #vector from centroid of triangle to atom coord 
+                scalar = np.dot(w_vector,normal_vector_triangle)
+                n_contribution_in_w_vector = np.multiply(scalar, normal_vector_triangle)
+                vector_orthogonal_normal = np.subtract(w_vector, n_contribution_in_w_vector)
 
 
-                if leaflet == "lower":
-                    ##pull all necessary information 
-                    normal_vector_triangle = np.array(norm_vector_triangles_l[triangle_num]) #grabs the normal vector for the current triangle grid
-                    centroid_triangle = np.array(centroid_triangles_l[triangle_num])
+                #for each trinangle I will have coords for each atom
+                atom_ray_tracing_lower[triangle_num] = {}
+                atom_ray_tracing_lower[triangle_num][atom_number] = vector_orthogonal_normal  #atom point projected onto traingle plane
 
-                    #project point onto plane, using the norm_vector_triangle as the direction vector
-                    w_vector = np.subtract(centroid_triangle, atom_coords) #vector from centroid of triangle to atom coord 
-                    scalar = np.dot(w_vector,normal_vector_triangle)
-                    n_contribution_in_w_vector = np.multiply(scalar, normal_vector_triangle)
-                    vector_orthogonal_normal = np.subtract(w_vector, n_contribution_in_w_vector)
-
-
-                    #for each trinangle I will have coords for each atom
-                    atom_ray_tracing_lower[triangle_num] = {}
-                    atom_ray_tracing_lower[triangle_num][atom_number] = vector_orthogonal_normal  #atom point projected onto traingle plane
-    
-
-
+            if leaflet == "upper":
+                continue
 
 
     #################################################
@@ -404,19 +345,19 @@ if __name__ == "__main__":
     
     # # #input: gro file, residue assignment to leaflet, grid_mapping, vectors 
     # # #output: atm_grid {atom number: (x,y,z) coordinates of the normal vector of the grid that is closest to the lipid that the atom belongs to}
-    # atm_normal_vectors = gs.atm_normal_vector_assignment(pdblines, leaflet_residues_new, closest_mapping, norm_vector_triangles_up, norm_vector_triangles_l)
+    # atm_normal_vectors = gs.atm_normal_vector_assignment(grolines, leaflet_residues_new, closest_mapping, norm_vector_triangles_up, norm_vector_triangles_l)
     # print("completed atm_normal_vectors")
 
 
-    # atm_centroids = gs.atm_centroid_assignment(pdblines, leaflet_residues_new, closest_mapping, centroid_triangles_u, centroid_triangles_l)
+    # atm_centroids = gs.atm_centroid_assignment(grolines, leaflet_residues_new, closest_mapping, centroid_triangles_u, centroid_triangles_l)
     # print("completed atm_centroids")
 
     # #solve for intersection of z_midplane and normal vectors
-    # atm_lower_limit = gs.atm_lower_limit_assignment(pdblines,leaflet_residues_new, atm_normal_vectors, atm_centroids)
+    # atm_lower_limit = gs.atm_lower_limit_assignment(grolines,leaflet_residues_new, atm_normal_vectors, atm_centroids)
 
 
     # #output: {atom_number: [centroid of all slices (x,y,z)]}
-    # upper_slices = gs.grid_slices(pdblines, leaflet_residues_new, atm_centroids, atm_normal_vectors, f_mid)
+    # upper_slices = gs.grid_slices(grolines, leaflet_residues_new, atm_centroids, atm_normal_vectors, f_mid)
     
     # first_key = list(upper_slices.keys())[0]
     # print("Key:", first_key)
