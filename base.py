@@ -249,14 +249,15 @@ if __name__ == "__main__":
     atom_ray_tracing_upper = {}
     atom_ray_tracing_lower = {}
 
+    atom_features = pp.atom_features(grolines, list_types_atoms,leaflet_residues_new)
+
     for triangle_num in centroid_triangles_u: 
         #iterates over the atoms
         print(triangle_num)
         #print(len(centroid_triangles_u)) #39156
-        atom_features = pp.atom_features(grolines, list_types_atoms,leaflet_residues_new)
+        
         for atom_number in atom_features:
             if atom_features[atom_number][1] == "upper": ##check the value of the dictionary 
-
                 ##pull all necessary information 
                 normal_vector_triangle = np.array(norm_vector_triangles_up[triangle_num]) #grabs the normal vector for the current triangle grid
                 centroid_triangle = np.array(centroid_triangles_u[triangle_num])
@@ -282,7 +283,6 @@ if __name__ == "__main__":
         #iterates over the atoms
         print(triangle_num)
         #print(len(centroid_triangles_u)) #39156
-        atom_features = pp.atom_features(grolines, list_types_atoms,leaflet_residues_new)
         for atom_number in atom_features:
             if atom_features[atom_number][1] == "lower": ##check the value of the dictionary 
 
@@ -303,6 +303,7 @@ if __name__ == "__main__":
 
             if leaflet == "upper":
                 continue
+
 
 
     #################################################
