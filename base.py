@@ -231,51 +231,196 @@ if __name__ == "__main__":
     ##formating data for analysis
     X_f, Y_f, zupper_f, zlower_f = m.format_data(X,Y, zupper,zlower)
 
-    ##interpolates over the z_midplane, to create a function that best represents the midplane mesh
-    f_mid = qm.midplane_interpolated(z_midplane)
-
-
     ###turns the quadrilateral mesh into a triangular mesh and computes the normal vector for each triangle in the mesh
     ###each key represents the triangle grid number
     ###normal_vector_triangles: {triangle number: (x,y,z) of normal vector}
     ###centroid_triangles: {triangle number: (x,y,z) of the centroid of the triangle}
-    centroid_triangles_u, centroid_triangles_l, norm_vector_triangles_up, norm_vector_triangles_l  = m.normal_vector_triangles(X_f,Y_f,zupper_f,zlower_f)
+    centroid_triangles_u, centroid_triangles_l, norm_vector_triangles_up, norm_vector_triangles_l, coords_triangles_upper, coords_triangles_lower = m.normal_vector_triangles(X_f,Y_f,zupper_f,zlower_f)
+
+    ##############################
+    ###grid assignment per atom###
+    ##############################
+
+    ##iterate over the triangles
+    ##iterate over the atoms 
+    ##project the bead onto the plane
+
+    atom_ray_tracing_upper = {}
+    atom_ray_tracing_lower = {}
+    for triangle_num in centroid_triangles_u: 
+        #iterates over the atoms
+        print(triangle_num)
+        #print(len(centroid_triangles_u)) #39156
+        for i, line_atom in enumerate(pdblines):
+            if i > 1 and i < (len(pdblines)-1):
+                #z-coord is dependent on which lipid the atom belong to 
+                #search function to find which atom the lipid belongs to 
+                res_name_number = line_atom[0:12].strip()
+                match = re.match(r"(\d+)([A-Za-z]+)", res_name_number)
+                if match:
+                    res_number = int(match.group(1))
+                    #res_name = int(match.group(2))
+                
+                #list of atom types 
+                list_types_atoms = util.list_types_atoms
+
+                atm_name_number = str(line_atom[12:22].strip())
+
+                #extracts atom name and number
+                for j in list_types_atoms:
+                    if atm_name_number.startswith(j):
+                        atm_name = j
+                        atom_number = atm_name_number[len(j):]
+                        break
+                
+
+                #extracts the coordinates of the atom
+                x_coord = float(line_atom[20:28].strip()) ##grabs the x coordinate
+                y_coord = float(line_atom[28:36].strip()) ##grabs the y coordinate
+                z_coord = float(line_atom[36:44].strip()) ##grabs the z coordinate
+
+                atom_coords = np.array([x_coord, y_coord, z_coord])
+
+                
+                #first determine if atom is in the upper or lower leaflet depending on its residue number
+                leaflet = gs.find_leaflet(res_number, leaflet_residues_new)
+
+                if leaflet == "upper": ##check the value of the dictionary 
+
+                    ##pull all necessary information 
+                    normal_vector_triangle = np.array(norm_vector_triangles_up[triangle_num]) #grabs the normal vector for the current triangle grid
+                    centroid_triangle = np.array(centroid_triangles_u[triangle_num])
+
+                    #project point onto plane, using the norm_vector_triangle as the direction vector
+                    w_vector = np.subtract(centroid_triangle, atom_coords) #vector from centroid of triangle to atom coord 
+                    scalar = np.dot(w_vector,normal_vector_triangle)
+                    n_contribution_in_w_vector = np.multiply(scalar, normal_vector_triangle)
+                    vector_orthogonal_normal = np.subtract(w_vector, n_contribution_in_w_vector)
 
 
-    #####################
-    ###grid assignment###    
-    #####################
-    #next determine for each lipid which grid is the closest, then use that to iterate up and down the z-axis 
-    #output: dictionary{lipid number: index of the grid number it's associated with}
+                    #for each trinangle I will have coords for each atom
+                    atom_ray_tracing_upper[triangle_num] = {}
+                    atom_ray_tracing_upper[triangle_num][atom_number] = vector_orthogonal_normal  #atom point projected onto traingle plane
+
+                if leaflet == "lower":
+                    continue
+
+
+    print("done with upper leaflet")
+
+    for triangle_num in centroid_triangles_l: 
+        print(triangle_num)
+        for i, line_atom in enumerate(pdblines):
+            if i > 1 and i < (len(pdblines)-1):
+                #z-coord is dependent on which lipid the atom belong to 
+                #search function to find which atom the lipid belongs to 
+                res_name_number = line_atom[0:12].strip()
+                match = re.match(r"(\d+)([A-Za-z]+)", res_name_number)
+                if match:
+                    res_number = int(match.group(1))
+                    #res_name = int(match.group(2))
+                
+                #list of atom types 
+                list_types_atoms = util.list_types_atoms
+
+                atm_name_number = str(line_atom[12:22].strip())
+
+                #extracts atom name and number
+                for j in list_types_atoms:
+                    if atm_name_number.startswith(j):
+                        atm_name = j
+                        atom_number = atm_name_number[len(j):]
+                        break
+                
+
+                #extracts the coordinates of the atom
+                x_coord = float(line_atom[20:28].strip()) ##grabs the x coordinate
+                y_coord = float(line_atom[28:36].strip()) ##grabs the y coordinate
+                z_coord = float(line_atom[36:44].strip()) ##grabs the z coordinate
+                atom_coords = np.array([x_coord, y_coord, z_coord])
+
+                
+                #first determine if atom is in the upper or lower leaflet depending on its residue number
+                leaflet = gs.find_leaflet(res_number, leaflet_residues_new)
+
+
+                if leaflet == "lower":
+                    ##pull all necessary information 
+                    normal_vector_triangle = np.array(norm_vector_triangles_l[triangle_num]) #grabs the normal vector for the current triangle grid
+                    centroid_triangle = np.array(centroid_triangles_l[triangle_num])
+
+                    #project point onto plane, using the norm_vector_triangle as the direction vector
+                    w_vector = np.subtract(centroid_triangle, atom_coords) #vector from centroid of triangle to atom coord 
+                    scalar = np.dot(w_vector,normal_vector_triangle)
+                    n_contribution_in_w_vector = np.multiply(scalar, normal_vector_triangle)
+                    vector_orthogonal_normal = np.subtract(w_vector, n_contribution_in_w_vector)
+
+
+                    #for each trinangle I will have coords for each atom
+                    atom_ray_tracing_lower[triangle_num] = {}
+                    atom_ray_tracing_lower[triangle_num][atom_number] = vector_orthogonal_normal  #atom point projected onto traingle plane
     
 
 
-    #input: GL2 bead and its coordinates, centroids of triangle, empty list of residue numbers, upper vs lower leaflet assignment based on residue number
-    #then calculate ED to determine which grid is the closest for that lipid
-    #output: closest_mapping = {residue number:triangle number} 
-    closest_mapping = m.closest_grid(residue_coords_gl2,residue_dict,leaflet_residues_new, centroid_triangles_u, centroid_triangles_l)
-    print("completed closest_mapping")
+
+
+    #################################################
+    ##now determine what atoms are in each triangle##
+    #################################################
+    ###outline of code###
+    ##1) calculate the shortest distance from from point to edge of the triangle
+        ##will have to do for each edge 
+    
+    # triangle_atom_assignment = {}
+    # for triangle in atom_ray_tracing_upper:
+    #     for each triangle loop through atom_number:
+    #         for each edge in triangle: #determine the vectors for the edges in the mesh_clean function? 
+    #             edge1 = P0 - P1
+    #             edge2 = P1 - P2
+    #             edge3=  P2 - P0 
+    #             shortest_distance = np.divide(np.absolute(np.cross(vector1, vector2)),np.absolute(vector1)): 
+    #             if shortest_distance < radius_of_atom:
+    #                 then add it to the triangle list:
+    #                     for triangle_atom_assignment[] = atom_number
+
+    
+        
+        
+
+
+    # #####################
+    # ###grid assignment###    
+    # #####################
+    # #next determine for each lipid which grid is the closest, then use that to iterate up and down the z-axis 
+    # #output: dictionary{lipid number: index of the grid number it's associated with}
+
+
+    # #input: GL2 bead and its coordinates, centroids of triangle, empty list of residue numbers, upper vs lower leaflet assignment based on residue number
+    # #then calculate ED to determine which grid is the closest for that lipid
+    # #output: closest_mapping = {residue number:triangle number} 
+    # closest_mapping = m.closest_grid(residue_coords_gl2,residue_dict,leaflet_residues_new, centroid_triangles_u, centroid_triangles_l)
+    # print("completed closest_mapping")
   
     
-    # #input: gro file, residue assignment to leaflet, grid_mapping, vectors 
-    # #output: atm_grid {atom number: (x,y,z) coordinates of the normal vector of the grid that is closest to the lipid that the atom belongs to}
-    atm_normal_vectors = gs.atm_normal_vector_assignment(pdblines, leaflet_residues_new, closest_mapping, norm_vector_triangles_up, norm_vector_triangles_l)
-    print("completed atm_normal_vectors")
+    # # #input: gro file, residue assignment to leaflet, grid_mapping, vectors 
+    # # #output: atm_grid {atom number: (x,y,z) coordinates of the normal vector of the grid that is closest to the lipid that the atom belongs to}
+    # atm_normal_vectors = gs.atm_normal_vector_assignment(pdblines, leaflet_residues_new, closest_mapping, norm_vector_triangles_up, norm_vector_triangles_l)
+    # print("completed atm_normal_vectors")
 
 
-    atm_centroids = gs.atm_centroid_assignment(pdblines, leaflet_residues_new, closest_mapping, centroid_triangles_u, centroid_triangles_l)
-    print("completed atm_centroids")
+    # atm_centroids = gs.atm_centroid_assignment(pdblines, leaflet_residues_new, closest_mapping, centroid_triangles_u, centroid_triangles_l)
+    # print("completed atm_centroids")
 
-    #solve for intersection of z_midplane and normal vectors
-    atm_lower_limit = gs.atm_lower_limit_assignment(pdblines,leaflet_residues_new, atm_normal_vectors, atm_centroids)
+    # #solve for intersection of z_midplane and normal vectors
+    # atm_lower_limit = gs.atm_lower_limit_assignment(pdblines,leaflet_residues_new, atm_normal_vectors, atm_centroids)
 
 
-    #output: {atom_number: [centroid of all slices (x,y,z)]}
-    upper_slices = gs.grid_slices(pdblines, leaflet_residues_new, atm_centroids, atm_normal_vectors, f_mid)
+    # #output: {atom_number: [centroid of all slices (x,y,z)]}
+    # upper_slices = gs.grid_slices(pdblines, leaflet_residues_new, atm_centroids, atm_normal_vectors, f_mid)
     
-    first_key = list(upper_slices.keys())[0]
-    print("Key:", first_key)
-    print("value of key:", upper_slices[first_key])
+    # first_key = list(upper_slices.keys())[0]
+    # print("Key:", first_key)
+    # print("value of key:", upper_slices[first_key])
     
 
 
