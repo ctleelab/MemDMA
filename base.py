@@ -11,6 +11,15 @@ import pdb as pdb
 import numpy as np
 import re 
 import MDAnalysis as mda 
+import pickle
+from scipy.spatial import cKDTree
+
+
+#library for showing progress bar for runs
+from tqdm.auto import tqdm
+#library that does parallel processing 
+from tqdm.contrib.concurrent import process_map 
+
 
 import param as p
 import BasicFunctions as bfrg
@@ -22,6 +31,8 @@ import mesh_clean as m
 import util
 import grid_slicing as gs
 import preprocessing as pp 
+import ray_tracing as ry
+
 
 ##this chunk of code will only be run if the script is executed directly
 if __name__ == "__main__":
@@ -63,7 +74,6 @@ if __name__ == "__main__":
         ##will output 3 dictionaries containing 1) taking lipid_bead head name: lipid name(3-letters) 2) lipid name: GL2 bead head  3)lipid name (3-letters)
         DICT_3L, RESNAME_GLYC, LIPID = p.set_params(args.paramFile)
 
-        print("RESNAME_GLYC:", RESNAME_GLYC)
 
 
         # determine packing defect type (all/shallow/deep)
@@ -84,6 +94,7 @@ if __name__ == "__main__":
         
         grolines = bfrg.read_file(args.filename) ##reads line of the pdb file and stores each line  
         radius = bfrg.read_radius(args.filesrad) ##creates a dictionary that stores lipid_atom:radius of atom
+        print(radius)
         aliphatic = bfrg.read_aliphatic(args.filesrad) ##creates a dictionary that stores lipid_atom: n vs a (polar vs aliphatic)
     except:
         print('Command line: PackMem.py -i file.pdb -r fileRadius.txt \
@@ -227,16 +238,24 @@ if __name__ == "__main__":
     #inputs: grofile, selection of beads for mesh, step size for mesh grid (nm)
     #outputs: (X, Y, Z_upper, Z_lower) 
     ##note this also calcualtes the mesh information
-    X, Y, zupper, zlower, leaflet, residue_leaflet_old, leaflet_residues_new, z_midplane = qm.mesh(args.filename, "name GL2", 1)
+    print("running mesh")
+    X, Y, zupper, zlower, leaflet, residue_leaflet_old, leaflet_residues_new, z_midplane = qm.mesh(args.filename, "name GL2", .1)
 
     ##formating data for analysis
+    print("formatting data")
     X_f, Y_f, zupper_f, zlower_f = m.format_data(X,Y, zupper,zlower)
+
+    ##nm to A for mesh coordinates 
+    
 
     ###turns the quadrilateral mesh into a triangular mesh and computes the normal vector for each triangle in the mesh
     ###each key represents the triangle grid number
     ###normal_vector_triangles: {triangle number: (x,y,z) of normal vector}
     ###centroid_triangles: {triangle number: (x,y,z) of the centroid of the triangle}
-    centroid_triangles_u, centroid_triangles_l, norm_vector_triangles_up, norm_vector_triangles_l, coords_triangles_upper, coords_triangles_lower = m.normal_vector_triangles(X_f,Y_f,zupper_f,zlower_f)
+
+    print("computing normal vectors of triangle")
+    centroid_triangles_u, centroid_triangles_l, norm_vector_triangles_up, norm_vector_triangles_l, coords_triangles_upper, coords_triangles_lower, edges_triangles_upper, edges_triangles_lower = m.normal_vector_triangles(X_f,Y_f,zupper_f,zlower_f)
+
 
     ##############################
     ###grid assignment per atom###
@@ -245,114 +264,213 @@ if __name__ == "__main__":
     ##iterate over the triangles
     ##iterate over the atoms 
     ##project the bead onto the plane
+    ##output: {triangle {atom_number:coords of projected atom onto the plane of the triangle}}
 
     atom_ray_tracing_upper = {}
     atom_ray_tracing_lower = {}
 
+    print("determining atom features")
+    ##{atm_number: atm_name, leaflet, atm_coords)}
     atom_features = pp.atom_features(grolines, list_types_atoms,leaflet_residues_new)
 
-    for triangle_num in centroid_triangles_u: 
-        #iterates over the atoms
-        print(triangle_num)
-        #print(len(centroid_triangles_u)) #39156
-        
-        for atom_number in atom_features:
-            if atom_features[atom_number][1] == "upper": ##check the value of the dictionary 
-                ##pull all necessary information 
-                normal_vector_triangle = np.array(norm_vector_triangles_up[triangle_num]) #grabs the normal vector for the current triangle grid
-                centroid_triangle = np.array(centroid_triangles_u[triangle_num])
-
-                #project point onto plane, using the norm_vector_triangle as the direction vector
-                w_vector = np.subtract(centroid_triangle, atom_features[atom_number][2]) #vector from centroid of triangle to atom coord 
-                scalar = np.dot(w_vector,normal_vector_triangle)
-                n_contribution_in_w_vector = np.multiply(scalar, normal_vector_triangle)
-                vector_orthogonal_normal = np.subtract(w_vector, n_contribution_in_w_vector)
-
-
-                #for each trinangle I will have coords for each atom
-                atom_ray_tracing_upper[triangle_num] = {}
-                atom_ray_tracing_upper[triangle_num][atom_number] = vector_orthogonal_normal  #atom point projected onto traingle plane
-
-            if atom_features[atom_number][1] == "lower": ##check the value of the dictionary 
-
-                ##pull all necessary information 
-                normal_vector_triangle = np.array(norm_vector_triangles_l[triangle_num]) #grabs the normal vector for the current triangle grid
-                centroid_triangle = np.array(centroid_triangles_l[triangle_num])
-
-                #project point onto plane, using the norm_vector_triangle as the direction vector
-                w_vector = np.subtract(centroid_triangle, atom_features[atom_number][2]) #vector from centroid of triangle to atom coord 
-                scalar = np.dot(w_vector,normal_vector_triangle)
-                n_contribution_in_w_vector = np.multiply(scalar, normal_vector_triangle)
-                vector_orthogonal_normal = np.subtract(w_vector, n_contribution_in_w_vector)
-
-
-                #for each trinangle I will have coords for each atom
-                atom_ray_tracing_lower[triangle_num] = {}
-                atom_ray_tracing_lower[triangle_num][atom_number] = vector_orthogonal_normal  #atom point projected onto traingle plane
-
-
-
-    #################################################
-    ##now determine what atoms are in each triangle##
-    #################################################
-    ###outline of code###
-    ##1) calculate the shortest distance from from point to edge of the triangle
-        ##will have to do for each edge 
+    #print(len(centroid_triangles_u)) #39156
+    # print(len(centroid_triangles_l)) #39156
     
-    # triangle_atom_assignment = {}
-    # for triangle in atom_ray_tracing_upper:
-    #     for each triangle loop through atom_number:
-    #         for each edge in triangle: #determine the vectors for the edges in the mesh_clean function? 
-    #             edge1 = P0 - P1
-    #             edge2 = P1 - P2
-    #             edge3=  P2 - P0 
-    #             shortest_distance = np.divide(np.absolute(np.cross(vector1, vector2)),np.absolute(vector1)): 
-    #             if shortest_distance < radius_of_atom:
-    #                 then add it to the triangle list:
-    #                     for triangle_atom_assignment[] = atom_number
-
-    
-        
-        
+    print("atom ray tracing")
 
 
-    # #####################
-    # ###grid assignment###    
-    # #####################
-    # #next determine for each lipid which grid is the closest, then use that to iterate up and down the z-axis 
-    # #output: dictionary{lipid number: index of the grid number it's associated with}
+    #5 represents the cut off neighborhoods (5nm cutoff)
+    # I believe the units are nm 
+    neighborhood_projections = ry.neighborhood_project_atoms_to_triangles(atom_features, centroid_triangles_u, norm_vector_triangles_up, 10 , "upper" )
 
-
-    # #input: GL2 bead and its coordinates, centroids of triangle, empty list of residue numbers, upper vs lower leaflet assignment based on residue number
-    # #then calculate ED to determine which grid is the closest for that lipid
-    # #output: closest_mapping = {residue number:triangle number} 
-    # closest_mapping = m.closest_grid(residue_coords_gl2,residue_dict,leaflet_residues_new, centroid_triangles_u, centroid_triangles_l)
-    # print("completed closest_mapping")
-  
-    
-    # # #input: gro file, residue assignment to leaflet, grid_mapping, vectors 
-    # # #output: atm_grid {atom number: (x,y,z) coordinates of the normal vector of the grid that is closest to the lipid that the atom belongs to}
-    # atm_normal_vectors = gs.atm_normal_vector_assignment(grolines, leaflet_residues_new, closest_mapping, norm_vector_triangles_up, norm_vector_triangles_l)
-    # print("completed atm_normal_vectors")
-
-
-    # atm_centroids = gs.atm_centroid_assignment(grolines, leaflet_residues_new, closest_mapping, centroid_triangles_u, centroid_triangles_l)
-    # print("completed atm_centroids")
-
-    # #solve for intersection of z_midplane and normal vectors
-    # atm_lower_limit = gs.atm_lower_limit_assignment(grolines,leaflet_residues_new, atm_normal_vectors, atm_centroids)
-
-
-    # #output: {atom_number: [centroid of all slices (x,y,z)]}
-    # upper_slices = gs.grid_slices(grolines, leaflet_residues_new, atm_centroids, atm_normal_vectors, f_mid)
-    
-    # first_key = list(upper_slices.keys())[0]
-    # print("Key:", first_key)
-    # print("value of key:", upper_slices[first_key])
+    with open("neighborhood_projections.pickle", "wb") as f:
+        pickle.dump(neighborhood_projections , f) 
     
 
 
+    ############################
+    ####old-code-inefficeint####
+    ############################
+
+    # for triangle_num in centroid_triangles_u: #rather than using the centroid_triangles_u to iterate over, would it just be better to iterate over a lens(number of triangles?)
+    #     #iterates over the atoms
+    #     print("update_atom_projection_upper_triangle_num:", triangle_num)        
+    #     for atom_number in atom_features:
+    #         if atom_features[atom_number][1] == "upper": ##check the value of the dictionary 
+    #             ##pull all necessary information 
+    #             normal_vector_triangle = np.array(norm_vector_triangles_up[triangle_num]) #grabs the normal vector for the current triangle grid
+    #             centroid_triangle = np.array(centroid_triangles_u[triangle_num])
+
+    #             #project point onto plane, using the norm_vector_triangle as the direction vector
+    #             w_vector = np.subtract(centroid_triangle, atom_features[atom_number][2]) #vector from centroid of triangle to atom coord 
+    #             scalar = np.dot(w_vector,normal_vector_triangle)
+    #             n_contribution_in_w_vector = np.multiply(scalar, normal_vector_triangle)
+    #             vector_orthogonal_normal = np.subtract(w_vector, n_contribution_in_w_vector)
 
 
+    #             #for each trinangle I will have coords for each atom
+    #             if triangle_num not in atom_ray_tracing_upper:
+    #                 atom_ray_tracing_upper[triangle_num] = {}
+    #             else:
+    #                 atom_ray_tracing_upper[triangle_num][atom_number] = vector_orthogonal_normal  #atom point projected onto triangle plane
+    #         if atom_features[atom_number][1] == "lower":
+    #             continue
+
+    # for triangle_num in centroid_triangles_l:
+    #     #print("update_atom_projection_lower_triangle_num:", triangle_num)
+    #     for atom_number in atom_features:
+
+    #         if atom_features[atom_number][1] == "lower": ##check the value of the dictionary 
+
+    #             ##pull all necessary information 
+    #             normal_vector_triangle = np.array(norm_vector_triangles_l[triangle_num]) #grabs the normal vector for the current triangle grid
+    #             centroid_triangle = np.array(centroid_triangles_l[triangle_num])
+
+    #             #project point onto plane, using the norm_vector_triangle as the direction vector
+    #             w_vector = np.subtract(centroid_triangle, atom_features[atom_number][2]) #vector from centroid of triangle to atom coord 
+    #             scalar = np.dot(w_vector,normal_vector_triangle)
+    #             n_contribution_in_w_vector = np.multiply(scalar, normal_vector_triangle)
+    #             vector_orthogonal_normal = np.subtract(w_vector, n_contribution_in_w_vector)
+
+
+    #             #for each trinangle I will have coords for each atom
+    #             if triangle_num not in atom_ray_tracing_lower:
+    #                 atom_ray_tracing_lower[triangle_num] = {}
+    #             else: 
+    #                 atom_ray_tracing_lower[triangle_num][atom_number] = vector_orthogonal_normal  #atom point projected onto traingle plane
+    #         if atom_features[atom_number][1] == "upper":
+    #             continue
+
+
+
+
+
+#     ################################################
+#     #now determine what atoms are in each triangle##
+#     ################################################
+
+#     ##outline of code###
+#     #1) put all atom coords into NumPy array i
+
+
+#     #1) calculate the shortest distance from from point to edge of the triangle
+#         #will have to do for each edge 
+    
+#     triangle_atom_assignment_upper  = {} 
+#     triangle_atom_assignment_lower  = {} 
+
+#     print("atom mapping")
+#     for triangle_num in centroid_triangles_u:
+#         for atom_number in atom_ray_tracing_upper[triangle_num]:
+#             #print("atom_number:", atom_number)
+#             if atom_features[atom_number][1] == "upper":
+#                 #print("update_atom_mapping_upper:", triangle_num)
+
+#                 #determine the radius of the atom you're working with
+#                 lipid_atm_name = atom_features[atom_number][3]
+#                 atm_radius = radius[lipid_atm_name]
+
+#                 #coordinates of atom in plane of triangle 
+#                 coords_atom_plane_of_triangle = atom_ray_tracing_upper[triangle_num][atom_number]
+
+#                 ##import edges of triangle and import points of tringles
+#                 edges_and_points = {
+#                     "edge1": (edges_triangles_upper[triangle_num][0], coords_triangles_upper[triangle_num][0]),
+#                     "edge2": (edges_triangles_upper[triangle_num][1], coords_triangles_upper[triangle_num][1]),
+#                     "edge3": (edges_triangles_upper[triangle_num][2], coords_triangles_upper[triangle_num][2])
+#                 }
+
+#             ##determine the distance between each edge
+#             ##once the distance is <1 exit the loop of the code 
+#                 shortest_distance_to_atom = 1000 #setting arbritraury distance that much greater than the radius of all atoms 
+
+                
+#                 ##the plane should be the one defined by the triangle...
+#                 for edge, (edge_vector, point_on_edge) in edges_and_points.items():
+#                     if shortest_distance_to_atom > atm_radius:
+#                         #vector from point of vector to coords_atom_plane_of_triangle
+                        
+#                         vector_to_atom = coords_atom_plane_of_triangle - point_on_edge
+#                         area_parallelogram = np.linalg.norm(np.cross(vector_to_atom, edge_vector))  #this is giving me coordinates and not a single value....
+#                         base_parallelogram = np.linalg.norm(edge_vector)
+
+#                         shortest_distance_to_atom = np.divide(area_parallelogram,base_parallelogram)
+                
+#                     if shortest_distance_to_atom <= atm_radius:
+#                         # print("A HIT")
+#                         # sys.exit()
+#                         if triangle_num not in triangle_atom_assignment_upper:
+#                             triangle_atom_assignment_upper[triangle_num] = []
+#                             triangle_atom_assignment_upper[triangle_num].append((atom_number).strip())
+#                         else:
+#                             triangle_atom_assignment_upper[triangle_num].append((atom_number).strip())
+#                         break
+#             if atom_features[atom_number][1] == "lower":
+#                 continue
+#     # Save as a pickle file
+#     with open("triangle_atom_assignment_upper.pickle", "wb") as f:
+#         pickle.dump(triangle_atom_assignment_lower, f) 
+    
+#     # Save as a text file
+#     with open("triangle_atom_assignment_upper.txt", "w") as f:
+#         for triangle, atoms in triangle_atom_assignment_upper.items():
+#             f.write(f"{triangle}: {atoms}\n")
+
+#     for triangle_num in centroid_triangles_l:
+#         for atom_number in atom_ray_tracing_lower[triangle_num]:
+
+#             if atom_features[atom_number][1] == "lower":
+#                 print("update_atom_mapping_lower:", triangle_num)
+
+#                 #determine the radius of the atom you're working with
+#                 lipid_atm_name = atom_features[atom_number][3]
+#                 atm_radius = radius[lipid_atm_name]
+
+#                 #coordinates of atom in plane of triangle 
+#                 coords_atom_plane_of_triangle = atom_ray_tracing_lower[triangle_num][atom_number]
+
+#                 ##import edges of triangle and import points of tringles
+#                 edges_and_points = {
+#                     "edge1": (edges_triangles_lower[triangle_num][0], coords_triangles_lower[triangle_num][0]),
+#                     "edge2": (edges_triangles_lower[triangle_num][1], coords_triangles_lower[triangle_num][1]),
+#                     "edge3": (edges_triangles_lower[triangle_num][2], coords_triangles_lower[triangle_num][2])
+#                 }
+
+#             ##determine the distance between each edge
+#             ##once the distance is <1 exit the loop of the code 
+#                 shortest_distance_to_atom = 1000 #setting arbritraury distance that is much greater than the radius of all atoms 
+
+#                 ##the plane should be the one defined by the triangle...
+#                 for edge, (edge_vector, point_on_edge) in edges_and_points.items():
+#                         if shortest_distance_to_atom > atm_radius:
+#                             #vector from point of vector to coords_atom_plane_of_triangle
+                            
+#                             vector_to_atom = coords_atom_plane_of_triangle - point_on_edge
+#                             area_parallelogram = np.linalg.norm(np.cross(vector_to_atom, edge_vector))  #this is giving me coordinates and not a single value....
+#                             base_parallelogram = np.linalg.norm(edge_vector)
+
+#                             shortest_distance_to_atom = np.divide(area_parallelogram,base_parallelogram)
+                    
+#                         if shortest_distance_to_atom <= atm_radius:
+#                             if triangle_num not in triangle_atom_assignment_lower:
+#                                 triangle_atom_assignment_lower[triangle_num] = []
+#                                 triangle_atom_assignment_lower[triangle_num].append((atom_number).strip())
+#                             else:
+#                                 triangle_atom_assignment_lower[triangle_num].append((atom_number).strip())
+#                             break
+#             if atom_features[atom_number][1] == "upper":
+#                 continue
+#     # Save as a pickle file
+#     with open("triangle_atom_assignment_lower.pickle", "wb") as f:
+#         pickle.dump(triangle_atom_assignment_lower, f)
+
+#     # Save as a text file
+#     with open("triangle_atom_assignment_lower.txt", "w") as f:
+#         for triangle, atoms in triangle_atom_assignment_upper.items():
+#             f.write(f"{triangle}: {atoms}\n")
+
+
+    
+# print("CODE IS Completed")
 
 
