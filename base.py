@@ -273,17 +273,6 @@ if __name__ == "__main__":
                 atom_ray_tracing_upper[triangle_num] = {}
                 atom_ray_tracing_upper[triangle_num][atom_number] = vector_orthogonal_normal  #atom point projected onto traingle plane
 
-            if leaflet == "lower":
-                continue
-
-
-    print("done with upper leaflet")
-
-    for triangle_num in centroid_triangles_l: 
-        #iterates over the atoms
-        print(triangle_num)
-        #print(len(centroid_triangles_u)) #39156
-        for atom_number in atom_features:
             if atom_features[atom_number][1] == "lower": ##check the value of the dictionary 
 
                 ##pull all necessary information 
@@ -300,9 +289,6 @@ if __name__ == "__main__":
                 #for each trinangle I will have coords for each atom
                 atom_ray_tracing_lower[triangle_num] = {}
                 atom_ray_tracing_lower[triangle_num][atom_number] = vector_orthogonal_normal  #atom point projected onto traingle plane
-
-            if leaflet == "upper":
-                continue
 
 
 
