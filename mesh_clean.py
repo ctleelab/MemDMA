@@ -33,7 +33,11 @@ def normal_vector_triangles(X,Y,Zupper_2d, Zlower_2d):
     centroid_triangles_upper = {}
     centroid_triangles_lower = {}
     normal_vector_triangles_upper = {}
-    normal_vector_triangles_lower ={}
+    normal_vector_triangles_lower = {}
+    coords_triangles_upper = {}
+    coords_triangles_lower = {}
+    edges_triangles_upper = {}
+    edges_triangles_lower = {} 
     # vertices_quadrilateral = set()
     # connections_quadrilateral = []
     nx, ny = X.shape
@@ -60,7 +64,6 @@ def normal_vector_triangles(X,Y,Zupper_2d, Zlower_2d):
             #     vertices_quadrilateral.add(tuple(point))
             # connections_quadrilateral.append([tuple(quad_upper[0]), tuple(quad_upper[1]), tuple(quad_upper[2]), tuple(quad_upper[3])])
             
-            
             #triangle 1: [p0,p1,p2]
             traingle1_xcord = (quad_upper[0,0] + quad_upper[1,0] + quad_upper[2,0])/3 
             traingle1_ycord = (quad_upper[0,1] + quad_upper[1,1] + quad_upper[2,1])/3 
@@ -68,12 +71,23 @@ def normal_vector_triangles(X,Y,Zupper_2d, Zlower_2d):
             triangle1_centroid = (traingle1_xcord, traingle1_ycord, traingle1_zcord)
             centroid_triangles_upper[triangle_upper] = list(triangle1_centroid)
 
+            edge1_traingle1 = quad_upper[1] - quad_upper[0]
+            edge2_traingle1 = quad_upper[2] - quad_upper[1]
+            edge3_traingle1 = quad_upper[0] - quad_upper[2]
+
+
+            coords_triangles_upper[triangle_upper] = [[X[p0], Y[p0], Zupper_2d[p0]],[X[p1], Y[p1], Zupper_2d[p1]], [X[p2], Y[p2], Zupper_2d[p2]]]
+
+            edges_triangles_upper[triangle_upper] = [edge1_traingle1, edge2_traingle1, edge3_traingle1]
+
             #calculating normal vectors to each triangle
             #upper, triangle 1: will be vector from p0 to p1 and p1 to p2
             v1_1 = quad_upper[1] - quad_upper[0]
             v1_2 = quad_upper[2] - quad_upper[0]
+
             #cross product between the two vector
             normal1 = np.cross(v1_1, v1_2)
+            #normal1_unit =  np.linalg.norm(normal1) 
             normal_vector_triangles_upper[triangle_upper]= normal1
             
 
@@ -88,10 +102,19 @@ def normal_vector_triangles(X,Y,Zupper_2d, Zlower_2d):
             triangle2_centroid = (traingle2_xcord, traingle2_ycord, traingle2_zcord)
             centroid_triangles_upper[triangle_upper] = list(triangle2_centroid)
 
+            edge1_traingle2 = quad_upper[2] - quad_upper[0]
+            edge2_traingle2 = quad_upper[3] - quad_upper[2]
+            edge3_traingle2 = quad_upper[0] - quad_upper[3]
+
+            coords_triangles_upper[triangle_upper] = [[X[p0], Y[p0], Zupper_2d[p0]],[X[p2], Y[p2], Zupper_2d[p2]], [X[p3], Y[p3], Zupper_2d[p3]]] 
+
+            edges_triangles_upper[triangle_upper] = [edge1_traingle2, edge2_traingle2, edge3_traingle2]
+
             #upper, triangle 2: will be vector from p2 to p3 and p3 to p1
             v2_1 = quad_upper[3] - quad_upper[2]
             v2_2 = quad_upper[0] - quad_upper[3]
             normal2 = np.cross(v2_1, v2_2)
+            #normal2_unit =  np.linalg.norm(normal2) 
             normal_vector_triangles_upper[triangle_upper]= normal2
             
 
@@ -113,10 +136,20 @@ def normal_vector_triangles(X,Y,Zupper_2d, Zlower_2d):
             centroid_triangles_lower[triangle_lower] = list(triangle3_centroid)
 
 
+            edge1_traingle3 = quad_lower[1] - quad_lower[0]
+            edge2_traingle3 = quad_lower[2] - quad_lower[1]
+            edge3_traingle3 = quad_lower[0] - quad_lower[2]
+
+            coords_triangles_lower[triangle_lower] = [[X[p0], Y[p0], Zlower_2d[p0]],[X[p1], Y[p1], Zlower_2d[p1]], [X[p2], Y[p2], Zlower_2d[p2]]]
+
+
+            edges_triangles_lower[triangle_lower] = [edge1_traingle3, edge2_traingle3, edge3_traingle3]
+
             #lower, triangle 3: will be vector from p0 to p1 and p1 to p2
             v3_1 = quad_lower[1] - quad_lower[0]
             v3_2 = quad_lower[2] - quad_lower[0]
             normal3 = np.cross(v3_1, v3_2)
+            #normal3_unit =  np.linalg.norm(normal3) 
             normal_vector_triangles_lower[triangle_lower]= normal3
 
             triangle_lower += 1
@@ -128,10 +161,19 @@ def normal_vector_triangles(X,Y,Zupper_2d, Zlower_2d):
             triangle4_centroid = (traingle4_xcord, traingle4_ycord, traingle4_zcord)
             centroid_triangles_lower[triangle_lower] = list(triangle4_centroid)
 
+            edge1_traingle4 = quad_lower[2] - quad_lower[0]
+            edge2_traingle4 = quad_lower[3] - quad_lower[2]
+            edge3_traingle4 = quad_lower[0] - quad_lower[3]
+
+            coords_triangles_lower[triangle_lower] = [[X[p0], Y[p0], Zlower_2d[p0]],[X[p2], Y[p2], Zlower_2d[p2]], [X[p3], Y[p3], Zlower_2d[p3]]]
+
+            edges_triangles_lower[triangle_lower] = [edge1_traingle4, edge2_traingle4, edge3_traingle4]
+
             #lower, triangle 4: will be vector from p2 to p3 and p3 to p1
             v4_1 = quad_lower[3] - quad_lower[2]
             v4_2 = quad_lower[0] - quad_lower[3]
             normal4 = np.cross(v4_1, v4_2)
+            #normal4_unit =  np.linalg.norm(normal4) 
             normal_vector_triangles_lower[triangle_lower] = normal4
             
             triangle_lower += 1 
@@ -146,7 +188,7 @@ def normal_vector_triangles(X,Y,Zupper_2d, Zlower_2d):
     # centroid_triangles_lower_np = np.array(centroid_triangles_lower)
 
 
-    return centroid_triangles_upper, centroid_triangles_lower, normal_vector_triangles_upper, normal_vector_triangles_lower
+    return centroid_triangles_upper, centroid_triangles_lower, normal_vector_triangles_upper, normal_vector_triangles_lower, coords_triangles_upper, coords_triangles_lower, edges_triangles_upper, edges_triangles_lower
 
 #centroid_triangles_upper_np, centroid_triangles_lower_np, normal_vector_triangles_upper_np, normal_vector_triangles_lower_np, normal_vector_triangles_upper_triangle1_np, normal_vector_triangles_upper_triangle2_np, vertices_quadrilateral_np, connections_quadrilateral_np =  normal_vector_triangles(X,Y,Zupper_2d, Zlower_2d, triangle_bins)
 
