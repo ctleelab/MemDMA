@@ -71,14 +71,14 @@ def mesh(gro, selection, step ):
 
 
 
-    leaflet, residue_leaflet, leaflet_residues = leaflet_finder.determine_leaflets(u, selection)
+    leaflet, leaflet_residues = leaflet_finder.determine_leaflets(u, selection)
 
     # # Save only the results I care about. No need to save entire mc object
     # with open("membrane_curvature_smooth_.5A.pickle", "wb") as handle:
     #     pickle.dump({"X":X, "Y": Y, "Z_upper": z_data_upper ,"Z_lower": z_data_lower, "bin_area": bin_area}, handle, protocol=pickle.HIGHEST_PROTOCOL)
     z_midplane = .5 * (z_data_upper + z_data_lower)
     
-    return (X, Y, z_data_upper, z_data_lower,  leaflet, residue_leaflet, leaflet_residues, z_midplane)
+    return (X, Y, z_data_upper, z_data_lower,  leaflet, leaflet_residues, z_midplane)
 # jobs = []
 # systems = ["test"]
 # lipid = "test"
