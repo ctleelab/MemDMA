@@ -59,11 +59,12 @@ def determine_leaflets(universe, selection = "all"):
     #     'upper': list(leaflets['upper'].resids),
     #     'lower': list(leaflets['lower'].resids)
     #}
-    residue_leaflet_map ={}
-    for resid in leaflets['upper'].resids:
-        residue_leaflet_map[resid] = 'upper'
-    for resid in leaflets['lower'].resids:
-        residue_leaflet_map[resid] = 'lower'
+    ##Cailyn took out because this has the format for each residue number it states upper vs lower, rather than having a list upper vs lower with all residues belonging to the appropriate leaflet
+    # residue_leaflet_map ={}
+    # for resid in leaflets['upper'].resids:
+    #     residue_leaflet_map[resid] = 'upper'
+    # for resid in leaflets['lower'].resids:
+    #     residue_leaflet_map[resid] = 'lower'
    
     ##Cailyn added
     #make it nicer so two list upper vs lower
@@ -73,7 +74,7 @@ def determine_leaflets(universe, selection = "all"):
     }
 
     # Return both AtomGroups and the residue map
-    return leaflets, residue_leaflet_map, leaflet_residues
+    return leaflets, leaflet_residues
 
 # #Cailyn: troubleshooting to determine if the residue is being named to the correct upper or lower leaflet 
 # from pathlib import Path
