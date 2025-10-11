@@ -108,9 +108,6 @@ if __name__ == "__main__":
     num_frame=pdb.find_numframe(grolines)
 
 
-
-
-
     #####################################################################
     ########## create a quadrilateral mesh of the membrane ##############
     #####################################################################
@@ -232,20 +229,20 @@ if __name__ == "__main__":
     # ########## compute the normal vector of each triangle in the mesh ###############
     # #################################################################################
 
-    # #inputs: X_f, Y_f, zupper_f, zlower_f
-    # #outputs: For the upper and lower leaflet of the membrane: centroids of the triangles, normal vectors of each triangle, 3 points that create each triangle, and the edges that compose each triangle
-    # ##note this also calculates the mesh information
+    #inputs: X_f, Y_f, zupper_f, zlower_f
+    #outputs: For the upper and lower leaflet of the membrane: centroids of the triangles, normal vectors of each triangle, 3 points that create each triangle, and the edges that compose each triangle
+    ##note this also calculates the mesh information
 
-    # print("Start:computing normal vectors of triangle")
-    # centroid_triangles_u, centroid_triangles_l, norm_vector_triangles_up, norm_vector_triangles_l, coords_triangles_upper, coords_triangles_lower, edges_triangles_upper, edges_triangles_lower = m.normal_vector_triangles(X_f,Y_f,zupper_f,zlower_f) #potentially need to increase the efficiency of this code
-    # print("Finished:computing normal vectors of triangle")
+    print("Start:computing normal vectors of triangle")
+    centroid_triangles_u, centroid_triangles_l, norm_vector_triangles_up, norm_vector_triangles_l, coords_triangles_upper, coords_triangles_lower, edges_triangles_upper, edges_triangles_lower, quadrilateral_upper, quadrilateral_lower = m.normal_vector_triangles(X_f,Y_f,zupper_f,zlower_f) #potentially need to increase the efficiency of this code
+    print("Finished:computing normal vectors of triangle")
 
 
 
     # #################################################################################
     # ########## average the normal vector for the triangle for each grid #############
     # #################################################################################
-
+    
 
 
 
