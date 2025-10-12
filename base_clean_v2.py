@@ -238,12 +238,10 @@ if __name__ == "__main__":
     print("Finished:computing normal vectors of triangle")
 
 
-
     # #################################################################################
     # ########## average the normal vector for the triangle for each grid #############
     # #################################################################################
     
-
 
 
 

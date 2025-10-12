@@ -97,8 +97,10 @@ def normal_vector_triangles(X,Y,Zupper_2d, Zlower_2d):
             #normal1_unit =  np.linalg.norm(normal1) 
             normal_vector_triangles_upper[triangle_upper]= normal1
             
-            #assigning the quadrilateral number to each triangle
-            quadrilateral_upper[triangle_upper] = quadrilateral_number
+            # #assigning the quadrilateral number to each triangle
+            # if quadrilateral_number not in quadrilateral_upper:
+            #     quadrilateral_upper[quadrilateral_number] = []
+            # quadrilateral_upper[quadrilateral_number].append(triangle_upper)
 
             #increase key number of triangle
             triangle_upper += 1 
@@ -123,16 +125,23 @@ def normal_vector_triangles(X,Y,Zupper_2d, Zlower_2d):
             v2_1 = quad_upper[3] - quad_upper[2]
             v2_2 = quad_upper[0] - quad_upper[3]
             normal2 = np.cross(v2_1, v2_2)
+
             #normal2_unit =  np.linalg.norm(normal2) 
             normal_vector_triangles_upper[triangle_upper]= normal2
 
+            #averagenormal
+            average_normal_upper = np.average([normal1, normal2], axis = 0)
+
             #assigning the quadrilateral number to each triangle
-            quadrilateral_upper[triangle_upper] = quadrilateral_number           
+            if quadrilateral_number not in quadrilateral_upper:
+                quadrilateral_upper[quadrilateral_number] = []
+            quadrilateral_upper[quadrilateral_number].append(average_normal_upper)      
 
             triangle_upper += 1
 
-
-            ###start of lower leaflet
+            ###############################
+            #####start of lower leaflet####
+            ###############################
 
             quad_lower = np.array([[X[p0], Y[p0], Zlower_2d[p0]],
                                    [X[p1], Y[p1], Zlower_2d[p1]],
@@ -165,8 +174,11 @@ def normal_vector_triangles(X,Y,Zupper_2d, Zlower_2d):
             #normal3_unit =  np.linalg.norm(normal3) 
             normal_vector_triangles_lower[triangle_lower]= normal3
 
-            #assigning the quadrilateral number to each triangle
-            quadrilateral_lower[triangle_lower] = quadrilateral_number     
+
+            # #assigning the quadrilateral number to each triangle
+            # if quadrilateral_number not in quadrilateral_lower:
+            #     quadrilateral_lower[quadrilateral_number] = []
+            # quadrilateral_lower[quadrilateral_number].append(triangle_lower)
 
             triangle_lower += 1
 
@@ -192,9 +204,15 @@ def normal_vector_triangles(X,Y,Zupper_2d, Zlower_2d):
             #normal4_unit =  np.linalg.norm(normal4) 
             normal_vector_triangles_lower[triangle_lower] = normal4
             
-
+            #averagenormal between the two triangles that make up the quadrilateral
+            average_normal_lower = np.average([normal3, normal4], axis = 0)
+            
             #assigning the quadrilateral number to each triangle
-            quadrilateral_lower[triangle_lower] = quadrilateral_number     
+            if quadrilateral_number not in quadrilateral_upper:
+                quadrilateral_upper[quadrilateral_number] = []
+            quadrilateral_upper[quadrilateral_number].append(average_normal_lower)
+
+            
 
             triangle_lower += 1 
 
@@ -213,6 +231,21 @@ def normal_vector_triangles(X,Y,Zupper_2d, Zlower_2d):
     return centroid_triangles_upper, centroid_triangles_lower, normal_vector_triangles_upper, normal_vector_triangles_lower, coords_triangles_upper, coords_triangles_lower, edges_triangles_upper, edges_triangles_lower, quadrilateral_upper, quadrilateral_lower
 
 #centroid_triangles_upper_np, centroid_triangles_lower_np, normal_vector_triangles_upper_np, normal_vector_triangles_lower_np, normal_vector_triangles_upper_triangle1_np, normal_vector_triangles_upper_triangle2_np, vertices_quadrilateral_np, connections_quadrilateral_np =  normal_vector_triangles(X,Y,Zupper_2d, Zlower_2d, triangle_bins)
+
+
+# #input triangle normal vector, and the quadrilateral the triangle belongs to 
+# def average_quadrilateral_normal(normal_vector, quadrilateral_number):
+#     #loop over the quadrilaterals 
+#     #if the triangle name in it then append 
+
+
+
+
+
+
+    
+
+
 
 
 #determine which grid gets assigned to which lipid 
