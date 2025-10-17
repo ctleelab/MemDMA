@@ -30,6 +30,7 @@ import ray_tracing_parallelization_v2 as ry
 import matching 
 import quad_centroid as qc
 import neighborhood_grids as ng
+import ray_tracing_quads as rq
 
 
 ##this chunk of code will only be run if the script is executed directly
@@ -173,6 +174,8 @@ if __name__ == "__main__":
             if v[1] == "lower":
                 gl2_beads_lower[key] = v[2]
                 gl2_beads_lower_resnumber[key] = v[4]
+
+
     
     ##all atom dictionary
     ## output {atom number: res_number, coords}
@@ -196,20 +199,38 @@ if __name__ == "__main__":
     #2-1) create a matrix of the center of mass of each mesh grid
     upper_centroids, lower_centroids, centroids_upper_dict, centroids_lower_dict  = qc.centroid_quadrilaterals(X_f, Y_f, zupper_f, zlower_f)
 
+
     #2-2) ##create neighborhood for each grid that has an upper limit of 10A 
     upper_neighborhood = ng.neighborhood(centroids_upper_dict, 1)
     lower_neighborhood = ng.neighborhood(centroids_lower_dict, 1)
+
+    ##############################################
+    ######troubleshooting neighborhood grids######
+    ##############################################
+    
+    # if 1993802 in upper_neighborhood:
+    #     print(upper_neighborhood[1993802])
+    # else:
+    #     print("not found")
+
+    
+    # if 100 in upper_neighborhood:
+    #     print(upper_neighborhood[100])
+    # else:
+    #     print("not found")
+
 
     #2-3) calculate the euclidean distance between the Gl2 and the grids in the mesh
     # can compare the array of Gl2 coordinates to the array of mesh COM (this should be quick because can do matrix math). Will compare by euclidean distance. 
 
     #inputs will be the centroids of each grid and the gl2 bead coordinates
     #output : {'4': (np.int64(42), array([ 8.09204793,  1.12890854, 19.91730258]}
-    #output : {atom_number: grid_number, (coords of grid), list of neighborhood grids}
+    #output : {gl2 atom_number: grid_number, (coords of grid), list of neighborhood grids}
     gl2_grid_assignment_upper = qc.grid_assignment(gl2_beads_upper, upper_centroids, upper_neighborhood) 
     gl2_grid_assignment_lower = qc.grid_assignment(gl2_beads_lower, lower_centroids, lower_neighborhood) 
-   
 
+
+   
   
     # #############################################################
     # ########## assign the neighborhood to each lipid ############
@@ -234,34 +255,38 @@ if __name__ == "__main__":
     ##note this also calculates the mesh information
 
     print("Start:computing normal vectors of triangle")
-    centroid_triangles_u, centroid_triangles_l, norm_vector_triangles_up, norm_vector_triangles_l, coords_triangles_upper, coords_triangles_lower, edges_triangles_upper, edges_triangles_lower, quadrilateral_upper, quadrilateral_lower = m.normal_vector_triangles(X_f,Y_f,zupper_f,zlower_f) #potentially need to increase the efficiency of this code
+    centroid_triangles_u, centroid_triangles_l, norm_vector_triangles_up, norm_vector_triangles_l, coords_triangles_upper, coords_triangles_lower, edges_triangles_upper, edges_triangles_lower, quadrilateral_normal_upper, quadrilateral_normal_lower = m.normal_vector_triangles(X_f,Y_f,zupper_f,zlower_f) #potentially need to increase the efficiency of this code
     print("Finished:computing normal vectors of triangle")
 
 
-    # #################################################################################
-    # ########## average the normal vector for the triangle for each grid #############
-    # #################################################################################
-    
-
-
-
     # ##################################################################################################################
-    # ########## Determine the coordinate of an atom if projected onto the same plane as a given triangle ##############
+    # ########## Determine the coordinate of an atom if projected onto the same plane as a given quadrilateral #########
     # ##################################################################################################################
     
+    #need the inputs of the neighborhood of grids 
+    #inputs: quadrilateral_upper (which has the average normal vector and the quadrilateral number), atom_coords, upper_centroids (quadrilateral_centroids)
+    #quadrilateral_upper {quad_number: coords of normal vector}
+    #atom_grid_assignment_upper  {atom number: res_number, coords, list of close by grids}
+    #upper_centroids is a matrix
+    output = rq.project_block_of_triangles(quadrilateral_normal_upper, atom_grid_assignment_upper , upper_centroids)
+
+
+
+
+
     # #calculate the tree = cKDTree(atom_coords) prior 
     # tree, atom_num, atom_coords_np = ry.tree_cKDTree(atom_features, "upper")
 
 
     # # print("Start: atom ray projection")
-    # neighborhood_projections_upper, neighborhood_atom_id_upper = ry.neighborhood_project_atoms_to_triangles(atom_num, atom_coords_np, centroid_triangles_u, norm_vector_triangles_up, tree, 6 )
+    # neighborhood_projections_upper, neighborhood_atom_id_upper = ry.neighborhood_project_atoms_to_triangles_tree(atom_num, atom_coords_np, centroid_triangles_u, norm_vector_triangles_up, tree, 6 )
 
-    # # with open("neighborhood_projections_upper_test.pickle", "wb") as f:
-    # #     pickle.dump(neighborhood_projections_upper , f) 
+    # with open("neighborhood_projections_upper_test.pickle", "wb") as f:
+    #     pickle.dump(neighborhood_projections_upper , f) 
 
-    # # with open("neighborhood_projections_atom_id_test.pickle", "wb") as f:
-    # #     pickle.dump(neighborhood_atom_id_upper, f) 
-    # # print("Finished: atom ray projection")
+    # with open("neighborhood_projections_atom_id_test.pickle", "wb") as f:
+    #     pickle.dump(neighborhood_atom_id_upper, f) 
+    # print("Finished: atom ray projection")
 
 
 
