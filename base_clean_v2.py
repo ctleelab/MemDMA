@@ -147,7 +147,24 @@ if __name__ == "__main__":
 
     print("Finished:determining atom features")
 
+    # #################################################################################
+    # ########## compute the normal vector of each triangle in the mesh ###############
+    # #################################################################################
+
+    #inputs: X_f, Y_f, zupper_f, zlower_f
+    #outputs: For the upper and lower leaflet of the membrane: centroids of the triangles, normal vectors of each triangle, 3 points that create each triangle, and the edges that compose each triangle
+    ##note this also calculates the mesh information
+
+    #potentially need to increase the efficiency of this code
+    print("Start:computing normal vectors of triangle")
+    centroid_triangles_u, centroid_triangles_l, norm_vector_triangles_up, norm_vector_triangles_l, coords_triangles_upper, coords_triangles_lower, edges_triangles_upper, edges_triangles_lower, quadrilateral_normal_upper, quadrilateral_normal_lower = m.normal_vector_triangles(X_f,Y_f,zupper_f,zlower_f)
+    print("Finished:computing normal vectors of triangle")
+
+
+
+
     
+
     #################################################################################
     ########## Determine the grid closest to the GL2 bead of each lipid #############
     #################################################################################
@@ -207,7 +224,7 @@ if __name__ == "__main__":
     ##############################################
     ######troubleshooting neighborhood grids######
     ##############################################
-    
+
     # if 1993802 in upper_neighborhood:
     #     print(upper_neighborhood[1993802])
     # else:
@@ -237,8 +254,8 @@ if __name__ == "__main__":
     # #############################################################
 
     # #3-1) 
-    #input 
-    #match by res_number 
+    #goal: assign to each atom a neighborhood of grids
+    #matchs by res_number by using the Gl2 bead
     #output {atom number: res_number, coords, list of close by grids}
 
     atom_grid_assignment_upper = qc.atom_grid_mapping(all_atoms_upper, gl2_grid_assignment_upper, gl2_beads_upper_resnumber)
@@ -246,17 +263,6 @@ if __name__ == "__main__":
 
     print("Finished:GL2 grid neighborhood assignment")
 
-    # #################################################################################
-    # ########## compute the normal vector of each triangle in the mesh ###############
-    # #################################################################################
-
-    #inputs: X_f, Y_f, zupper_f, zlower_f
-    #outputs: For the upper and lower leaflet of the membrane: centroids of the triangles, normal vectors of each triangle, 3 points that create each triangle, and the edges that compose each triangle
-    ##note this also calculates the mesh information
-
-    print("Start:computing normal vectors of triangle")
-    centroid_triangles_u, centroid_triangles_l, norm_vector_triangles_up, norm_vector_triangles_l, coords_triangles_upper, coords_triangles_lower, edges_triangles_upper, edges_triangles_lower, quadrilateral_normal_upper, quadrilateral_normal_lower = m.normal_vector_triangles(X_f,Y_f,zupper_f,zlower_f) #potentially need to increase the efficiency of this code
-    print("Finished:computing normal vectors of triangle")
 
 
     # ##################################################################################################################
@@ -269,7 +275,6 @@ if __name__ == "__main__":
     #atom_grid_assignment_upper  {atom number: res_number, coords, list of close by grids}
     #upper_centroids is a matrix
     output = rq.project_block_of_triangles(quadrilateral_normal_upper, atom_grid_assignment_upper , upper_centroids)
-
 
 
 
