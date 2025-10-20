@@ -49,6 +49,7 @@ def centroid_quadrilaterals(X,Y,Zupper_2d, Zlower_2d):
             centroids_upper.append(mean_quad_upper)
             centroids_lower.append(mean_quad_lower)
 
+            #create a dictionary that stores grid: coords
             centroids_upper_dict[key] = mean_quad_upper 
             centroids_lower_dict[key] = mean_quad_lower
 
@@ -76,30 +77,51 @@ def grid_assignment(gl2_coords, grid_matrix, grid_dict):
         #rather then grid_coords I want grid_number
         #match the grid_coords to the grid_dict and pull out the key 
         list_neighborhood = grid_dict[min_distance_index]
+
         gl2_grid_assignment[key.strip()] = (min_distance_index, grid_coords, list_neighborhood )
     return gl2_grid_assignment
 
 
 #gl2_neighborhood_grids: {gl2_atom_number: grid_number, (coords of grid), list of neighborhood grids}
-#all_atom: {atom_number: coords, resnumber}
+#all_atom: {atom_number: resnumber, coords}
 #gl2_beads_resnumber: {gl2_atom_number: resnumber}
 
 def atom_grid_mapping(all_atom, gl2_neighborhood_grids, gl2_beads_resnumber):
 
     # Precompute reverse lookup: residue number -> gl2_atom
-    res_to_gl2_atom = {v: k for k, v in gl2_beads_resnumber.items()}
+    res_to_gl2_atom = {v: str(k).strip() for k, v in gl2_beads_resnumber.items()}
+    # print("res_to_gl2_atom:", res_to_gl2_atom)
+
+    # for k, v in gl2_beads_resnumber.items():
+    #     print("Key:", k, "Type:", type(k))
+    #     print("Value:", v, "Type:", type(v))
+    #     break  # just check the first item
+
+    #trouble-shooting why GL2 atoms are missing neighborhood
+    #print("gl2_neighborhood_grids:", gl2_neighborhood_grids)
+    # if '2392' in gl2_neighborhood_grids:
+    #     print(gl2_neighborhood_grids['2392'])
+
 
     for key1, v1 in all_atom.items():
-        res_number = v1[0]
-
-        # Find corresponding GL2 atom
+        res_number = v1[0] #pulls out residue number
+        
+        # Find corresponding GL2 atom for each residue number 
         gl2_atom = res_to_gl2_atom.get(res_number)
+        
         if gl2_atom is None: # residue not present in GL2 mapping (need to check this)
-            continue  
+            print("Stop issue!")
+            #the issue is not the gl2_atom being missing, as this print statement is never triggered
 
-        # Get neighborhood info for that GL2 atom
-        values_1 = gl2_neighborhood_grids.get(gl2_atom)
+        values_1 = gl2_neighborhood_grids.get(gl2_atom) #this right now is not working for gl2 = 2392?
+
+        #print("Values 1:", values_1)
+        #Why are some values None?
         if values_1 is None or len(values_1) < 3:
+            print("Gl2_atom", gl2_atom)
+            print("Values 1:", values_1)
+            print("Issue")
+            
             continue  # skip if not enough data or missing key
 
         neighborhood_list = values_1[2]
