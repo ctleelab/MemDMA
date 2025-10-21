@@ -9,11 +9,11 @@ import csv
 
 
 
-with open("neighborhood_projections_upper_test.pickle", "rb") as f:
-    neighborhood_projections_upper = pickle.load(f)
+# with open("neighborhood_projections_upper_test.pickle", "rb") as f:
+#     neighborhood_projections_upper = pickle.load(f)
 
-with open("neighborhood_projections_atom_id_test.pickle", "rb") as f:
-    neighborhood_grid_id_upper = pickle.load(f)
+# with open("neighborhood_projections_atom_id_test.pickle", "rb") as f:
+#     neighborhood_grid_id_upper = pickle.load(f)
 
 
 triangle_atom_assignment_upper  = {} 
@@ -35,7 +35,7 @@ triangle_atom_assignment_lower  = {}
 
 #output grid, mapping value
 
-def sum_atom_mapping(atom_features, radius, aliphatic, edges_triangles_upper, neighborhood_projections_upper,neighborhood_grid_id_upper, coords_triangles_upper): 
+def sum_atom_mapping(atom_features, radius, aliphatic, edges_triangles_upper, neighborhood_grid_id_upper, coords_triangles_upper): 
     for atom_num, grid_ids in neighborhood_grid_id_upper.items(): 
         stop_triangle = False
         atom_num = int(atom_num)
