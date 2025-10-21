@@ -9,3 +9,5 @@ ExplePackMem/
 *.txt
 *.pickle
 *.log
+*.csv
+*_np
