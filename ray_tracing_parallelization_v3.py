@@ -4,6 +4,7 @@ from concurrent.futures import ProcessPoolExecutor, as_completed
 #from concurrent.futures import ThreadPoolExecutor, as_completed
 from tqdm import tqdm
 from multiprocessing import shared_memory
+import pickle
 
 #blocks should be the atoms
 #shared memory should be the grid coordinates 
@@ -120,6 +121,12 @@ def neighborhood_project_atoms_to_triangles(atom_num, grid_num, coords_np, norma
 
     shm_coords.close()
     shm_coords.unlink()
+
+    # with open("neighborhood_projections_upper_test.pickle", "wb") as f:
+    #     pickle.dump(projections_dict, f) 
+
+    # with open("neighborhood_projections_upper_atom_id_test.pickle", "wb") as f:
+    #     pickle.dump(atom_numbers_dict, f) 
 
     return projections_dict, atom_numbers_dict
 

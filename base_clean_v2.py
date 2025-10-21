@@ -307,11 +307,6 @@ if __name__ == "__main__":
     neighborhood_projections_lower, neighborhood_grid_id_lower = ry.neighborhood_project_atoms_to_triangles(atom_lower_num, grid_lower_num, grid_coords_lower_np, norm_vector_triangles_l, atom_grid_neighborhood_assignment_lower)
 
 
-    with open("neighborhood_projections_upper_test.pickle", "wb") as f:
-        pickle.dump(neighborhood_projections_upper , f) 
-
-    with open("neighborhood_projections_atom_id_test.pickle", "wb") as f:
-        pickle.dump(neighborhood_grid_id_upper, f) 
 
     print("Finished: atom ray projection")
 
@@ -321,11 +316,11 @@ if __name__ == "__main__":
     ########################################################
     print("Start: atom mapping to triangles")
 
-    with open("neighborhood_projections_upper_test.pickle", "rb") as f:
-        neighborhood_projections_upper = pickle.load(f)
+    # with open("neighborhood_projections_upper_test.pickle", "rb") as f:
+    #     neighborhood_projections_upper = pickle.load(f)
 
-    with open("neighborhood_projections_atom_id_test.pickle", "rb") as f:
-        neighborhood_grid_id_upper = pickle.load(f)
+    # with open("neighborhood_projections_atom_id_test.pickle", "rb") as f:
+    #     neighborhood_grid_id_upper = pickle.load(f)
 
     
     triangle_atom_assignment_upper  = {} 
@@ -338,7 +333,6 @@ if __name__ == "__main__":
     #print(max(neighborhood_grid_id_upper))
 
     #completed for upper 
-    agm.sum_atom_mapping(atom_features, radius, aliphatic, edges_triangles_upper, neighborhood_projections_upper,neighborhood_grid_id_upper, coords_triangles_upper)
-    agm.sum_atom_mapping(atom_features, radius, aliphatic, edges_triangles_lower, neighborhood_projections_lower,neighborhood_grid_id_lower, coords_triangles_lower)
+    agm.sum_atom_mapping(atom_features, radius, aliphatic, edges_triangles_upper, neighborhood_grid_id_upper, coords_triangles_upper)
+    agm.sum_atom_mapping(atom_features, radius, aliphatic, edges_triangles_lower, neighborhood_grid_id_lower, coords_triangles_lower)
 
-    
