@@ -7,6 +7,7 @@ import re
 import MDAnalysis as mda 
 import pickle
 from scipy.spatial import cKDTree
+import csv
 
 
 #library for showing progress bar for runs
@@ -26,7 +27,7 @@ import mesh_clean as m
 import util
 import grid_slicing as gs
 import preprocessing as pp 
-import ray_tracing_parallelization_v2 as ry
+import ray_tracing_parallelization_v3 as ry
 import matching 
 import quad_centroid as qc
 import neighborhood_grids as ng
@@ -120,7 +121,7 @@ if __name__ == "__main__":
 
     #mesh is in nm
     print("Start: running mesh")
-    X, Y, zupper, zlower, leaflet, leaflet_residues, z_midplane = qm.mesh(args.filename, "name GL2", .1)
+    X, Y, zupper, zlower, leaflet, leaflet_residues, z_midplane = qm.mesh(args.filename, "name GL2", .5)
     print("Finished:running mesh")
 
     
@@ -128,8 +129,6 @@ if __name__ == "__main__":
     print("Start:formatting data")
     X_f, Y_f, zupper_f, zlower_f = m.format_data(X,Y, zupper,zlower)
     print("Finished:formating data")
-
-
 
 
     ####################################################
@@ -142,8 +141,6 @@ if __name__ == "__main__":
 
     list_types_atoms = util.list_types_atoms_lipid  #just loads in the types of atoms in the .gro file
     atom_features = pp.atom_features(grolines, list_types_atoms,leaflet_residues) 
-    
-
 
     print("Finished:determining atom features")
 
@@ -153,17 +150,15 @@ if __name__ == "__main__":
 
     #inputs: X_f, Y_f, zupper_f, zlower_f
     #outputs: For the upper and lower leaflet of the membrane: centroids of the triangles, normal vectors of each triangle, 3 points that create each triangle, and the edges that compose each triangle
+    #centroid_triangles_u {grid_number: corods of centroidxs (x,y,z)}
     ##note this also calculates the mesh information
+    
 
     #potentially need to increase the efficiency of this code
     print("Start:computing normal vectors of triangle")
-    centroid_triangles_u, centroid_triangles_l, norm_vector_triangles_up, norm_vector_triangles_l, coords_triangles_upper, coords_triangles_lower, edges_triangles_upper, edges_triangles_lower, quadrilateral_normal_upper, quadrilateral_normal_lower = m.normal_vector_triangles(X_f,Y_f,zupper_f,zlower_f)
+    centroid_triangles_u, centroid_triangles_l, norm_vector_triangles_up, norm_vector_triangles_l, coords_triangles_upper, coords_triangles_lower, edges_triangles_upper, edges_triangles_lower, quadrilateral_normal_upper, quadrilateral_normal_lower, centroid_triangles_lower_matrix, centroid_triangles_upper_matrix = m.normal_vector_triangles(X_f,Y_f,zupper_f,zlower_f)
     print("Finished:computing normal vectors of triangle")
 
-
-
-
-    
 
     #################################################################################
     ########## Determine the grid closest to the GL2 bead of each lipid #############
@@ -175,6 +170,7 @@ if __name__ == "__main__":
     #3) create a neighborhood around that grid
     #4) assign the grid to the lipid such that now every bead in that lipid gets assigned the grid
     
+
     print("Start:GL2 grid neighborhood assignment")
     #1-1) creating dictionaries for gl2 beads and all atoms
     #  gl2_beads_upper a dictionary of just gl2 beads {atm#: coords}
@@ -204,7 +200,6 @@ if __name__ == "__main__":
         if v[1] == "lower":
             all_atoms_lower[key] = (v[4], v[2]) #adds resnumber 
 
-
     #1-2) turn dictionary into a matrix, and have the keys. The index matches the keys to the matrix
     #gl2_beads_upper_keys = {k: None for k in gl2_beads_upper.keys()}
     #gl2_beads_upper_matrix = np.array(list(gl2_beads_upper.values()))
@@ -213,20 +208,25 @@ if __name__ == "__main__":
 
 
 
-    #2-1) create a matrix of the center of mass of each mesh grid
-    upper_centroids, lower_centroids, centroids_upper_dict, centroids_lower_dict  = qc.centroid_quadrilaterals(X_f, Y_f, zupper_f, zlower_f)
+    # #2-1) create a matrix of the center of mass of each mesh grid for quadrilaterals
+    #upper_centroids, lower_centroids, centroids_upper_dict, centroids_lower_dict  = qc.centroid_quadrilaterals(X_f, Y_f, zupper_f, zlower_f)
 
 
-    #2-2) ##create neighborhood for each grid that has an upper limit of 10A 
-    upper_neighborhood = ng.neighborhood(centroids_upper_dict, 1)
-    lower_neighborhood = ng.neighborhood(centroids_lower_dict, 1)
+    # #2-2a) ##create neighborhood for each grid that has an upper limit of 10A with the quadrilaterals
+    # upper_neighborhood = ng.neighborhood(centroids_upper_dict, 1)
+    # lower_neighborhood = ng.neighborhood(centroids_lower_dict, 1)
 
-    ##############################################
-    ######troubleshooting neighborhood grids######
-    ##############################################
 
-    # if 1993802 in upper_neighborhood:
-    #     print(upper_neighborhood[1993802])
+    #2-2b) ##create neighborhood for each grid that has an upper limit of 10A with the triangles
+    upper_neighborhood = ng.neighborhood(centroid_triangles_u, 1)
+    lower_neighborhood = ng.neighborhood(centroid_triangles_l, 1)
+
+    # ##############################################
+    # ######troubleshooting neighborhood grids######
+    # ##############################################
+
+    # if 50 in upper_neighborhood:
+    #     print(upper_neighborhood[50])
     # else:
     #     print("not found")
 
@@ -237,17 +237,17 @@ if __name__ == "__main__":
     #     print("not found")
 
 
+
     #2-3) calculate the euclidean distance between the Gl2 and the grids in the mesh
     # can compare the array of Gl2 coordinates to the array of mesh COM (this should be quick because can do matrix math). Will compare by euclidean distance. 
 
     #inputs will be the centroids of each grid and the gl2 bead coordinates
     #output : {'4': (np.int64(42), array([ 8.09204793,  1.12890854, 19.91730258]}
     #output : {gl2 atom_number: grid_number, (coords of grid), list of neighborhood grids}
-    gl2_grid_assignment_upper = qc.grid_assignment(gl2_beads_upper, upper_centroids, upper_neighborhood) 
-    gl2_grid_assignment_lower = qc.grid_assignment(gl2_beads_lower, lower_centroids, lower_neighborhood) 
+    gl2_grid_assignment_upper = qc.grid_assignment(gl2_beads_upper, centroid_triangles_upper_matrix, upper_neighborhood) 
+    gl2_grid_assignment_lower = qc.grid_assignment(gl2_beads_lower, centroid_triangles_lower_matrix, lower_neighborhood) 
 
 
-   
   
     # #############################################################
     # ########## assign the neighborhood to each lipid ############
@@ -258,127 +258,189 @@ if __name__ == "__main__":
     #matchs by res_number by using the Gl2 bead
     #output {atom number: res_number, coords, list of close by grids}
 
-    atom_grid_assignment_upper = qc.atom_grid_mapping(all_atoms_upper, gl2_grid_assignment_upper, gl2_beads_upper_resnumber)
-    atom_grid_assignment_lower = qc.atom_grid_mapping(all_atoms_lower, gl2_grid_assignment_lower, gl2_beads_lower_resnumber)
+    atom_grid_neighborhood_assignment_upper = qc.atom_grid_mapping(all_atoms_upper, gl2_grid_assignment_upper, gl2_beads_upper_resnumber)
+    atom_grid_neighborhood_assignment_lower = qc.atom_grid_mapping(all_atoms_lower, gl2_grid_assignment_lower, gl2_beads_lower_resnumber)
 
     print("Finished:GL2 grid neighborhood assignment")
 
 
 
-    # ##################################################################################################################
-    # ########## Determine the coordinate of an atom if projected onto the same plane as a given quadrilateral #########
-    # ##################################################################################################################
+    # # ##################################################################################################################
+    # # ########## Determine the coordinate of an atom if projected onto the same plane as a given quadrilateral #########
+    # # ##################################################################################################################
     
-    #need the inputs of the neighborhood of grids 
-    #inputs: quadrilateral_upper (which has the average normal vector and the quadrilateral number), atom_coords, upper_centroids (quadrilateral_centroids)
-    #quadrilateral_upper {quad_number: coords of normal vector}
-    #atom_grid_assignment_upper  {atom number: res_number, coords, list of close by grids}
-    #upper_centroids is a matrix
-    output = rq.project_block_of_triangles(quadrilateral_normal_upper, atom_grid_assignment_upper , upper_centroids)
+    # # #need the inputs of the neighborhood of grids 
+    # # #inputs: quadrilateral_upper (which has the average normal vector and the quadrilateral number), atom_coords, upper_centroids (quadrilateral_centroids)
+    # # #quadrilateral_upper {quad_number: coords of normal vector}
+    # # #atom_grid_assignment_upper  {atom number: res_number, coords, list of close by grids}
+    # # #upper_centroids is a matrix
+    # # output = rq.project_block_of_triangles(quadrilateral_normal_upper, atom_grid_assignment_upper , upper_centroids)
 
 
-
-
-    # #calculate the tree = cKDTree(atom_coords) prior 
-    # tree, atom_num, atom_coords_np = ry.tree_cKDTree(atom_features, "upper")
-
-
-    # # print("Start: atom ray projection")
-    # neighborhood_projections_upper, neighborhood_atom_id_upper = ry.neighborhood_project_atoms_to_triangles_tree(atom_num, atom_coords_np, centroid_triangles_u, norm_vector_triangles_up, tree, 6 )
-
-    # with open("neighborhood_projections_upper_test.pickle", "wb") as f:
-    #     pickle.dump(neighborhood_projections_upper , f) 
-
-    # with open("neighborhood_projections_atom_id_test.pickle", "wb") as f:
-    #     pickle.dump(neighborhood_atom_id_upper, f) 
-    # print("Finished: atom ray projection")
-
-
-
-    # #######################################################
-    # #now determine what atoms lie inside in each triangle##
-    # #######################################################
+    # # ##################################################################################################################
+    # # ########## Determine the coordinate of an atom if projected onto the same plane as a given triangle      #########
+    # # ##################################################################################################################
     
-    # with open("neighborhood_projections_upper_v1.pickle", "rb") as f:
-    #     neighborhood_projections_upper = pickle.load(f)
 
-    # with open("neighborhood_projections_atom_id_v1.pickle", "rb") as f:
-    #     neighborhood_atom_id_upper = pickle.load(f)
+    # # # #calculate the tree = cKDTree(atom_coords) prior 
+
+    # ## grid_coords_np: is the (x,y,z) coordinates of the atoms in the upper leaflet
+    # ##  grid_upper_num: is a list of grid numbers in the upper leaflet 
+    grid_upper_num, grid_coords_upper_np = ry.extract_grid_coords(centroid_triangles_u)
+    grid_lower_num, grid_coords_lower_np = ry.extract_grid_coords(centroid_triangles_l)
+
+    atom_upper_num, atoms_coords_upper_np = ry.extract_atoms(atom_features, "upper")
+    atom_lower_num, atoms_coords_lower_np = ry.extract_atoms(atom_features, "lower")
+
+    # # will need to search atom_grid_assignment_upper only 
+    # #atom_coords_np comes from the tree function 
+    print("Start: atom ray projection")
 
     
-    # triangle_atom_assignment_upper  = {} 
-    # triangle_atom_assignment_lower  = {} 
 
-    # print("Start: atom mapping to triangles")
+    #atom_grid_neighborhood_assignment_lower this needs to be in the input somewhere
+    #output: neighborhood_grid_id: {atom number: list of grid number}
+    #ouput: neighborhood_projections: {atom number: list of array(x,y,z)}
 
-    # for triangle_num, atom_ids in enumerate(neighborhood_atom_id_upper): #loops over each triangle 
-    #     stop_triangle = False
-    #     #if triangle_num < 20000: #just emplaced so that I can troubleshoot the code
-    #     print(triangle_num) #here to help troubleshoot the code 
-    #     # Determine the coordinates for the atom by taking atom_id and searching in the same triangle
-    #     # in neighborhood_projections and pulling out its coordinates
-    #     for atom_id in atom_ids: #loops over the atoms in each triangle
-    #         if stop_triangle:   #will move onto a new triangle if an polar atom was mapped
-    #             break
-    #         if atom_features[atom_id][1] == "lower": ##skips atoms that belong to the lower leaflet
-    #             continue
-    #         #coordinates of atom in plane of triangle 
-    #         atom_coords = matching.get_projection(triangle_num, atom_id, neighborhood_projections_upper, neighborhood_atom_id_upper)
-
-    #         #determine the radius of the atom you're working with
-    #         lipid_atm_name = atom_features[atom_id][3]
-    #         atm_radius = radius[lipid_atm_name]
-    #         atm_type = aliphatic[lipid_atm_name]
+    neighborhood_projections_upper, neighborhood_grid_id_upper = ry.neighborhood_project_atoms_to_triangles(atom_upper_num, grid_upper_num, grid_coords_upper_np, norm_vector_triangles_up, atom_grid_neighborhood_assignment_upper)
+    neighborhood_projections_lower, neighborhood_grid_id_lower = ry.neighborhood_project_atoms_to_triangles(atom_lower_num, grid_lower_num, grid_coords_lower_np, norm_vector_triangles_l, atom_grid_neighborhood_assignment_lower)
 
 
-    #         triangle_idex_num = int(triangle_num)+1
+    with open("neighborhood_projections_upper_test.pickle", "wb") as f:
+        pickle.dump(neighborhood_projections_upper , f) 
 
-    #         ##import edges of triangle and import points of tringles
-    #         edges_and_points = {
-    #             "edge1": (edges_triangles_upper[triangle_idex_num][0], coords_triangles_upper[triangle_idex_num][0]),
-    #             "edge2": (edges_triangles_upper[triangle_idex_num][1], coords_triangles_upper[triangle_idex_num][1]),
-    #             "edge3": (edges_triangles_upper[triangle_idex_num][2], coords_triangles_upper[triangle_idex_num][2])
-    #         }
+    with open("neighborhood_projections_atom_id_test.pickle", "wb") as f:
+        pickle.dump(neighborhood_grid_id_upper, f) 
 
-    #     ##determine the distance between each edge
-    #     ##once the distance is <1 exit the loop of the code 
-    #         shortest_distance_to_atom = 1000 #setting arbritraury distance that much greater than the radius of all atoms 
+    print("Finished: atom ray projection")
 
 
-    #         ##the plane should be the one defined by the triangle...
-    #         for edge, (edge_vector, point_on_edge) in edges_and_points.items():
-    #             #triangle_atom_assignment_upper[triangle_idex_num] = []
-    #             triangle_atom_assignment_upper[triangle_idex_num] = 0  
 
-    #             if shortest_distance_to_atom > atm_radius:
-    #                 #vector from point of vector to coords_atom_plane_of_triangle
+    ########################################################
+    ##now determine what atoms lie inside in each triangle##
+    ########################################################
+    print("Start: atom mapping to triangles")
+
+    with open("neighborhood_projections_upper_test.pickle", "rb") as f:
+        neighborhood_projections_upper = pickle.load(f)
+
+    with open("neighborhood_projections_atom_id_test.pickle", "rb") as f:
+        neighborhood_grid_id_upper = pickle.load(f)
+
+    
+    triangle_atom_assignment_upper  = {} 
+    triangle_atom_assignment_lower  = {} 
+    #success = [] #troubleshooting
+    #fails = [] #troublshooting
+
+
+    ##Current issues
+    #1) some atoms still not found in atom_features
+    #checking the function that make the atom_features
+    #something is wrong with the atom number
+    #issue lies in neighborhood_project_atoms_to_triangles function
+    #2) for some reason not finding polar atoms mapping 
+
+    #trouble-shooting    
+    #print(max(neighborhood_grid_id_upper))
+
+
+    #output grid, mapping value
+    for atom_num, grid_ids in neighborhood_grid_id_upper.items(): 
+        stop_triangle = False
+        atom_num = int(atom_num)
+        if atom_num > 0: #just emplaced so that I can troubleshoot the code
+            atom_num = str(atom_num) #changes atom_num to a string so it matches atom_features keys
+            if atom_num not in atom_features:
+                #print(f"Warning: atom_num {atom_num} missing in atom_features")
+                #fails.append(int(atom_num))
+                continue
+            # Determine the coordinates for the atom by taking atom_id and searching in the same triangle
+            # in neighborhood_projections and pulling out its coordinates
+            else:
+                #success.append(int(atom_num))
+                for grid_id in grid_ids: #loops over the neighborhood of grids for each atom
+                    ##Issue: for some reason atoms are mising
+                    if stop_triangle:   #will move onto a new triangle if an polar atom was mapped
+                        break
+                    if atom_features[atom_num][1] == "lower": ##skips atoms that belong to the lower leaflet
+                        continue
+
+                    #coordinates of atom in plane of triangle 
+                    #atom_coords = matching.get_projection(atom_num, grid_id, neighborhood_projections_upper, neighborhood_grid_id_upper, atom_features)
+
+                    atom_coords = atom_features[atom_num][2]
+
+                    #determine the radius of the atom you're working with
+                    lipid_atm_name = atom_features[atom_num][3]
+                    atm_radius = radius[lipid_atm_name]
+                    atm_type = aliphatic[lipid_atm_name]
+
+
+                    triangle_idex_num = int(grid_id)
+
+                    ##import edges of triangle and import points of tringles
+                    edges_and_points = {
+                        "edge1": (edges_triangles_upper[grid_id][0], coords_triangles_upper[grid_id][0]),
+                        "edge2": (edges_triangles_upper[grid_id][1], coords_triangles_upper[grid_id][1]),
+                        "edge3": (edges_triangles_upper[grid_id][2], coords_triangles_upper[grid_id][2])
+                    }
+
+                ##determine the distance between each edge
+                ##once the distance is <1 exit the loop of the code 
+                    shortest_distance_to_atom = 1000 #setting arbritraury distance that much greater than the radius of all atoms 
                     
-    #                 vector_to_atom = atom_coords- point_on_edge
-    #                 area_parallelogram = np.linalg.norm(np.cross(vector_to_atom, edge_vector))  #this is giving me coordinates and not a single value....
-    #                 base_parallelogram = np.linalg.norm(edge_vector)
+                    if triangle_idex_num not in triangle_atom_assignment_upper: #only initialize the grid if the grid doesn't exist yet
+                        triangle_atom_assignment_upper[triangle_idex_num] = 0
 
-    #                 shortest_distance_to_atom = np.divide(area_parallelogram,base_parallelogram)
-    #             if shortest_distance_to_atom <= atm_radius:
-    #                 if atm_type == "n":  #add an if statement where if the atom is polar exit and move onto a new triangle
-    #                     triangle_atom_assignment_upper[triangle_idex_num] += 1 
-    #                     # if triangle_idex_num not in triangle_atom_assignment_upper:
-    #                     #     triangle_atom_assignment_upper[triangle_idex_num] = []
-    #                     #triangle_atom_assignment_upper[triangle_idex_num].append((atom_id).strip()) 
-    #                     #triangle_atom_assignment_upper[triangle_idex_num].append((atom_id).strip()) 
-    #                     ##rather than appends the atom id, maybe just add 1 
-    #                     stop_triangle = True
-    #                     break 
-    #                 else:
-    #                     triangle_atom_assignment_upper[triangle_idex_num] += .001
-    #                     # if triangle_idex_num not in triangle_atom_assignment_upper:
-    #                     #     triangle_atom_assignment_upper[triangle_idex_num] = []
-    #                     #triangle_atom_assignment_upper[triangle_idex_num].append((atom_id).strip()) 
-    #                     break
-             
-    # # Save as a pickle file
-    # with open("triangle_atom_assignment_upper_test3.pickle", "wb") as f:
-    #     pickle.dump(triangle_atom_assignment_upper, f) 
+                    ##the plane should be the one defined by the triangle...
+                    for edge, (edge_vector, point_on_edge) in edges_and_points.items():
+                        #triangle_atom_assignment_upper[triangle_idex_num] = []
+                        if shortest_distance_to_atom > atm_radius:
+                            #vector from point of vector to coords_atom_plane_of_triangle
+                            
+                            vector_to_atom = atom_coords- point_on_edge
+                            area_parallelogram = np.linalg.norm(np.cross(vector_to_atom, edge_vector))  #this is giving me coordinates and not a single value....
+                            base_parallelogram = np.linalg.norm(edge_vector)
 
+                            shortest_distance_to_atom = np.divide(area_parallelogram,base_parallelogram)
+                        if shortest_distance_to_atom <= atm_radius:
+                            if atm_type == "n":  #add an if statement where if the atom is polar exit and move onto a new triangle
+                                print("polar atom")
+                                triangle_atom_assignment_upper[triangle_idex_num] += 1.0 
+                                # if triangle_idex_num not in triangle_atom_assignment_upper:
+                                #     triangle_atom_assignment_upper[triangle_idex_num] = []
+                                #triangle_atom_assignment_upper[triangle_idex_num].append((atom_id).strip()) 
+                                #triangle_atom_assignment_upper[triangle_idex_num].append((atom_id).strip()) 
+                                ##rather than appends the atom id, maybe just add 1 
+                                stop_triangle = True
+                                break 
+                            else:
+                                triangle_atom_assignment_upper[triangle_idex_num] += .001
+                                # if triangle_idex_num not in triangle_atom_assignment_upper:
+                                #     triangle_atom_assignment_upper[triangle_idex_num] = []
+                                #triangle_atom_assignment_upper[triangle_idex_num].append((atom_id).strip()) 
+                                continue
+    print("finished: atom mapping to triangles")
+
+    #troubleshooting
+    #print(fails)
+    #print("min fails:", min(fails))
+    #print("max fails:", max(fails))
+    #print(success)
+    #print("min success:", min(success))
+    #print("max success:", max(success))
+    #print("length of atom features:", len(atom_features))
+                    
+    # Save as a pickle file
+    with open("triangle_atom_assignment_upper_test6.pickle", "wb") as f:
+        pickle.dump(triangle_atom_assignment_upper, f) 
+
+    with open("triangle_atom_assignment_upper_test6.csv", "w", newline="") as f:
+        writer = csv.writer(f)
+        writer.writerow(["triangle_id", "assignment"])  # optional header
+        for key, value in triangle_atom_assignment_upper.items():
+            writer.writerow([key, value])
 
 
 
