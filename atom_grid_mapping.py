@@ -96,7 +96,6 @@ def sum_atom_mapping(atom_features, radius, aliphatic, edges_triangles_upper, ne
                             shortest_distance_to_atom = np.divide(area_parallelogram,base_parallelogram)
                         if shortest_distance_to_atom <= atm_radius:
                             if atm_type == "n":  #add an if statement where if the atom is polar exit and move onto a new triangle
-                                print("polar atom")
                                 triangle_atom_assignment_upper[triangle_idex_num] += 1.0 
                                 # if triangle_idex_num not in triangle_atom_assignment_upper:
                                 #     triangle_atom_assignment_upper[triangle_idex_num] = []

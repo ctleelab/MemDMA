@@ -8,7 +8,6 @@ from scipy.spatial import cKDTree
 def neighborhood(grid_centroids, cutoff):
     grid_keys = list(grid_centroids.keys())  #creates a list of the keys of all centroids of the grid points
     centroids = np.array([grid_centroids[k][:3] for k in grid_keys]) #take the coordinates for each grid 
-    print(centroids)
     tree = cKDTree(centroids)
     grid_neighborhood = {}
     #create neighborhood grid, but only if its not created already 
