@@ -78,7 +78,7 @@ def grid_assignment(gl2_coords, grid_matrix, grid_dict):
         #match the grid_coords to the grid_dict and pull out the key 
         list_neighborhood = grid_dict[min_distance_index]
 
-        gl2_grid_assignment[key.strip()] = (min_distance_index, grid_coords, list_neighborhood )
+        gl2_grid_assignment[key] = (min_distance_index, grid_coords, list_neighborhood )
     return gl2_grid_assignment
 
 

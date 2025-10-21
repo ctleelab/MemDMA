@@ -39,7 +39,7 @@ def create_shared_atom_coords(arr, name = None):
 #will want to import also the neighborhood 
 #Need to change this function: where only loop through the neighborhood list
 
-def _project_block_of_atoms(block_atoms, normals, atom_num, coords_meta, atom_grid_neighborhood_assignment):
+def _project_block_of_atoms(block_atoms, normals, grid_num, coords_meta, atom_grid_neighborhood_assignment):
     block_projections = {}
     block_atom_numbers = {}
 
@@ -55,11 +55,14 @@ def _project_block_of_atoms(block_atoms, normals, atom_num, coords_meta, atom_gr
         atom_resid = values[0]       
         atom_coords = values[1]     
         nearby_idx_list = values[2] 
+        
+        if atom not in block_projections:
+            block_projections[atom] = []
 
+        if atom not in block_atom_numbers:
+           block_atom_numbers[atom] = []
+         
         for tri_indx in nearby_idx_list:
-            if tri_indx not in block_projections:
-                block_projections[tri_indx] = []
-                block_atom_numbers[tri_indx] = []
 
             grid_coord = grid_coords_np[tri_indx]
             w_vectors = grid_coord - atom_coords
@@ -68,14 +71,14 @@ def _project_block_of_atoms(block_atoms, normals, atom_num, coords_meta, atom_gr
             n_contributions = np.outer(scalars, normals[tri_indx])
             projections = w_vectors - n_contributions
 
-            block_projections[tri_indx].append(projections.tolist())
-            block_atom_numbers[tri_indx].append(int(atom))  # use atom ID directly
+            block_projections[atom].append(projections.tolist())
+            block_atom_numbers[atom].append(int(tri_indx))  # use atom ID directly
 
     shm.close()
     return block_projections, block_atom_numbers
 
 #max_workers tells you how many threads are being used at once 
-def neighborhood_project_atoms_to_triangles(atom_num, num, coords_np, normals, atom_grid_neighborhood_assignment, max_workers=24, block_size=1000):
+def neighborhood_project_atoms_to_triangles(atom_num, grid_num, coords_np, normals, atom_grid_neighborhood_assignment, max_workers=24, block_size=1000):
     """
     Projects atoms in a given leaflet onto triangle planes, in parallel.
     """
@@ -83,8 +86,9 @@ def neighborhood_project_atoms_to_triangles(atom_num, num, coords_np, normals, a
     shm_coords, shared_coords, coords_meta = create_shared_atom_coords(coords_np)
 
     # Split atoms into blocks
-    grid_indices = list(atom_num)
-    blocks = [grid_indices[i:i + block_size] for i in range(0, len(grid_indices), block_size)]
+    atom_indices = list(atom_num)
+    blocks = [atom_indices[i:i + block_size] for i in range(0, len(atom_indices), block_size)]
+
 
     # Dictionaries to store results
     projections_dict = {}
@@ -96,7 +100,7 @@ def neighborhood_project_atoms_to_triangles(atom_num, num, coords_np, normals, a
                 _project_block_of_atoms,
                 block,
                 normals,
-                num,
+                grid_num, 
                 coords_meta,
                 atom_grid_neighborhood_assignment,
             ): block
@@ -105,14 +109,14 @@ def neighborhood_project_atoms_to_triangles(atom_num, num, coords_np, normals, a
 
         for future in tqdm(as_completed(futures), total=len(futures), desc="Processing triangle blocks"):
             block_projections, block_atom_numbers = future.result()
-            # Merge block results into global dicts
-            for tri_idx in block_projections:
-                if tri_idx not in projections_dict:
-                    projections_dict[tri_idx] = []
-                    atom_numbers_dict[tri_idx] = []
 
-                projections_dict[tri_idx].extend(block_projections[tri_idx])
-                atom_numbers_dict[tri_idx].extend(block_atom_numbers[tri_idx])
+            # Merge block results into global dict
+            for atom in block_projections:
+                if atom not in projections_dict:
+                    projections_dict[atom] = []
+                    atom_numbers_dict[atom] = []
+                projections_dict[atom].extend(block_projections[atom])
+                atom_numbers_dict[atom].extend(block_atom_numbers[atom])
 
     shm_coords.close()
     shm_coords.unlink()
