@@ -28,7 +28,6 @@ import util
 import grid_slicing as gs
 import preprocessing as pp 
 import ray_tracing_parallelization_v3 as ry
-import matching 
 import quad_centroid as qc
 import neighborhood_grids as ng
 import ray_tracing_quads as rq
@@ -219,8 +218,11 @@ if __name__ == "__main__":
 
 
     #2-2b) ##create neighborhood for each grid that has an upper limit of 10A with the triangles
+
+    print("Start: neighborbood")
     upper_neighborhood = ng.neighborhood(centroid_triangles_u, 1)
     lower_neighborhood = ng.neighborhood(centroid_triangles_l, 1)
+    print("Finished: neighborbood")
 
     # ##############################################
     # ######troubleshooting neighborhood grids######
@@ -245,10 +247,12 @@ if __name__ == "__main__":
     #inputs will be the centroids of each grid and the gl2 bead coordinates
     #output : {'4': (np.int64(42), array([ 8.09204793,  1.12890854, 19.91730258]}
     #output : {gl2 atom_number: grid_number, (coords of grid), list of neighborhood grids}
+
+    print("Start: gl2 grid assignment")
     gl2_grid_assignment_upper = qc.grid_assignment(gl2_beads_upper, centroid_triangles_upper_matrix, upper_neighborhood) 
     gl2_grid_assignment_lower = qc.grid_assignment(gl2_beads_lower, centroid_triangles_lower_matrix, lower_neighborhood) 
 
-
+    print("Finished: gl2 grid assignment")
   
     # #############################################################
     # ########## assign the neighborhood to each lipid ############
@@ -283,10 +287,10 @@ if __name__ == "__main__":
     # # ##################################################################################################################
     
 
-    # # # #calculate the tree = cKDTree(atom_coords) prior 
+    # #calculate the tree = cKDTree(atom_coords) prior 
 
-    # ## grid_coords_np: is the (x,y,z) coordinates of the atoms in the upper leaflet
-    # ##  grid_upper_num: is a list of grid numbers in the upper leaflet 
+    ## grid_coords_np: is the (x,y,z) coordinates of the atoms in the upper leaflet
+    ##  grid_upper_num: is a list of grid numbers in the upper leaflet 
     grid_upper_num, grid_coords_upper_np = ry.extract_grid_coords(centroid_triangles_u)
     grid_lower_num, grid_coords_lower_np = ry.extract_grid_coords(centroid_triangles_l)
 
@@ -332,7 +336,24 @@ if __name__ == "__main__":
     #trouble-shooting    
     #print(max(neighborhood_grid_id_upper))
 
-    #completed for upper 
-    agm.sum_atom_mapping(atom_features, radius, aliphatic, edges_triangles_upper, neighborhood_grid_id_upper, coords_triangles_upper)
-    agm.sum_atom_mapping(atom_features, radius, aliphatic, edges_triangles_lower, neighborhood_grid_id_lower, coords_triangles_lower)
+    #sum of the atom mapping to matrix polar vs nonpolar
+    triangle_atom_assignment_upper = agm.sum_atom_mapping(atom_features, radius, aliphatic, edges_triangles_upper, neighborhood_grid_id_upper, coords_triangles_upper, grid_upper_num)
+    triangle_atom_assignment_lower = agm.sum_atom_mapping(atom_features, radius, aliphatic, edges_triangles_lower, neighborhood_grid_id_lower, coords_triangles_lower, grid_lower_num)
+    
+    print("completed frame")
 
+    #############################################
+    #####plot the grid with the atom_mappings####
+    #############################################
+
+    #match grid number to coords of centroids
+    #input: centroid_triangles_u and triangle_atom_assignment_upper 
+    #I need x and y
+
+    #first plot the x,y 
+
+    #pull out the (x,y) from all triangle numbers
+
+
+    
+    
