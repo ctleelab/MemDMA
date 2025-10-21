@@ -31,9 +31,12 @@ def residue_leaflet_determine(u, selection):
 
 #{triangle number : centroid [(x1,y1,z1), normal vector (x2,y2,z2)}
 #goal: calculate the center for the each triangle
-def normal_vector_triangles(X,Y,Zupper_2d, Zlower_2d):
 
-    #center of triangle = (Ax + Bx + Cx)/3, (Ay + By + Cy)/3, (Az + Bz + Cz)/3
+def normal_vector_triangles(X, Y, Zupper_2d, Zlower_2d, normalize=True):
+    nx, ny = X.shape
+    n_quads = (nx - 1) * (ny - 1)
+    n_tri = 2 * n_quads  # two triangles per quad per leaflet
+
     centroid_triangles_upper = {}
     centroid_triangles_lower = {}
     normal_vector_triangles_upper = {}
@@ -43,203 +46,118 @@ def normal_vector_triangles(X,Y,Zupper_2d, Zlower_2d):
     edges_triangles_upper = {}
     edges_triangles_lower = {}
     quadrilateral_upper = {}
-    quadrilateral_lower = {} 
-    centroid_triangles_upper_list = []
-    centroid_triangles_lower_list = []
-    # vertices_quadrilateral = set()
-    # connections_quadrilateral = []
-    nx, ny = X.shape
+    quadrilateral_lower = {}
+
+    centroid_upper_list = []
+    centroid_lower_list = []
+
     triangle_upper = 1
-    triangle_lower = 1 
-    quadrilateral_number = 1
-    print("This is nx:", nx)
-    print("This is ny:", ny)
-    for i in range(nx-1):
-        for j in range(ny-1):
-            #calculate the centroids of the triangles by breaking down each quadrilateral into two triangles
-            #index of the points in the quadrilateral
-            p0 = (i,j)
-            p1 = (i+1,j)
-            p2 = (i+1, j+1)
-            p3 = (i, j+1)
+    triangle_lower = 1
+    quad_num = 1
 
-            #values of the (X,Y,Z) for each point that composes a quadrilateral
-            quad_upper = np.array([[X[p0], Y[p0], Zupper_2d[p0]],
-                                   [X[p1], Y[p1], Zupper_2d[p1]],
-                                   [X[p2], Y[p2], Zupper_2d[p2]],
-                                   [X[p3], Y[p3], Zupper_2d[p3]]]
-                                   )
-            # for point in quad_upper:
-            #     vertices_quadrilateral.add(tuple(point))
-            # connections_quadrilateral.append([tuple(quad_upper[0]), tuple(quad_upper[1]), tuple(quad_upper[2]), tuple(quad_upper[3])])
-            
-            #triangle 1: [p0,p1,p2]
-            traingle1_xcord = (quad_upper[0,0] + quad_upper[1,0] + quad_upper[2,0])/3 
-            traingle1_ycord = (quad_upper[0,1] + quad_upper[1,1] + quad_upper[2,1])/3 
-            traingle1_zcord = (quad_upper[0,2] + quad_upper[1,2] + quad_upper[2,2])/3 
-            triangle1_centroid = (traingle1_xcord, traingle1_ycord, traingle1_zcord)
-            centroid_triangles_upper[triangle_upper] = np.array(triangle1_centroid)
-            centroid_triangles_upper_list.append(triangle1_centroid)
+    # precompute vertex coordinates in bulk for vectorized operations
+    for i in range(nx - 1):
+        for j in range(ny - 1):
+            # corners
+            p0 = (i, j)
+            p1 = (i + 1, j)
+            p2 = (i + 1, j + 1)
+            p3 = (i, j + 1)
 
-            edge1_traingle1 = quad_upper[1] - quad_upper[0]
-            edge2_traingle1 = quad_upper[2] - quad_upper[1]
-            edge3_traingle1 = quad_upper[0] - quad_upper[2]
+            # ---- upper leaflet ----
+            quad_u = np.array([
+                [X[p0], Y[p0], Zupper_2d[p0]],
+                [X[p1], Y[p1], Zupper_2d[p1]],
+                [X[p2], Y[p2], Zupper_2d[p2]],
+                [X[p3], Y[p3], Zupper_2d[p3]],
+            ])
 
+            # two triangles: [p0,p1,p2] and [p0,p2,p3]
+            tri1 = quad_u[[0, 1, 2]]
+            tri2 = quad_u[[0, 2, 3]]
 
-            coords_triangles_upper[triangle_upper] = [[X[p0], Y[p0], Zupper_2d[p0]],[X[p1], Y[p1], Zupper_2d[p1]], [X[p2], Y[p2], Zupper_2d[p2]]]
+            # centroids
+            cent1 = tri1.mean(axis=0)
+            cent2 = tri2.mean(axis=0)
+            centroid_triangles_upper[triangle_upper] = cent1
+            centroid_triangles_upper[triangle_upper + 1] = cent2
+            centroid_upper_list.extend([cent1, cent2])
 
-            edges_triangles_upper[triangle_upper] = [edge1_traingle1, edge2_traingle1, edge3_traingle1]
+            # normals
+            n1 = np.cross(tri1[1] - tri1[0], tri1[2] - tri1[0])
+            n2 = np.cross(tri2[1] - tri2[0], tri2[2] - tri2[0])
+            if normalize:
+                n1 /= np.linalg.norm(n1) + 1e-12
+                n2 /= np.linalg.norm(n2) + 1e-12
 
-            #calculating normal vectors to each triangle
-            #upper, triangle 1: will be vector from p0 to p1 and p1 to p2
-            v1_1 = quad_upper[1] - quad_upper[0]
-            v1_2 = quad_upper[2] - quad_upper[0]
+            normal_vector_triangles_upper[triangle_upper] = n1
+            normal_vector_triangles_upper[triangle_upper + 1] = n2
 
-            #cross product between the two vector
-            normal1 = np.cross(v1_1, v1_2)
-            #normal1_unit =  np.linalg.norm(normal1) 
-            normal_vector_triangles_upper[triangle_upper]= normal1
-            
-            # #assigning the quadrilateral number to each triangle
-            # if quadrilateral_number not in quadrilateral_upper:
-            #     quadrilateral_upper[quadrilateral_number] = []
-            # quadrilateral_upper[quadrilateral_number].append(triangle_upper)
+            coords_triangles_upper[triangle_upper] = tri1
+            coords_triangles_upper[triangle_upper + 1] = tri2
 
-            #increase key number of triangle
-            triangle_upper += 1 
+            edges_triangles_upper[triangle_upper] = [tri1[1] - tri1[0], tri1[2] - tri1[1], tri1[0] - tri1[2]]
+            edges_triangles_upper[triangle_upper + 1] = [tri2[1] - tri2[0], tri2[2] - tri2[1], tri2[0] - tri2[2]]
 
+            avg_normal_upper = (n1 + n2) / 2
+            quadrilateral_upper[quad_num] = [avg_normal_upper]
 
-            #triangle 2: [p0,p2,p3]
-            traingle2_xcord = (quad_upper[0,0] + quad_upper[2,0] +  quad_upper[3,0])/3 
-            traingle2_ycord = (quad_upper[0,1] + quad_upper[2,1] + quad_upper[3,1])/3 
-            traingle2_zcord = (quad_upper[0,2] + quad_upper[2,2] + quad_upper[3,2])/3 
-            triangle2_centroid = (traingle2_xcord, traingle2_ycord, traingle2_zcord)
-            centroid_triangles_upper[triangle_upper] = np.array(triangle2_centroid)
-            centroid_triangles_upper_list.append(triangle2_centroid)
+            triangle_upper += 2
 
-            edge1_traingle2 = quad_upper[2] - quad_upper[0]
-            edge2_traingle2 = quad_upper[3] - quad_upper[2]
-            edge3_traingle2 = quad_upper[0] - quad_upper[3]
+            # ---- lower leaflet ----
+            quad_l = np.array([
+                [X[p0], Y[p0], Zlower_2d[p0]],
+                [X[p1], Y[p1], Zlower_2d[p1]],
+                [X[p2], Y[p2], Zlower_2d[p2]],
+                [X[p3], Y[p3], Zlower_2d[p3]],
+            ])
 
-            coords_triangles_upper[triangle_upper] = [[X[p0], Y[p0], Zupper_2d[p0]],[X[p2], Y[p2], Zupper_2d[p2]], [X[p3], Y[p3], Zupper_2d[p3]]] 
+            tri3 = quad_l[[0, 1, 2]]
+            tri4 = quad_l[[0, 2, 3]]
+            cent3 = tri3.mean(axis=0)
+            cent4 = tri4.mean(axis=0)
+            centroid_triangles_lower[triangle_lower] = cent3
+            centroid_triangles_lower[triangle_lower + 1] = cent4
+            centroid_lower_list.extend([cent3, cent4])
 
-            edges_triangles_upper[triangle_upper] = [edge1_traingle2, edge2_traingle2, edge3_traingle2]
+            n3 = np.cross(tri3[1] - tri3[0], tri3[2] - tri3[0])
+            n4 = np.cross(tri4[1] - tri4[0], tri4[2] - tri4[0])
+            if normalize:
+                n3 /= np.linalg.norm(n3) + 1e-12
+                n4 /= np.linalg.norm(n4) + 1e-12
 
-            #upper, triangle 2: will be vector from p2 to p3 and p3 to p1
-            v2_1 = quad_upper[3] - quad_upper[2]
-            v2_2 = quad_upper[0] - quad_upper[3]
-            normal2 = np.cross(v2_1, v2_2)
+            normal_vector_triangles_lower[triangle_lower] = n3
+            normal_vector_triangles_lower[triangle_lower + 1] = n4
 
-            #normal2_unit =  np.linalg.norm(normal2) 
-            normal_vector_triangles_upper[triangle_upper]= normal2
+            coords_triangles_lower[triangle_lower] = tri3
+            coords_triangles_lower[triangle_lower + 1] = tri4
 
-            #averagenormal
-            average_normal_upper = np.average([normal1, normal2], axis = 0)
+            edges_triangles_lower[triangle_lower] = [tri3[1] - tri3[0], tri3[2] - tri3[1], tri3[0] - tri3[2]]
+            edges_triangles_lower[triangle_lower + 1] = [tri4[1] - tri4[0], tri4[2] - tri4[1], tri4[0] - tri4[2]]
 
-            #assigning the quadrilateral number to each triangle
-            if quadrilateral_number not in quadrilateral_upper:
-                quadrilateral_upper[quadrilateral_number] = []
-            quadrilateral_upper[quadrilateral_number].append(average_normal_upper)      
+            avg_normal_lower = (n3 + n4) / 2
+            quadrilateral_lower[quad_num] = [avg_normal_lower]
 
-            triangle_upper += 1
+            triangle_lower += 2
+            quad_num += 1
 
-            ###############################
-            #####start of lower leaflet####
-            ###############################
+    centroid_triangles_upper_matrix = np.vstack(centroid_upper_list)
+    centroid_triangles_lower_matrix = np.vstack(centroid_lower_list)
 
-            quad_lower = np.array([[X[p0], Y[p0], Zlower_2d[p0]],
-                                   [X[p1], Y[p1], Zlower_2d[p1]],
-                                   [X[p2], Y[p2], Zlower_2d[p2]],
-                                   [X[p3], Y[p3], Zlower_2d[p3]]]
-                                   )
-            
-
-            #triangle 3: [p0,p1,p2]
-            traingle3_xcord = (quad_lower[0,0] + quad_lower[1,0] + quad_lower[2,0])/3 
-            traingle3_ycord = (quad_lower[0,1] + quad_lower[1,1] + quad_lower[2,1])/3 
-            traingle3_zcord = (quad_lower[0,2] + quad_lower[1,2] + quad_lower[2,2])/3 
-            triangle3_centroid = (traingle3_xcord, traingle3_ycord, traingle3_zcord)
-            centroid_triangles_lower[triangle_lower] = np.array(triangle3_centroid)
-            centroid_triangles_lower_list.append(triangle3_centroid)
-
-
-            edge1_traingle3 = quad_lower[1] - quad_lower[0]
-            edge2_traingle3 = quad_lower[2] - quad_lower[1]
-            edge3_traingle3 = quad_lower[0] - quad_lower[2]
-
-            coords_triangles_lower[triangle_lower] = [[X[p0], Y[p0], Zlower_2d[p0]],[X[p1], Y[p1], Zlower_2d[p1]], [X[p2], Y[p2], Zlower_2d[p2]]]
-
-
-            edges_triangles_lower[triangle_lower] = [edge1_traingle3, edge2_traingle3, edge3_traingle3]
-
-            #lower, triangle 3: will be vector from p0 to p1 and p1 to p2
-            v3_1 = quad_lower[1] - quad_lower[0]
-            v3_2 = quad_lower[2] - quad_lower[0]
-            normal3 = np.cross(v3_1, v3_2)
-            #normal3_unit =  np.linalg.norm(normal3) 
-            normal_vector_triangles_lower[triangle_lower]= normal3
-
-
-            # #assigning the quadrilateral number to each triangle
-            # if quadrilateral_number not in quadrilateral_lower:
-            #     quadrilateral_lower[quadrilateral_number] = []
-            # quadrilateral_lower[quadrilateral_number].append(triangle_lower)
-
-            triangle_lower += 1
-
-            #triangle 4: [p0,p2,p3]
-            traingle4_xcord = (quad_lower[0,0] + quad_lower[1,0] + quad_lower[2,0])/3 
-            traingle4_ycord = (quad_lower[0,1] + quad_lower[1,1] + quad_lower[2,1])/3 
-            traingle4_zcord = (quad_lower[0,2] + quad_lower[1,2] + quad_lower[2,2])/3 
-            triangle4_centroid = (traingle4_xcord, traingle4_ycord, traingle4_zcord)
-            centroid_triangles_lower[triangle_lower] = np.array(triangle4_centroid)
-            centroid_triangles_lower_list.append(triangle4_centroid)
-
-            edge1_traingle4 = quad_lower[2] - quad_lower[0]
-            edge2_traingle4 = quad_lower[3] - quad_lower[2]
-            edge3_traingle4 = quad_lower[0] - quad_lower[3]
-
-            coords_triangles_lower[triangle_lower] = [[X[p0], Y[p0], Zlower_2d[p0]],[X[p2], Y[p2], Zlower_2d[p2]], [X[p3], Y[p3], Zlower_2d[p3]]]
-
-            edges_triangles_lower[triangle_lower] = [edge1_traingle4, edge2_traingle4, edge3_traingle4]
-
-            #lower, triangle 4: will be vector from p2 to p3 and p3 to p1
-            v4_1 = quad_lower[3] - quad_lower[2]
-            v4_2 = quad_lower[0] - quad_lower[3]
-            normal4 = np.cross(v4_1, v4_2)
-            #normal4_unit =  np.linalg.norm(normal4) 
-            normal_vector_triangles_lower[triangle_lower] = normal4
-            
-            #average normal between the two triangles that make up the quadrilateral
-            average_normal_lower = np.average([normal3, normal4], axis = 0)
-            
-            #assigning the quadrilateral number to each triangle
-            if quadrilateral_number not in quadrilateral_upper:
-                quadrilateral_upper[quadrilateral_number] = []
-            quadrilateral_upper[quadrilateral_number].append(average_normal_lower)
-
-            
-
-            triangle_lower += 1 
-
-            quadrilateral_number += 1
-
-        #convert list to numpy array 
-        centroid_triangles_lower_matrix = np.array(centroid_triangles_lower_list)
-        centroid_triangles_upper_matrix = np.array(centroid_triangles_upper_list)
-
-
-    # centroid_triangles_upper_np = np.array(centroid_triangles_upper)
-    # centroid_triangles_upper_flatten = centroid_triangles_upper_np.reshape(centroid_triangles_upper_np.shape[0], -1)
-    # np.savetxt("centroid_triangles_upper", centroid_triangles_upper_flatten)
-
-    # normal_vector_triangles_upper_np = np.array(normal_vector_triangles_upper)
-    # normal_vector_triangles_lower_np = np.array(normal_vector_triangles_lower)
-    # centroid_triangles_lower_np = np.array(centroid_triangles_lower)
-
-
-    return centroid_triangles_upper, centroid_triangles_lower, normal_vector_triangles_upper, normal_vector_triangles_lower, coords_triangles_upper, coords_triangles_lower, edges_triangles_upper, edges_triangles_lower, quadrilateral_upper, quadrilateral_lower, centroid_triangles_lower_matrix, centroid_triangles_upper_matrix
-
+    return (
+        centroid_triangles_upper,
+        centroid_triangles_lower,
+        normal_vector_triangles_upper,
+        normal_vector_triangles_lower,
+        coords_triangles_upper,
+        coords_triangles_lower,
+        edges_triangles_upper,
+        edges_triangles_lower,
+        quadrilateral_upper,
+        quadrilateral_lower,
+        centroid_triangles_lower_matrix,
+        centroid_triangles_upper_matrix,
+    )
 #centroid_triangles_upper_np, centroid_triangles_lower_np, normal_vector_triangles_upper_np, normal_vector_triangles_lower_np, normal_vector_triangles_upper_triangle1_np, normal_vector_triangles_upper_triangle2_np, vertices_quadrilateral_np, connections_quadrilateral_np =  normal_vector_triangles(X,Y,Zupper_2d, Zlower_2d, triangle_bins)
 
 
