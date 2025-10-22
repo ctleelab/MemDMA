@@ -6,7 +6,6 @@ to_delete/
 ExplePackMem/
 *.pdb
 *.html
-*.txt
 *.pickle
 *.log
 *.csv
