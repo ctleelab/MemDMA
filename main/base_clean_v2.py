@@ -165,10 +165,9 @@ if __name__ == "__main__":
 
     #outline of code
     #1) pull out gl2 bead and its coordinates
-    #2) determine which grid is closest to the GL2 bead (can pull from information from CG2TS)
-    #3) create a neighborhood around that grid
-    #4) assign the grid to the lipid such that now every bead in that lipid gets assigned the grid
-    
+    #2) create a neighborhood by cKDtree
+    #3) determine which grid is closest to the GL2 bead by euclidean distance
+    #5) assign a neighborhood to each bead based on lipid it belongs too. 
 
     print("Start:GL2 grid neighborhood assignment")
     #1-1) creating dictionaries for gl2 beads and all atoms
@@ -189,7 +188,7 @@ if __name__ == "__main__":
 
 
     
-    ##all atom dictionary
+    ##1-2) all atom dictionary
     ## output {atom number: res_number, coords}
     all_atoms_upper = {}
     all_atoms_lower = {}
@@ -206,29 +205,25 @@ if __name__ == "__main__":
     #gl2_beads_lower_matrix = np.array(list(gl2_beads_lower.values()))
 
 
-
+    ##########################################
+    ##calculations for quadrilateral grids####
+    ##########################################
     # #2-1) create a matrix of the center of mass of each mesh grid for quadrilaterals
     #upper_centroids, lower_centroids, centroids_upper_dict, centroids_lower_dict  = qc.centroid_quadrilaterals(X_f, Y_f, zupper_f, zlower_f)
-
-
     # #2-2a) ##create neighborhood for each grid that has an upper limit of 10A with the quadrilaterals
     # upper_neighborhood = ng.neighborhood(centroids_upper_dict, 1)
     # lower_neighborhood = ng.neighborhood(centroids_lower_dict, 1)
 
 
-    #2-2b) ##create neighborhood for each grid that has an upper limit of 10A with the triangles
-
+    #2) ##create neighborhood for each grid that has an upper limit of 10A with the triangles
     print("Start: neighborbood")
     upper_neighborhood = ng.neighborhood(centroid_triangles_u, 10)
 
-    print(type(upper_neighborhood))
-
     #get more information about the neighborhood created
-    with open ("upper_neighborhood.csv", "w", newline= "") as f:
+    with open ("upper_neighborhood_cKDtree.csv", "w", newline= "") as f:
         writer = csv.writer(f)
         for key, value in upper_neighborhood.items():
             writer.writerow([key, value])
-
 
     lower_neighborhood = ng.neighborhood(centroid_triangles_l, 10)
     print("Finished: neighborbood")
@@ -236,13 +231,11 @@ if __name__ == "__main__":
     # ##############################################
     # ######troubleshooting neighborhood grids######
     # ##############################################
-
     # if 50 in upper_neighborhood:
     #     print(upper_neighborhood[50])
     # else:
     #     print("not found")
 
-    
     # if 100 in upper_neighborhood:
     #     print(upper_neighborhood[100])
     # else:
@@ -250,7 +243,7 @@ if __name__ == "__main__":
 
 
 
-    #2-3) calculate the euclidean distance between the Gl2 and the grids in the mesh
+    #3) calculate the euclidean distance between the Gl2 and the grids in the mesh
     # can compare the array of Gl2 coordinates to the array of mesh COM (this should be quick because can do matrix math). Will compare by euclidean distance. 
 
     #inputs will be the centroids of each grid and the gl2 bead coordinates
@@ -260,14 +253,15 @@ if __name__ == "__main__":
     print("Start: gl2 grid assignment")
     gl2_grid_assignment_upper = qc.grid_assignment(gl2_beads_upper, centroid_triangles_upper_matrix, upper_neighborhood) 
     gl2_grid_assignment_lower = qc.grid_assignment(gl2_beads_lower, centroid_triangles_lower_matrix, lower_neighborhood) 
-
     print("Finished: gl2 grid assignment")
+
+
   
     # #############################################################
-    # ########## assign the neighborhood to each lipid ############
+    # ########## assign the neighborhood to each atom  ############
     # #############################################################
 
-    # #3-1) 
+    # #4) 
     #goal: assign to each atom a neighborhood of grids
     #matchs by res_number by using the Gl2 bead
     #output {atom number: res_number, coords, list of close by grids}
@@ -295,37 +289,28 @@ if __name__ == "__main__":
     # # ########## Determine the coordinate of an atom if projected onto the same plane as a given triangle      #########
     # # ##################################################################################################################
     
-
-    # #calculate the tree = cKDTree(atom_coords) prior 
+    print("Start: atom ray projection")
 
     ## grid_coords_np: is the (x,y,z) coordinates of the atoms in the upper leaflet
-    ##  grid_upper_num: is a list of grid numbers in the upper leaflet 
+    ## grid_upper_num: is a list of grid numbers in the upper leaflet 
     grid_upper_num, grid_coords_upper_np = ry.extract_grid_coords(centroid_triangles_u)
     grid_lower_num, grid_coords_lower_np = ry.extract_grid_coords(centroid_triangles_l)
 
     atom_upper_num, atoms_coords_upper_np = ry.extract_atoms(atom_features, "upper")
     atom_lower_num, atoms_coords_lower_np = ry.extract_atoms(atom_features, "lower")
-
-    # # will need to search atom_grid_assignment_upper only 
-    # #atom_coords_np comes from the tree function 
-    print("Start: atom ray projection")
-
-    
+ 
 
     #atom_grid_neighborhood_assignment_lower this needs to be in the input somewhere
     #output: neighborhood_grid_id: {atom number: list of grid number}
     #ouput: neighborhood_projections: {atom number: list of array(x,y,z)}
-
     neighborhood_projections_upper, neighborhood_grid_id_upper = ry.neighborhood_project_atoms_to_triangles(atom_upper_num, grid_upper_num, grid_coords_upper_np, norm_vector_triangles_up, atom_grid_neighborhood_assignment_upper)
     neighborhood_projections_lower, neighborhood_grid_id_lower = ry.neighborhood_project_atoms_to_triangles(atom_lower_num, grid_lower_num, grid_coords_lower_np, norm_vector_triangles_l, atom_grid_neighborhood_assignment_lower)
-
-
 
     print("Finished: atom ray projection")
 
 
     ########################################################
-    ##now determine what atoms lie inside in each triangle##
+    ##  Determine if the atoms lies inside in the triangle##
     ########################################################
     
     print("Start: atom mapping to triangles")
@@ -339,11 +324,10 @@ if __name__ == "__main__":
     
     triangle_atom_assignment_upper  = {} 
     triangle_atom_assignment_lower  = {} 
-    #success = [] #troubleshooting
-    #fails = [] #troublshooting
-
 
     #trouble-shooting    
+    #success = [] 
+    #fails = [] 
     #print(max(neighborhood_grid_id_upper))
 
     #atom mapping to matrix quantifying polar vs nonpolar 
@@ -367,5 +351,5 @@ if __name__ == "__main__":
     #pull out the (x,y) from all triangle numbers
 
 
-    
+      
     
