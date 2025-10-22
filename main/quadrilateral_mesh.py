@@ -20,7 +20,7 @@ def mesh(gro, selection, step ):
     import numpy as np
     import MDAnalysis as mda
     from membrane_spectral_analysis.base import MembraneSpectralAnalysis
-    import leaflet_finder 
+    import leaflet_finder as leaflet_finder 
     
     #gro, selection, traj, path = args
     #u = mda.Universe(gro, str(traj) , continous=True)
@@ -30,6 +30,7 @@ def mesh(gro, selection, step ):
     # might not need since I'm in the NVT ensemble
     avg_dim_x = np.mean([ts.dimensions[0] for ts in u.trajectory])
     avg_dim_y = np.mean([ts.dimensions[1] for ts in u.trajectory])
+    print(avg_dim_y)
 
 
     # Determine number of bins

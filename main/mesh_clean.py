@@ -21,7 +21,7 @@ def format_data(X,Y,Zupper, Zlower):
 
 #determines which residues belong to the upper vs lower leaflet
 def residue_leaflet_determine(u, selection):
-    import leaflet_finder
+    import main.leaflet_finder as leaflet_finder
     import MDAnalysis as mda 
     leaflet, residue_leaflet = leaflet_finder.determine_leaflets(u, selection)
 
@@ -158,7 +158,6 @@ def normal_vector_triangles(X, Y, Zupper_2d, Zlower_2d, normalize=True):
         centroid_triangles_lower_matrix,
         centroid_triangles_upper_matrix,
     )
-#centroid_triangles_upper_np, centroid_triangles_lower_np, normal_vector_triangles_upper_np, normal_vector_triangles_lower_np, normal_vector_triangles_upper_triangle1_np, normal_vector_triangles_upper_triangle2_np, vertices_quadrilateral_np, connections_quadrilateral_np =  normal_vector_triangles(X,Y,Zupper_2d, Zlower_2d, triangle_bins)
 
 
 # #input triangle normal vector, and the quadrilateral the triangle belongs to 

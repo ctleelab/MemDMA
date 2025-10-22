@@ -24,7 +24,7 @@ import listes as l
 import leaflet_finder as lf
 import quadrilateral_mesh as qm
 import mesh_clean as m
-import util
+import util as util
 import grid_slicing as gs
 import preprocessing as pp 
 import ray_tracing_parallelization_v3 as ry
@@ -119,7 +119,7 @@ if __name__ == "__main__":
     ## leaflet_residues_new: {upper:[1,2,3], lower:[4,5,6]}
     ##note this also calculates the mesh information
 
-    #mesh is in nm
+    #Is the mesh is in nm?
     print("Start: running mesh")
     X, Y, zupper, zlower, leaflet, leaflet_residues, z_midplane = qm.mesh(args.filename, "name GL2", .5)
     print("Finished:running mesh")
@@ -154,7 +154,6 @@ if __name__ == "__main__":
     ##note this also calculates the mesh information
     
 
-    #potentially need to increase the efficiency of this code
     print("Start:computing normal vectors of triangle")
     centroid_triangles_u, centroid_triangles_l, norm_vector_triangles_up, norm_vector_triangles_l, coords_triangles_upper, coords_triangles_lower, edges_triangles_upper, edges_triangles_lower, quadrilateral_normal_upper, quadrilateral_normal_lower, centroid_triangles_lower_matrix, centroid_triangles_upper_matrix = m.normal_vector_triangles(X_f,Y_f,zupper_f,zlower_f)
     print("Finished:computing normal vectors of triangle")
@@ -220,8 +219,18 @@ if __name__ == "__main__":
     #2-2b) ##create neighborhood for each grid that has an upper limit of 10A with the triangles
 
     print("Start: neighborbood")
-    upper_neighborhood = ng.neighborhood(centroid_triangles_u, 1)
-    lower_neighborhood = ng.neighborhood(centroid_triangles_l, 1)
+    upper_neighborhood = ng.neighborhood(centroid_triangles_u, 10)
+
+    print(type(upper_neighborhood))
+
+    #get more information about the neighborhood created
+    with open ("upper_neighborhood.csv", "w", newline= "") as f:
+        writer = csv.writer(f)
+        for key, value in upper_neighborhood.items():
+            writer.writerow([key, value])
+
+
+    lower_neighborhood = ng.neighborhood(centroid_triangles_l, 10)
     print("Finished: neighborbood")
 
     # ##############################################
@@ -318,6 +327,7 @@ if __name__ == "__main__":
     ########################################################
     ##now determine what atoms lie inside in each triangle##
     ########################################################
+    
     print("Start: atom mapping to triangles")
 
     # with open("neighborhood_projections_upper_test.pickle", "rb") as f:
@@ -336,11 +346,13 @@ if __name__ == "__main__":
     #trouble-shooting    
     #print(max(neighborhood_grid_id_upper))
 
-    #sum of the atom mapping to matrix polar vs nonpolar
-    triangle_atom_assignment_upper = agm.sum_atom_mapping(atom_features, radius, aliphatic, edges_triangles_upper, neighborhood_grid_id_upper, coords_triangles_upper, grid_upper_num)
-    triangle_atom_assignment_lower = agm.sum_atom_mapping(atom_features, radius, aliphatic, edges_triangles_lower, neighborhood_grid_id_lower, coords_triangles_lower, grid_lower_num)
-    
+    #atom mapping to matrix quantifying polar vs nonpolar 
+    triangle_atom_assignment_upper = agm.sum_atom_mapping_upper(atom_features, radius, aliphatic, edges_triangles_upper, neighborhood_grid_id_upper, coords_triangles_upper, grid_upper_num)
+    triangle_atom_assignment_lower = agm.sum_atom_mapping_lower(atom_features, radius, aliphatic, edges_triangles_lower, neighborhood_grid_id_lower, coords_triangles_lower, grid_lower_num)
+
     print("completed frame")
+
+    #Issue: too many grids are empty...
 
     #############################################
     #####plot the grid with the atom_mappings####

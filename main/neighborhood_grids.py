@@ -5,6 +5,7 @@ from scipy.spatial import cKDTree
 
 #something is not working properly
 #neighborhood of all grids 
+#units of cutoff is in nm
 def neighborhood(grid_centroids, cutoff):
     grid_keys = list(grid_centroids.keys())  #creates a list of the keys of all centroids of the grid points
     centroids = np.array([grid_centroids[k][:3] for k in grid_keys]) #take the coordinates for each grid 

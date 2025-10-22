@@ -75,8 +75,10 @@ def grid_assignment(gl2_coords, grid_matrix, grid_dict):
         min_distance_index = np.argmin(distance) #return the smallest value of the distance array index value
         grid_coords = grid_matrix[min_distance_index] 
         #rather then grid_coords I want grid_number
+
         #match the grid_coords to the grid_dict and pull out the key 
-        list_neighborhood = grid_dict[min_distance_index]
+        #add one because grid_dict starts at 1, no zero
+        list_neighborhood = grid_dict[min_distance_index +1 ]
 
         gl2_grid_assignment[key] = (min_distance_index, grid_coords, list_neighborhood )
     return gl2_grid_assignment
@@ -113,7 +115,7 @@ def atom_grid_mapping(all_atom, gl2_neighborhood_grids, gl2_beads_resnumber):
             print("Stop issue!")
             #the issue is not the gl2_atom being missing, as this print statement is never triggered
 
-        values_1 = gl2_neighborhood_grids.get(gl2_atom) #this right now is not working for gl2 = 2392?
+        values_1 = gl2_neighborhood_grids.get(gl2_atom)
 
         #print("Values 1:", values_1)
         #Why are some values None?
@@ -128,5 +130,7 @@ def atom_grid_mapping(all_atom, gl2_neighborhood_grids, gl2_beads_resnumber):
 
         # Append neighborhood list to atom entry (preserves original data)
         all_atom[key1] = (*v1, neighborhood_list)
+        print("atom num:", key1)
+        print(all_atom[key1])
 
     return all_atom

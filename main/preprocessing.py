@@ -5,7 +5,7 @@
 import re 
 import numpy as np
 import grid_slicing as gs
-import util
+import util as util
 
 #create a dictionary with atom: (atom_name), (leaflet_assignment), (atom_coords), (molecule number)
 atoms = {}

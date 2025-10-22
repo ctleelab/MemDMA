@@ -4,7 +4,7 @@
 
 import math
 import sys
-import BasicFunctions as bfrg
+import PackMem_original.BasicFunctions as bfrg
 
 # matrix size  (square size = 1A)
 SIZE=1.0
@@ -50,6 +50,7 @@ def fill_matrix(matrix,coordtmp,res_number,res_name,atom_name, listX,listY,listZ
     #makes sure that we dont go outside of the grid boundaries
     iX = check_edges(iX, v, len(listX))
     iY = check_edges(iY, v, len(listY))
+    
     #only considers a small neighborhood aroun the atom, rather than the entire membrane
     listXM = listX[iX - v : iX + (v + 1)]
     listYM = listY[iY - v : iY + (v + 1)]

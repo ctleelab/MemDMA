@@ -1,7 +1,6 @@
-import util
+import util as util
 import MDAnalysis as mda 
 import subprocess 
-
 
 def _strip_trajectory(gro) -> None:
 
@@ -14,7 +13,7 @@ def _strip_trajectory(gro) -> None:
     lipids = u.select_atoms("resname DPPC POPC DOPC")  
 
     # Write to a new .gro file
-    lipids.write("lipid_only.gro")
+    lipids.write("testing_buckled_lipid_only.gro")
 
 
 _strip_trajectory("testing.gro")

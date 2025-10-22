@@ -4,7 +4,7 @@
 #output: normal vector to each atom
 
 import numpy as np
-import util
+import util as util
 import re
 
 def atm_normal_vector_assignment(pdblines, residue_leaflet, closest_mapping, norm_up, norm_l):
