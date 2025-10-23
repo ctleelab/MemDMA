@@ -130,7 +130,7 @@ def atom_grid_mapping(all_atom, gl2_neighborhood_grids, gl2_beads_resnumber):
 
         # Append neighborhood list to atom entry (preserves original data)
         all_atom[key1] = (*v1, neighborhood_list)
-        print("atom num:", key1)
-        print(all_atom[key1])
+        #print("atom num:", key1)
+        #print(all_atom[key1])
 
     return all_atom
