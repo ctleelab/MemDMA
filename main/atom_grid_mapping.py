@@ -36,6 +36,7 @@ def sum_atom_mapping_upper(atom_features, radius, aliphatic, edges_triangles_upp
         #print("atomnum:", atom_num)
         stop_triangle = False #just emplaced so that I can troubleshoot the code
         atom_num = str(atom_num) #changes atom_num to a string so it matches atom_features keys
+        #print("atom_num:", atom_num)
         if atom_num not in atom_features:
             print(f"Warning: atom_num {atom_num} missing in atom_features")
                 #fails.append(int(atom_num))
@@ -49,7 +50,7 @@ def sum_atom_mapping_upper(atom_features, radius, aliphatic, edges_triangles_upp
                 #success.append(int(atom_num))
             for grid_id in grid_ids: #loops over the neighborhood of grids for each atom
                 shortest_distance_to_atom = 1000 #setting arbritraury distance that much greater than the radius of all atoms 
-                
+                grid_id += 1 
                 if stop_triangle:  #will move onto a new triangle if an polar atom was mapped
                     break
 
@@ -57,12 +58,12 @@ def sum_atom_mapping_upper(atom_features, radius, aliphatic, edges_triangles_upp
                 #coordinates of atom in plane of triangle 
                 #atom_coords = matching.get_projection(atom_num, grid_id, neighborhood_projections_upper, neighborhood_grid_id_upper, atom_features)
 
-                atom_coords = atom_features[atom_num][2]
+                atom_coords = atom_features[atom_num][2]*10
 
                 #determine the radius of the atom you're working with
                 lipid_atm_name = atom_features[atom_num][3]
                 atm_radius = radius[lipid_atm_name]
-                #print(atm_radius)
+                print("atom_radius:", atm_radius)
                 atm_type = aliphatic[lipid_atm_name]
                 #print(atm_type)
 
@@ -88,10 +89,12 @@ def sum_atom_mapping_upper(atom_features, radius, aliphatic, edges_triangles_upp
                     if shortest_distance_to_atom > atm_radius:
                         #vector from point of vector to coords_atom_plane_of_triangle
                         
-                        vector_to_atom = atom_coords- point_on_edge
+                        vector_to_atom = atom_coords-point_on_edge
                         area_parallelogram = np.linalg.norm(np.cross(vector_to_atom, edge_vector)) 
                         base_parallelogram = np.linalg.norm(edge_vector)
                         shortest_distance_to_atom = np.divide(area_parallelogram,base_parallelogram)
+
+                        print("shortest_distance:", shortest_distance_to_atom)
                         #print("shortest:", shortest_distance_to_atom)
 
                         if shortest_distance_to_atom <= atm_radius:
@@ -118,6 +121,9 @@ def sum_atom_mapping_upper(atom_features, radius, aliphatic, edges_triangles_upp
         if grid_int not in triangle_atom_assignment_upper:
             #print(f"Adding missing grid: {grid_int}")
             triangle_atom_assignment_upper[grid_int] = 0.0
+
+    triangle_atom_assignment_upper_sorted = dict(sorted(triangle_atom_assignment_upper.items()))
+
     
     ####################
     ##trouble-shooting##  
@@ -132,15 +138,15 @@ def sum_atom_mapping_upper(atom_features, radius, aliphatic, edges_triangles_upp
                     
     # Save as a pickle file
     with open("triangle_atom_assignment_upper_test13.pickle", "wb") as f:
-        pickle.dump(triangle_atom_assignment_upper, f) 
+        pickle.dump(triangle_atom_assignment_upper_sorted, f) 
 
     with open("triangle_atom_assignment_upper_test13.csv", "w", newline="") as f:
         writer = csv.writer(f)
         writer.writerow(["triangle_id", "assignment"])  # optional header
-        for key, value in triangle_atom_assignment_upper.items():
+        for key, value in triangle_atom_assignment_upper_sorted.items():
             writer.writerow([key, value])
     
-    return triangle_atom_assignment_upper
+    return triangle_atom_assignment_upper_sorted
 
 
 def sum_atom_mapping_lower(atom_features, radius, aliphatic, edges_triangles_lower, neighborhood_grid_id_lower, coords_triangles_lower, grid_num): 
@@ -239,10 +245,10 @@ def sum_atom_mapping_lower(atom_features, radius, aliphatic, edges_triangles_low
     #print("length of atom features:", len(atom_features))
                     
     # Save as a pickle file
-    with open("triangle_atom_assignment_lower_test7.pickle", "wb") as f:
+    with open("triangle_atom_assignment_lower_test.pickle", "wb") as f:
         pickle.dump(triangle_atom_assignment_lower, f) 
 
-    with open("triangle_atom_assignment_lower_test7.csv", "w", newline="") as f:
+    with open("triangle_atom_assignment_lower_test.csv", "w", newline="") as f:
         writer = csv.writer(f)
         writer.writerow(["triangle_id", "assignment"])  # optional header
         for key, value in triangle_atom_assignment_lower.items():
