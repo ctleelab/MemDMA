@@ -105,8 +105,8 @@ def sum_atom_mapping_upper(atom_features, radius, aliphatic, edges_triangles_upp
                                 #triangle_atom_assignment_upper[triangle_idex_num].append((atom_id).strip()) 
                                 #triangle_atom_assignment_upper[triangle_idex_num].append((atom_id).strip()) 
                                 ##rather than appends the atom id, maybe just add 1 
-                                stop_triangle = True
-                                break 
+                                #stop_triangle = True
+                                continue 
                             else:
                                 triangle_atom_assignment_upper[triangle_idex_num] += .001
                                 # if triangle_idex_num not in triangle_atom_assignment_upper:
