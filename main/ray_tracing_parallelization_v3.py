@@ -40,6 +40,7 @@ def create_shared_atom_coords(arr, name = None):
 #will want to import also the neighborhood 
 #Need to change this function: where only loop through the neighborhood list
 
+
 def _project_block_of_atoms(block_atoms, normals, grid_num, coords_meta, atom_grid_neighborhood_assignment):
     block_projections = {}
     block_atom_numbers = {}
@@ -64,12 +65,20 @@ def _project_block_of_atoms(block_atoms, normals, grid_num, coords_meta, atom_gr
            block_atom_numbers[atom] = []
          
         for tri_indx in nearby_idx_list:
+            #print(f"grid_coords_np shape: {grid_coords_np.shape}")
+            tri_indx -= 1 
+            # if tri_indx not in normals:
+            #     print(f"KeyError: tri_indx {tri_indx} not found in normals")
+            #     continue
+            # if tri_indx >= len(grid_coords_np):
+            #     print(f"Invalid index: {tri_indx}, max allowed: {len(grid_coords_np) - 1}")
+            #     continue
 
             grid_coord = grid_coords_np[tri_indx]
             w_vectors = grid_coord - atom_coords
 
-            scalars = np.dot(w_vectors, normals[tri_indx])
-            n_contributions = np.outer(scalars, normals[tri_indx])
+            scalars = np.dot(w_vectors, normals[tri_indx+1])
+            n_contributions = np.outer(scalars, normals[tri_indx+1])
             projections = w_vectors - n_contributions
 
             block_projections[atom].append(projections.tolist())
