@@ -1,3 +1,6 @@
+#Issues
+#1) might be an issue with the grids (for some reason they start at 0...)
+#2) checked the mesh and it looks okay
 #general libraries
 import argparse
 import sys
@@ -32,6 +35,7 @@ import quad_centroid as qc
 import neighborhood_grids as ng
 import ray_tracing_quads as rq
 import atom_grid_mapping as agm
+import neighborhood_grid_graph as neigh_graph
 
 
 ##this chunk of code will only be run if the script is executed directly
@@ -120,6 +124,7 @@ if __name__ == "__main__":
     ##note this also calculates the mesh information
 
     #Is the mesh is in nm?
+    #Right now the mesh is 5A
     print("Start: running mesh")
     X, Y, zupper, zlower, leaflet, leaflet_residues, z_midplane = qm.mesh(args.filename, "name GL2", .5)
     print("Finished:running mesh")
@@ -158,6 +163,10 @@ if __name__ == "__main__":
     centroid_triangles_u, centroid_triangles_l, norm_vector_triangles_up, norm_vector_triangles_l, coords_triangles_upper, coords_triangles_lower, edges_triangles_upper, edges_triangles_lower, quadrilateral_normal_upper, quadrilateral_normal_lower, centroid_triangles_lower_matrix, centroid_triangles_upper_matrix = m.normal_vector_triangles(X_f,Y_f,zupper_f,zlower_f)
     print("Finished:computing normal vectors of triangle")
 
+   
+
+
+    neigh_graph.plot_triangle_grid_assignment(centroid_triangles_u, centroid_triangles_l)
 
     #################################################################################
     ########## Determine the grid closest to the GL2 bead of each lipid #############
@@ -180,23 +189,23 @@ if __name__ == "__main__":
     for key, v in atom_features.items(): #need .items if there are multiple items in the value of the key of a dictionary 
         if v[0] == "GL2":
             if v[1] == "upper":
-                gl2_beads_upper[key] = v[2]
+                gl2_beads_upper[key] = v[2]*10 #add coords of gl2 beads but multiply by 10 to bring units to A
                 gl2_beads_upper_resnumber[key] = v[4]
             if v[1] == "lower":
-                gl2_beads_lower[key] = v[2]
+                gl2_beads_lower[key] = v[2]*10 #add coords of gl2 beads but multiply by 10 to bring units to A
                 gl2_beads_lower_resnumber[key] = v[4]
 
 
     
     ##1-2) all atom dictionary
-    ## output {atom number: res_number, coords}
+    ## output {atom number: res_number, coords} {3183': (12053, array([ 72.14,  58.45, 194.69]))}
     all_atoms_upper = {}
     all_atoms_lower = {}
     for key, v in atom_features.items(): #need .items if there are multiple items in the value of the key of a dictionary 
         if v[1] == "upper":
-            all_atoms_upper[key] = (v[4], v[2]) #adds resnumber 
+            all_atoms_upper[key] = (v[4], v[2]*10) #adds resnumber and coords(A, that's why multiply by 10)
         if v[1] == "lower":
-            all_atoms_lower[key] = (v[4], v[2]) #adds resnumber 
+            all_atoms_lower[key] = (v[4], v[2]*10) #adds resnumber and coords(A, that's why multiply by 10)
 
     #1-2) turn dictionary into a matrix, and have the keys. The index matches the keys to the matrix
     #gl2_beads_upper_keys = {k: None for k in gl2_beads_upper.keys()}
@@ -219,11 +228,11 @@ if __name__ == "__main__":
     print("Start: neighborbood")
     upper_neighborhood = ng.neighborhood(centroid_triangles_u, 10)
 
-    #get more information about the neighborhood created
-    with open ("upper_neighborhood_cKDtree.csv", "w", newline= "") as f:
-        writer = csv.writer(f)
-        for key, value in upper_neighborhood.items():
-            writer.writerow([key, value])
+    # #get more information about the neighborhood created
+    # with open ("upper_neighborhood_cKDtree.csv", "w", newline= "") as f:
+    #     writer = csv.writer(f)
+    #     for key, value in upper_neighborhood.items():
+    #         writer.writerow([key, value])
 
     lower_neighborhood = ng.neighborhood(centroid_triangles_l, 10)
     print("Finished: neighborbood")
@@ -249,12 +258,16 @@ if __name__ == "__main__":
     #inputs will be the centroids of each grid and the gl2 bead coordinates
     #output : {'4': (np.int64(42), array([ 8.09204793,  1.12890854, 19.91730258]}
     #output : {gl2 atom_number: grid_number, (coords of grid), list of neighborhood grids}
+    #for some reason the gl2_beads_upper is in nm 
 
     print("Start: gl2 grid assignment")
     gl2_grid_assignment_upper = qc.grid_assignment(gl2_beads_upper, centroid_triangles_upper_matrix, upper_neighborhood) 
     gl2_grid_assignment_lower = qc.grid_assignment(gl2_beads_lower, centroid_triangles_lower_matrix, lower_neighborhood) 
     print("Finished: gl2 grid assignment")
 
+    neigh_graph.plot_gl2_grid_assignment(gl2_grid_assignment_upper, gl2_grid_assignment_lower,gl2_beads_lower)
+
+    
 
   
     # #############################################################
@@ -269,8 +282,8 @@ if __name__ == "__main__":
     atom_grid_neighborhood_assignment_upper = qc.atom_grid_mapping(all_atoms_upper, gl2_grid_assignment_upper, gl2_beads_upper_resnumber)
     atom_grid_neighborhood_assignment_lower = qc.atom_grid_mapping(all_atoms_lower, gl2_grid_assignment_lower, gl2_beads_lower_resnumber)
 
-    print("Finished:GL2 grid neighborhood assignment")
 
+    print("Finished:GL2 grid neighborhood assignment")
 
 
     # # ##################################################################################################################
@@ -332,11 +345,10 @@ if __name__ == "__main__":
 
     #atom mapping to matrix quantifying polar vs nonpolar 
     triangle_atom_assignment_upper = agm.sum_atom_mapping_upper(atom_features, radius, aliphatic, edges_triangles_upper, neighborhood_grid_id_upper, coords_triangles_upper, grid_upper_num)
-    triangle_atom_assignment_lower = agm.sum_atom_mapping_lower(atom_features, radius, aliphatic, edges_triangles_lower, neighborhood_grid_id_lower, coords_triangles_lower, grid_lower_num)
+    #triangle_atom_assignment_lower = agm.sum_atom_mapping_lower(atom_features, radius, aliphatic, edges_triangles_lower, neighborhood_grid_id_lower, coords_triangles_lower, grid_lower_num)
 
     print("completed frame")
-
-    #Issue: too many grids are empty...
+    #Issue: too many grids are empty 
 
     #############################################
     #####plot the grid with the atom_mappings####
