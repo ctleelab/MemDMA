@@ -70,6 +70,10 @@ def mesh(gro, selection, step ):
     z_data_lower = mc.results["z_surface"]["lower"]
     bin_area = mc.bin_areas
 
+    # # Save only the results I care about. No need to save entire mc object
+    # with open("membrane_curvature_smooth.pickle", "wb") as handle:
+    #     pickle.dump({"X":X, "Y": Y, "Z_upper": z_data_upper ,"Z_lower": z_data_lower}, handle, protocol=pickle.HIGHEST_PROTOCOL)
+
 
 
     leaflet, leaflet_residues = leaflet_finder.determine_leaflets(u, selection)

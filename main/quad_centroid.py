@@ -67,12 +67,16 @@ def centroid_quadrilaterals(X,Y,Zupper_2d, Zlower_2d):
     return centroids_upper_matrix, centroids_lower_matrix, centroids_upper_dict, centroids_lower_dict
 
 #get the index of the smallest value (by using the function np.argmin)
+#the output of this is the same for all keys
+#grid_dict: grid with it's neighborhood
 def grid_assignment(gl2_coords, grid_matrix, grid_dict):
     gl2_grid_assignment = {} #create an empty dictionary with the same keys
-
     for key, gl2_points in gl2_coords.items():
-        distance = np.linalg.norm(grid_matrix - gl2_points, axis = 1 ) #compute the euclidean distance between grid and gl2, and sum along each row
+        #print(grid_matrix.shape)
+        #multiply gl2_points by 10 because its in A
+        distance = np.linalg.norm((grid_matrix - gl2_points), axis = 1 ) #compute the euclidean distance between grid and gl2, and sum along each row
         min_distance_index = np.argmin(distance) #return the smallest value of the distance array index value
+
         grid_coords = grid_matrix[min_distance_index] 
         #rather then grid_coords I want grid_number
 
@@ -81,6 +85,10 @@ def grid_assignment(gl2_coords, grid_matrix, grid_dict):
         list_neighborhood = grid_dict[min_distance_index +1 ]
 
         gl2_grid_assignment[key] = (min_distance_index, grid_coords, list_neighborhood )
+
+    for k, v in list(gl2_coords.items())[:5]:
+        print(k, np.round(v, 3))
+
     return gl2_grid_assignment
 
 
@@ -104,8 +112,12 @@ def atom_grid_mapping(all_atom, gl2_neighborhood_grids, gl2_beads_resnumber):
     # if '2392' in gl2_neighborhood_grids:
     #     print(gl2_neighborhood_grids['2392'])
 
+    #all_atom_neighborhood ={}
+    print(list(all_atom.keys())[:5])
 
+    #the keys start at 1
     for key1, v1 in all_atom.items():
+    
         res_number = v1[0] #pulls out residue number
         
         # Find corresponding GL2 atom for each residue number 
@@ -113,12 +125,10 @@ def atom_grid_mapping(all_atom, gl2_neighborhood_grids, gl2_beads_resnumber):
         
         if gl2_atom is None: # residue not present in GL2 mapping (need to check this)
             print("Stop issue!")
-            #the issue is not the gl2_atom being missing, as this print statement is never triggered
 
         values_1 = gl2_neighborhood_grids.get(gl2_atom)
 
         #print("Values 1:", values_1)
-        #Why are some values None?
         if values_1 is None or len(values_1) < 3:
             print("Gl2_atom", gl2_atom)
             print("Values 1:", values_1)
@@ -130,6 +140,8 @@ def atom_grid_mapping(all_atom, gl2_neighborhood_grids, gl2_beads_resnumber):
 
         # Append neighborhood list to atom entry (preserves original data)
         all_atom[key1] = (*v1, neighborhood_list)
+        #all_atom_neighborhood[key1] = (res_number,  neighborhood_list)
+
         #print("atom num:", key1)
         #print(all_atom[key1])
 
