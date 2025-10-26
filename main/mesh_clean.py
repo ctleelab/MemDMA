@@ -140,6 +140,16 @@ def normal_vector_triangles(X, Y, Zupper_2d, Zlower_2d, normalize=True):
 
             triangle_lower += 2
             quad_num += 1
+    #####################
+    ###troubleshooting###
+    #####################
+    
+    # z_coords = []
+    # for arr in centroid_upper_list:
+    #     z_coord = (arr[2])
+    #     z_coords.append(z_coord)
+    # print("min:", min(z_coords))
+    # print("max:", max(z_coords))
 
     centroid_triangles_upper_matrix = np.vstack(centroid_upper_list)
     centroid_triangles_lower_matrix = np.vstack(centroid_lower_list)
