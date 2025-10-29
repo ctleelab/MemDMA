@@ -1,6 +1,5 @@
-#Issues
-#1) might be an issue with the grids (for some reason they start at 0...)
-#2) checked the mesh and it looks okay
+#!/usr/bin/env python3
+
 #general libraries
 import argparse
 import sys
@@ -67,6 +66,9 @@ if __name__ == "__main__":
                             help = 'File for index (Gromacs ndx style). Only Lower/Upper group accepted')
         parser.add_argument('-v', dest = 'pdbout', action = 'store_true',
                             help = 'Increase the verbosity')
+        parser.add_argument('-f', action = 'store', dest = 'frame_num',
+                            help = 'frame number')
+        
         ##parse_args() will read the arguments that the user gives. These agruments were added to parser. This line of code then stores this information into the python variable args.        
         args = parser.parse_args()
         
@@ -126,7 +128,7 @@ if __name__ == "__main__":
     #Is the mesh is in nm?
     #Right now the mesh is 5A
     print("Start: running mesh")
-    X, Y, zupper, zlower, leaflet, leaflet_residues, z_midplane = qm.mesh(args.filename, "name GL2", .5)
+    X, Y, zupper, zlower, leaflet, leaflet_residues, z_midplane = qm.mesh(args.filename, "name GL2", .1)
     print("Finished:running mesh")
 
     
@@ -226,7 +228,7 @@ if __name__ == "__main__":
 
     #2) ##create neighborhood for each grid that has an upper limit of 10A with the triangles
     print("Start: neighborbood")
-    upper_neighborhood = ng.neighborhood(centroid_triangles_u, 10)
+    upper_neighborhood = ng.neighborhood(centroid_triangles_u, 1)
 
     # #get more information about the neighborhood created
     # with open ("upper_neighborhood_cKDtree.csv", "w", newline= "") as f:
@@ -234,7 +236,7 @@ if __name__ == "__main__":
     #     for key, value in upper_neighborhood.items():
     #         writer.writerow([key, value])
 
-    lower_neighborhood = ng.neighborhood(centroid_triangles_l, 10)
+    lower_neighborhood = ng.neighborhood(centroid_triangles_l, 1)
     print("Finished: neighborbood")
 
     # ##############################################
@@ -267,13 +269,11 @@ if __name__ == "__main__":
 
     neigh_graph.plot_gl2_grid_assignment(gl2_grid_assignment_upper, gl2_grid_assignment_lower,gl2_beads_lower)
 
-    
-
-  
     # #############################################################
     # ########## assign the neighborhood to each atom  ############
     # #############################################################
 
+    #note: this is taking alot of memory...
     # #4) 
     #goal: assign to each atom a neighborhood of grids
     #matchs by res_number by using the Gl2 bead
@@ -281,7 +281,6 @@ if __name__ == "__main__":
 
     atom_grid_neighborhood_assignment_upper = qc.atom_grid_mapping(all_atoms_upper, gl2_grid_assignment_upper, gl2_beads_upper_resnumber)
     atom_grid_neighborhood_assignment_lower = qc.atom_grid_mapping(all_atoms_lower, gl2_grid_assignment_lower, gl2_beads_lower_resnumber)
-
 
     print("Finished:GL2 grid neighborhood assignment")
 
@@ -321,7 +320,6 @@ if __name__ == "__main__":
 
     print("Finished: atom ray projection")
 
-
     ########################################################
     ##  Determine if the atoms lies inside in the triangle##
     ########################################################
@@ -341,10 +339,11 @@ if __name__ == "__main__":
     #trouble-shooting    
     #success = [] 
     #fails = [] 
-    #print(max(neighborhood_grid_id_upper))
+    #print(max(neighborhood_grid_id_upper) )
 
+    #output: neighborhood_grid_id: {atom number: list of grid number}
     #atom mapping to matrix quantifying polar vs nonpolar 
-    triangle_atom_assignment_upper = agm.sum_atom_mapping_upper(atom_features, radius, aliphatic, edges_triangles_upper, neighborhood_grid_id_upper, coords_triangles_upper, grid_upper_num)
+    triangle_atom_assignment_upper = agm.sum_atom_mapping_upper(atom_features, radius, aliphatic, edges_triangles_upper, neighborhood_grid_id_upper, coords_triangles_upper, grid_upper_num, args.frame_numsu)
     #triangle_atom_assignment_lower = agm.sum_atom_mapping_lower(atom_features, radius, aliphatic, edges_triangles_lower, neighborhood_grid_id_lower, coords_triangles_lower, grid_lower_num)
 
     print("completed frame")
