@@ -74,11 +74,16 @@ def _project_block_of_atoms(block_atoms, normals, grid_num, coords_meta, atom_gr
             #     print(f"Invalid index: {tri_indx}, max allowed: {len(grid_coords_np) - 1}")
             #     continue
 
-            grid_coord = grid_coords_np[tri_indx]
-            w_vectors = grid_coord - atom_coords
+            grid_coord = grid_coords_np[tri_indx] 
+            w_vectors = grid_coord - atom_coords  #change the naming of the grid_coords to triangle_centroid_coords 
 
-            scalars = np.dot(w_vectors, normals[tri_indx+1])
-            n_contributions = np.outer(scalars, normals[tri_indx+1])
+            # scalars = np.dot(w_vectors, normals[tri_indx+1])
+            # n_contributions = np.outer(scalars, normals[tri_indx+1])
+
+            # Calculate the normal direction by computing the dot product of the vector from the triangle centroid to the atom and the normalized triangle normal
+            n_contributions = np.dot(w_vectors, normals[tri_indx+1]) * normals[tri_indx+1]
+
+            # Project the atom onto the triangle plane by removing the normal contribution
             projections = w_vectors - n_contributions
 
             block_projections[atom].append(projections.tolist())
