@@ -209,49 +209,6 @@ if __name__ == "__main__":
         if v[1] == "lower":
             all_atoms_lower[key] = (v[4], v[2]*10) #adds resnumber and coords(A, that's why multiply by 10)
 
-    #1-2) turn dictionary into a matrix, and have the keys. The index matches the keys to the matrix
-    #gl2_beads_upper_keys = {k: None for k in gl2_beads_upper.keys()}
-    #gl2_beads_upper_matrix = np.array(list(gl2_beads_upper.values()))
-    #gl2_beads_lower_keys = {k: None for k in gl2_beads_lower.keys()}
-    #gl2_beads_lower_matrix = np.array(list(gl2_beads_lower.values()))
-
-
-    ##########################################
-    ##calculations for quadrilateral grids####
-    ##########################################
-    # #2-1) create a matrix of the center of mass of each mesh grid for quadrilaterals
-    #upper_centroids, lower_centroids, centroids_upper_dict, centroids_lower_dict  = qc.centroid_quadrilaterals(X_f, Y_f, zupper_f, zlower_f)
-    # #2-2a) ##create neighborhood for each grid that has an upper limit of 10A with the quadrilaterals
-    # upper_neighborhood = ng.neighborhood(centroids_upper_dict, 1)
-    # lower_neighborhood = ng.neighborhood(centroids_lower_dict, 1)
-
-
-    # #2) ##create neighborhood for each grid that has an upper limit of 10A with the triangles
-    # ##This takes alot of memory 
-    # print("Start: neighborbood")
-    # upper_neighborhood = ng.neighborhood(centroid_triangles_u, 10)
-
-    # # #get more information about the neighborhood created
-    # # with open ("upper_neighborhood_cKDtree.csv", "w", newline= "") as f:
-    # #     writer = csv.writer(f)
-    # #     for key, value in upper_neighborhood.items():
-    # #         writer.writerow([key, value])
-
-    # lower_neighborhood = ng.neighborhood(centroid_triangles_l, 10)
-    # print("Finished: neighborbood")
-
-    # ##############################################
-    # ######troubleshooting neighborhood grids######
-    # ##############################################
-    # if 50 in upper_neighborhood:
-    #     print(upper_neighborhood[50])
-    # else:
-    #     print("not found")
-
-    # if 100 in upper_neighborhood:
-    #     print(upper_neighborhood[100])
-    # else:
-    #     print("not found")
 
     #######################################
     ###create a cKDtree of the centroids###
@@ -267,10 +224,6 @@ if __name__ == "__main__":
     #inputs will be the centroids of each grid and the gl2 bead coordinates
     #output : {'4': (np.int64(42), array([ 8.09204793,  1.12890854, 19.91730258]}
     #output : {gl2 atom_number: grid_number, (coords of grid), list of neighborhood grids}
-    #for some reason the gl2_beads_upper is in nm 
-
-    #rather than computing the entire neighborhood for each grid, only compute the neighborhood for those that are assigned 
-
     print("Start: gl2 grid assignment")
     gl2_grid_assignment_upper = qc.grid_assignment(gl2_beads_upper, centroid_triangles_upper_matrix, centroid_triangles_u, tree_upper, grid_keys_upper, centroids_upper, 10) 
     gl2_grid_assignment_lower = qc.grid_assignment(gl2_beads_lower, centroid_triangles_lower_matrix, centroid_triangles_l, tree_lower, grid_keys_lower, centroids_lower, 10)
