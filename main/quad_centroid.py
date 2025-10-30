@@ -71,7 +71,7 @@ def centroid_quadrilaterals(X,Y,Zupper_2d, Zlower_2d):
 #the output of this is the same for all keys
 #grid_dict: grid with it's neighborhood
 #i
-def grid_assignment(gl2_coords, grid_matrix, centroid_triangles, tree_upper, grid_keys_upper, centroids_upper, cutoff):
+def grid_assignment(gl2_coords, grid_matrix, tree_upper, grid_keys_upper, centroids_upper, cutoff):
 
     gl2_grid_assignment = {} #create an empty dictionary with the same keys
 

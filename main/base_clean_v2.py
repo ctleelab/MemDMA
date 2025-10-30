@@ -165,8 +165,6 @@ if __name__ == "__main__":
     centroid_triangles_u, centroid_triangles_l, norm_vector_triangles_up, norm_vector_triangles_l, coords_triangles_upper, coords_triangles_lower, edges_triangles_upper, edges_triangles_lower, quadrilateral_normal_upper, quadrilateral_normal_lower, centroid_triangles_lower_matrix, centroid_triangles_upper_matrix = m.normal_vector_triangles(X_f,Y_f,zupper_f,zlower_f)
     print("Finished:computing normal vectors of triangle")
 
-   
-
 
     neigh_graph.plot_triangle_grid_assignment(centroid_triangles_u, centroid_triangles_l)
 
@@ -225,8 +223,8 @@ if __name__ == "__main__":
     #output : {'4': (np.int64(42), array([ 8.09204793,  1.12890854, 19.91730258]}
     #output : {gl2 atom_number: grid_number, (coords of grid), list of neighborhood grids}
     print("Start: gl2 grid assignment")
-    gl2_grid_assignment_upper = qc.grid_assignment(gl2_beads_upper, centroid_triangles_upper_matrix, centroid_triangles_u, tree_upper, grid_keys_upper, centroids_upper, 10) 
-    gl2_grid_assignment_lower = qc.grid_assignment(gl2_beads_lower, centroid_triangles_lower_matrix, centroid_triangles_l, tree_lower, grid_keys_lower, centroids_lower, 10)
+    gl2_grid_assignment_upper = qc.grid_assignment(gl2_beads_upper, centroid_triangles_upper_matrix, tree_upper, grid_keys_upper, centroids_upper, 10) 
+    gl2_grid_assignment_lower = qc.grid_assignment(gl2_beads_lower, centroid_triangles_lower_matrix, tree_lower, grid_keys_lower, centroids_lower, 10)
     print("Finished: gl2 grid assignment")
 
     neigh_graph.plot_gl2_grid_assignment(gl2_grid_assignment_upper, gl2_grid_assignment_lower,gl2_beads_lower)
@@ -235,8 +233,6 @@ if __name__ == "__main__":
     # ########## assign the neighborhood to each atom  ############
     # #############################################################
 
-    #note: this is taking alot of memory...
-    # #4) 
     #goal: assign to each atom a neighborhood of grids
     #matchs by res_number by using the Gl2 bead
     #output {atom number: res_number, coords, list of close by grids}
@@ -288,20 +284,9 @@ if __name__ == "__main__":
     
     print("Start: atom mapping to triangles")
 
-    # with open("neighborhood_projections_upper_test.pickle", "rb") as f:
-    #     neighborhood_projections_upper = pickle.load(f)
-
-    # with open("neighborhood_projections_atom_id_test.pickle", "rb") as f:
-    #     neighborhood_grid_id_upper = pickle.load(f)
-
-    
     triangle_atom_assignment_upper  = {} 
     triangle_atom_assignment_lower  = {} 
 
-    #trouble-shooting    
-    #success = [] 
-    #fails = [] 
-    #print(max(neighborhood_grid_id_upper) )
 
     #output: neighborhood_grid_id: {atom number: list of grid number}
     #atom mapping to matrix quantifying polar vs nonpolar 
@@ -312,18 +297,4 @@ if __name__ == "__main__":
     print("completed frame")
     #Issue: too many grids are empty 
 
-    #############################################
-    #####plot the grid with the atom_mappings####
-    #############################################
-
-    #match grid number to coords of centroids
-    #input: centroid_triangles_u and triangle_atom_assignment_upper 
-    #I need x and y
-
-    #first plot the x,y 
-
-    #pull out the (x,y) from all triangle numbers
-
-
-      
     
