@@ -226,18 +226,19 @@ if __name__ == "__main__":
     # lower_neighborhood = ng.neighborhood(centroids_lower_dict, 1)
 
 
-    #2) ##create neighborhood for each grid that has an upper limit of 10A with the triangles
-    print("Start: neighborbood")
-    upper_neighborhood = ng.neighborhood(centroid_triangles_u, 1)
+    # #2) ##create neighborhood for each grid that has an upper limit of 10A with the triangles
+    # ##This takes alot of memory 
+    # print("Start: neighborbood")
+    # upper_neighborhood = ng.neighborhood(centroid_triangles_u, 10)
 
-    # #get more information about the neighborhood created
-    # with open ("upper_neighborhood_cKDtree.csv", "w", newline= "") as f:
-    #     writer = csv.writer(f)
-    #     for key, value in upper_neighborhood.items():
-    #         writer.writerow([key, value])
+    # # #get more information about the neighborhood created
+    # # with open ("upper_neighborhood_cKDtree.csv", "w", newline= "") as f:
+    # #     writer = csv.writer(f)
+    # #     for key, value in upper_neighborhood.items():
+    # #         writer.writerow([key, value])
 
-    lower_neighborhood = ng.neighborhood(centroid_triangles_l, 1)
-    print("Finished: neighborbood")
+    # lower_neighborhood = ng.neighborhood(centroid_triangles_l, 10)
+    # print("Finished: neighborbood")
 
     # ##############################################
     # ######troubleshooting neighborhood grids######
@@ -252,6 +253,12 @@ if __name__ == "__main__":
     # else:
     #     print("not found")
 
+    #######################################
+    ###create a cKDtree of the centroids###
+    #######################################
+    tree_upper, grid_keys_upper, centroids_upper = ng.cKDtree_grid_neighborhood(centroid_triangles_u)
+
+    tree_lower, grid_keys_lower, centroids_lower = ng.cKDtree_grid_neighborhood(centroid_triangles_l)
 
 
     #3) calculate the euclidean distance between the Gl2 and the grids in the mesh
@@ -262,9 +269,11 @@ if __name__ == "__main__":
     #output : {gl2 atom_number: grid_number, (coords of grid), list of neighborhood grids}
     #for some reason the gl2_beads_upper is in nm 
 
+    #rather than computing the entire neighborhood for each grid, only compute the neighborhood for those that are assigned 
+
     print("Start: gl2 grid assignment")
-    gl2_grid_assignment_upper = qc.grid_assignment(gl2_beads_upper, centroid_triangles_upper_matrix, upper_neighborhood) 
-    gl2_grid_assignment_lower = qc.grid_assignment(gl2_beads_lower, centroid_triangles_lower_matrix, lower_neighborhood) 
+    gl2_grid_assignment_upper = qc.grid_assignment(gl2_beads_upper, centroid_triangles_upper_matrix, centroid_triangles_u, tree_upper, grid_keys_upper, centroids_upper, 10) 
+    gl2_grid_assignment_lower = qc.grid_assignment(gl2_beads_lower, centroid_triangles_lower_matrix, centroid_triangles_l, tree_lower, grid_keys_lower, centroids_lower, 10)
     print("Finished: gl2 grid assignment")
 
     neigh_graph.plot_gl2_grid_assignment(gl2_grid_assignment_upper, gl2_grid_assignment_lower,gl2_beads_lower)
@@ -315,8 +324,8 @@ if __name__ == "__main__":
     #atom_grid_neighborhood_assignment_lower this needs to be in the input somewhere
     #output: neighborhood_grid_id: {atom number: list of grid number}
     #ouput: neighborhood_projections: {atom number: list of array(x,y,z)}
-    neighborhood_projections_upper, neighborhood_grid_id_upper = ry.neighborhood_project_atoms_to_triangles(atom_upper_num, grid_upper_num, grid_coords_upper_np, norm_vector_triangles_up, atom_grid_neighborhood_assignment_upper)
-    neighborhood_projections_lower, neighborhood_grid_id_lower = ry.neighborhood_project_atoms_to_triangles(atom_lower_num, grid_lower_num, grid_coords_lower_np, norm_vector_triangles_l, atom_grid_neighborhood_assignment_lower)
+    #neighborhood_projections_upper, neighborhood_grid_id_upper = ry.neighborhood_project_atoms_to_triangles(atom_upper_num, grid_upper_num, grid_coords_upper_np, norm_vector_triangles_up, atom_grid_neighborhood_assignment_upper)
+    #neighborhood_projections_lower, neighborhood_grid_id_lower = ry.neighborhood_project_atoms_to_triangles(atom_lower_num, grid_lower_num, grid_coords_lower_np, norm_vector_triangles_l, atom_grid_neighborhood_assignment_lower)
 
     print("Finished: atom ray projection")
 
@@ -343,7 +352,8 @@ if __name__ == "__main__":
 
     #output: neighborhood_grid_id: {atom number: list of grid number}
     #atom mapping to matrix quantifying polar vs nonpolar 
-    triangle_atom_assignment_upper = agm.sum_atom_mapping_upper(atom_features, radius, aliphatic, edges_triangles_upper, neighborhood_grid_id_upper, coords_triangles_upper, grid_upper_num, args.frame_numsu)
+    #atom_grid_assignment_upper  {atom number: res_number, coords, list of close by grids}
+    triangle_atom_assignment_upper = agm.sum_atom_mapping_upper(atom_features, radius, aliphatic, edges_triangles_upper, atom_grid_neighborhood_assignment_upper, coords_triangles_upper, grid_upper_num,  grid_coords_upper_np, norm_vector_triangles_up, args.frame_num )
     #triangle_atom_assignment_lower = agm.sum_atom_mapping_lower(atom_features, radius, aliphatic, edges_triangles_lower, neighborhood_grid_id_lower, coords_triangles_lower, grid_lower_num)
 
     print("completed frame")

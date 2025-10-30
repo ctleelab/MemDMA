@@ -1,4 +1,5 @@
 import numpy as np
+import neighborhood_grids as ng
 
 def centroid_quadrilaterals(X,Y,Zupper_2d, Zlower_2d):
     # #trouble-shooting dimension of array
@@ -69,8 +70,11 @@ def centroid_quadrilaterals(X,Y,Zupper_2d, Zlower_2d):
 #get the index of the smallest value (by using the function np.argmin)
 #the output of this is the same for all keys
 #grid_dict: grid with it's neighborhood
-def grid_assignment(gl2_coords, grid_matrix, grid_dict):
+#i
+def grid_assignment(gl2_coords, grid_matrix, centroid_triangles, tree_upper, grid_keys_upper, centroids_upper, cutoff):
+
     gl2_grid_assignment = {} #create an empty dictionary with the same keys
+
     for key, gl2_points in gl2_coords.items():
         #print(grid_matrix.shape)
         #multiply gl2_points by 10 because its in A
@@ -82,7 +86,9 @@ def grid_assignment(gl2_coords, grid_matrix, grid_dict):
 
         #match the grid_coords to the grid_dict and pull out the key 
         #add one because grid_dict starts at 1, no zero
-        list_neighborhood = grid_dict[min_distance_index +1 ]
+        list_neighborhood = ng.neighborhood(cutoff, min_distance_index, tree_upper, grid_keys_upper, centroids_upper) 
+
+        #list_neighborhood = grid_dict[min_distance_index +1 ]
 
         gl2_grid_assignment[key] = (min_distance_index, grid_coords, list_neighborhood )
 
