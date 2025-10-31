@@ -68,6 +68,10 @@ if __name__ == "__main__":
                             help = 'Increase the verbosity')
         parser.add_argument('-f', action = 'store', dest = 'frame_num',
                             help = 'frame number')
+        parser.add_argument('-m', action = 'store', dest = 'mesh_size', default = 1, 
+                            help = 'size of the mesh')
+        parser.add_argument('-nc', action = 'store', dest = 'neighborhood_cutoff', default = 10,
+                            help = 'sets the size of the neighborhood cutoff for grids')
         
         ##parse_args() will read the arguments that the user gives. These agruments were added to parser. This line of code then stores this information into the python variable args.        
         args = parser.parse_args()
@@ -128,7 +132,7 @@ if __name__ == "__main__":
     #Is the mesh is in nm?
     #Right now the mesh is 5A
     print("Start: running mesh")
-    X, Y, zupper, zlower, leaflet, leaflet_residues, z_midplane = qm.mesh(args.filename, "name GL2", .1)
+    X, Y, zupper, zlower, leaflet, leaflet_residues, z_midplane = qm.mesh(args.filename, "name GL2", args.mesh_size)
     print("Finished:running mesh")
 
     
@@ -164,8 +168,6 @@ if __name__ == "__main__":
     print("Start:computing normal vectors of triangle")
     centroid_triangles_u, centroid_triangles_l, norm_vector_triangles_up, norm_vector_triangles_l, coords_triangles_upper, coords_triangles_lower, edges_triangles_upper, edges_triangles_lower, quadrilateral_normal_upper, quadrilateral_normal_lower, centroid_triangles_lower_matrix, centroid_triangles_upper_matrix = m.normal_vector_triangles(X_f,Y_f,zupper_f,zlower_f)
     print("Finished:computing normal vectors of triangle")
-
-   
 
 
     neigh_graph.plot_triangle_grid_assignment(centroid_triangles_u, centroid_triangles_l)
@@ -228,7 +230,7 @@ if __name__ == "__main__":
 
     #2) ##create neighborhood for each grid that has an upper limit of 10A with the triangles
     print("Start: neighborbood")
-    upper_neighborhood = ng.neighborhood(centroid_triangles_u, 1)
+    upper_neighborhood = ng.neighborhood(centroid_triangles_u, args.neighborhood_cutoff)
 
     # #get more information about the neighborhood created
     # with open ("upper_neighborhood_cKDtree.csv", "w", newline= "") as f:
@@ -236,7 +238,7 @@ if __name__ == "__main__":
     #     for key, value in upper_neighborhood.items():
     #         writer.writerow([key, value])
 
-    lower_neighborhood = ng.neighborhood(centroid_triangles_l, 1)
+    lower_neighborhood = ng.neighborhood(centroid_triangles_l, args.neighborhood_cutoff)
     print("Finished: neighborbood")
 
     # ##############################################
@@ -303,20 +305,25 @@ if __name__ == "__main__":
     
     print("Start: atom ray projection")
 
-    ## grid_coords_np: is the (x,y,z) coordinates of the atoms in the upper leaflet
-    ## grid_upper_num: is a list of grid numbers in the upper leaflet 
+    ## grid_coords_np: is the (x,y,z) coordinates of the grid in the designated leaflet
+    ## grid_upper_num: is a list of grid numbers in the designated leaflet
     grid_upper_num, grid_coords_upper_np = ry.extract_grid_coords(centroid_triangles_u)
     grid_lower_num, grid_coords_lower_np = ry.extract_grid_coords(centroid_triangles_l)
 
+
+    ## atoms_coords_upper_np: is the (x,y,z) coordinates of the atom in the designated leaflet
+    ## atom_upper_num: is a list of atom numbers in the upper leaflet 
     atom_upper_num, atoms_coords_upper_np = ry.extract_atoms(atom_features, "upper")
     atom_lower_num, atoms_coords_lower_np = ry.extract_atoms(atom_features, "lower")
  
 
+
+
     #atom_grid_neighborhood_assignment_lower this needs to be in the input somewhere
     #output: neighborhood_grid_id: {atom number: list of grid number}
     #ouput: neighborhood_projections: {atom number: list of array(x,y,z)}
-    neighborhood_projections_upper, neighborhood_grid_id_upper = ry.neighborhood_project_atoms_to_triangles(atom_upper_num, grid_upper_num, grid_coords_upper_np, norm_vector_triangles_up, atom_grid_neighborhood_assignment_upper)
-    neighborhood_projections_lower, neighborhood_grid_id_lower = ry.neighborhood_project_atoms_to_triangles(atom_lower_num, grid_lower_num, grid_coords_lower_np, norm_vector_triangles_l, atom_grid_neighborhood_assignment_lower)
+    # neighborhood_projections_upper, neighborhood_grid_id_upper = ry.neighborhood_project_atoms_to_triangles(atom_upper_num, grid_upper_num, grid_coords_upper_np, norm_vector_triangles_up, atom_grid_neighborhood_assignment_upper)
+    # neighborhood_projections_lower, neighborhood_grid_id_lower = ry.neighborhood_project_atoms_to_triangles(atom_lower_num, grid_lower_num, grid_coords_lower_np, norm_vector_triangles_l, atom_grid_neighborhood_assignment_lower)
 
     print("Finished: atom ray projection")
 
@@ -343,7 +350,8 @@ if __name__ == "__main__":
 
     #output: neighborhood_grid_id: {atom number: list of grid number}
     #atom mapping to matrix quantifying polar vs nonpolar 
-    triangle_atom_assignment_upper = agm.sum_atom_mapping_upper(atom_features, radius, aliphatic, edges_triangles_upper, neighborhood_grid_id_upper, coords_triangles_upper, grid_upper_num, args.frame_numsu)
+
+    triangle_atom_assignment_upper = agm.sum_atom_mapping_upper(atom_features, radius, aliphatic, edges_triangles_upper, atom_grid_neighborhood_assignment_upper, coords_triangles_upper, grid_upper_num, grid_coords_upper_np, norm_vector_triangles_up, args.frame_num)
     #triangle_atom_assignment_lower = agm.sum_atom_mapping_lower(atom_features, radius, aliphatic, edges_triangles_lower, neighborhood_grid_id_lower, coords_triangles_lower, grid_lower_num)
 
     print("completed frame")

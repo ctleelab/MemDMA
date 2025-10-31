@@ -31,26 +31,30 @@ triangle_atom_assignment_lower  = {}
 #function is for the upper leaflet
 #inputs: (atom_features, radius, aliphatic, edges_triangles_upper)
 #output {grid #: mapping value}
-def sum_atom_mapping_upper(atom_features: dict, radius: dict, aliphatic:dict, edges_triangles_upper, neighborhood_grid_id_upper, coords_triangles_upper, grid_num, frame: int) -> dict:
+#neighborhood_grid_id: {atom number: list of grid number}
+def sum_atom_mapping_upper(atom_features: dict, radius: dict, aliphatic:dict, edges_triangles:dict, atom_neighborhood_grid_id:dict, coords_triangles:dict, grid_num:list, grid_coords_np, norm_vector_triangles:dict, frame: int) -> dict:
     """
     This function is mapping atoms to grids in the upper leaflet of a lipid bilayer.
 
     Args:
-        atom_features (dict): A dictionary containing features of atoms, including their coordinates and type.
+        atom_features (dict): A dictionary containing features of atoms, including their coordinates and type.output ex: {atm#: GL2', 'lower', array([18.222,  4.37 , 14.85 ]), 'DOPC GL2', resnumber }
         radius (dict): A dictionary mapping atom names to their respective radii.
         aliphatic (dict): A dictionary mapping atom names to their type (e.g., polar or non-polar).
-        edges_triangles_upper: Data structure containing edge vectors for triangles in the upper leaflet.
-        neighborhood_grid_id_upper: A dictionary that assigns a list of grid per atom  [neighborhood_grid_id: {atom number: list of grid number}]
-        coords_triangles_upper: Data structure containing coordinates of triangle vertices in the upper leaflet.        
+        edges_triangles (dict): A dictionary containing edge vectors for triangles as a list. {triangle_number: [edge1, edge2, edge3]}
+        atom_neighborhood_grid_id (dict): A dictionary containing the res_number the atom belongs to, coords of atom, list of close by grids for each atom number
+        coords_triangles (dict): A dictionary containing the coordinates of all vertexes of the triangles {14959: array([[113.63737488,  21.55670166, 282.9483378 ],[114.63858032,  21.55670166, 282.60440123],[114.63858032,  22.55933762, 282.61294111]])}
+        grid_num (list): a list of all the grids numbers in either the upper or lower leaflet
+        grid_coords_np (array): An array where is index represents the grid number, and has the (x,y,z) coordinates of the grid in the designated leaflet
+        norm_vector_triangles (dict): A dictionary with triangle number a nd the coordinates of the normal vector (28104: array([ 0.29990481, -0.31881054,  0.89912009])
+        frame (int): the frame number of the trajectory file     
 
     Returns:
         dict: A dictionary mapping triangle IDs to their respective atom assignment values.
     """
-    for atom_num, grid_ids in neighborhood_grid_id_upper.items():  
+    for atom_num, data in atom_neighborhood_grid_id.items(): 
+        grid_ids = data[2] 
         #print("atomnum:", atom_num)
-        stop_triangle = False #just emplaced so that I can troubleshoot the code
         atom_num = str(atom_num) #changes atom_num to a string so it matches atom_features keys
-        #print("atom_num:", atom_num)
         if atom_num not in atom_features:
             print(f"Warning: atom_num {atom_num} missing in atom_features")
                 #fails.append(int(atom_num))
@@ -64,18 +68,25 @@ def sum_atom_mapping_upper(atom_features: dict, radius: dict, aliphatic:dict, ed
                 #success.append(int(atom_num))
             for grid_id in grid_ids: #loops over the neighborhood of grids for each atom
                 shortest_distance_to_atom = 1000 #setting arbritraury distance that much greater than the radius of all atoms 
-                grid_id += 1 
-                if stop_triangle:  #will move onto a new triangle if an polar atom was mapped
-                    break
 
 
-                #coordinates of atom in plane of triangle 
-                #atom_coords = matching.get_projection(atom_num, grid_id, neighborhood_projections_upper, neighborhood_grid_id_upper, atom_features)
-                
-                #multiply by 10 to covert into Angstrom
-                #
                 atom_coords = atom_features[atom_num][2]*10
 
+                ###Determine the coords if atom projected onto the same plane as the triangle grid
+                ##inputs: atom_num, grid_id, 
+
+                #subtract 1 because need to index the numpy grid that starts at 0 and grid_id starts at 1
+                grid_coord = grid_coords_np[grid_id-1] 
+                w_vectors = grid_coord - atom_coords  #change the naming of the grid_coords to triangle_centroid_coords 
+
+                # scalars = np.dot(w_vectors, normals[tri_indx+1])
+                # n_contributions = np.outer(scalars, normals[tri_indx+1])
+
+                # Calculate the normal direction by computing the dot product of the vector from the triangle centroid to the atom and the normalized triangle normal
+                n_contributions = np.dot(w_vectors, norm_vector_triangles[grid_id]) * norm_vector_triangles[grid_id]
+
+                # Project the atom onto the triangle plane by removing the normal contribution
+                atom_coords_projections = w_vectors - n_contributions
 
                 #determine the radius of the atom you're working with
                 lipid_atm_name = atom_features[atom_num][3]
@@ -89,9 +100,9 @@ def sum_atom_mapping_upper(atom_features: dict, radius: dict, aliphatic:dict, ed
 
                 ##import edges of triangle and import points of triangles
                 edges_and_points = {
-                    "edge1": (edges_triangles_upper[grid_id][0], coords_triangles_upper[grid_id][0]),
-                    "edge2": (edges_triangles_upper[grid_id][1], coords_triangles_upper[grid_id][1]),
-                    "edge3": (edges_triangles_upper[grid_id][2], coords_triangles_upper[grid_id][2])
+                    "edge1": (edges_triangles[grid_id][0], coords_triangles[grid_id][0]),
+                    "edge2": (edges_triangles[grid_id][1], coords_triangles[grid_id][1]),
+                    "edge3": (edges_triangles[grid_id][2], coords_triangles[grid_id][2])
                 }
 
                 ##determine the distance between each edge
@@ -108,7 +119,7 @@ def sum_atom_mapping_upper(atom_features: dict, radius: dict, aliphatic:dict, ed
                     if shortest_distance_to_atom > atm_radius:
                         #vector from point of vector to coords_atom_plane_of_triangle
                         
-                        vector_to_atom = atom_coords-point_on_edge 
+                        vector_to_atom =  atom_coords_projections-point_on_edge 
                         area_parallelogram = np.linalg.norm(np.cross(vector_to_atom, edge_vector)) 
                         base_parallelogram = np.linalg.norm(edge_vector) #length of parallelogram
                         shortest_distance_to_atom = np.divide(area_parallelogram,base_parallelogram)
