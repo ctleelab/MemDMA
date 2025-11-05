@@ -85,7 +85,7 @@ def sum_atom_mapping_upper(
             ) in grid_ids:  # loops over the neighborhood of grids for each atom
                 shortest_distance_to_atom = 1000  # setting arbritraury distance that much greater than the radius of all atoms
 
-                atom_coords = atom_features[atom_num][2] * 10
+                atom_coords = atom_features[atom_num][2]
 
                 ###Determine the coords if atom projected onto the same plane as the triangle grid
                 ##inputs: atom_num, grid_id,
