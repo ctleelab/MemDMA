@@ -68,6 +68,10 @@ if __name__ == "__main__":
                             help = 'Increase the verbosity')
         parser.add_argument('-f', action = 'store', dest = 'frame_num',
                             help = 'frame number')
+        parser.add_argument('-m', action = 'store', dest = 'mesh_size', default = .1, 
+                            help = 'size of the mesh in nm')
+        parser.add_argument('-nc', action = 'store', dest = 'neighborhood_cutoff', default = 1,
+                            help = 'sets the size of the neighborhood cutoff for grids in nm.') 
         
         ##parse_args() will read the arguments that the user gives. These agruments were added to parser. This line of code then stores this information into the python variable args.        
         args = parser.parse_args()
@@ -128,7 +132,7 @@ if __name__ == "__main__":
     #Is the mesh is in nm?
     #Right now the mesh is 5A
     print("Start: running mesh")
-    X, Y, zupper, zlower, leaflet, leaflet_residues, z_midplane = qm.mesh(args.filename, "name GL2", .1)
+    X, Y, zupper, zlower, leaflet, leaflet_residues, z_midplane, box_lengths = qm.mesh(args.filename, "name GL2", args.mesh_size)
     print("Finished:running mesh")
 
     
@@ -147,7 +151,7 @@ if __name__ == "__main__":
     ##output: {atm#: GL2', 'lower', array([18.222,  4.37 , 14.85 ]), 'DOPC GL2', resnumber }
 
     list_types_atoms = util.list_types_atoms_lipid  #just loads in the types of atoms in the .gro file
-    atom_features = pp.atom_features(grolines, list_types_atoms,leaflet_residues) 
+    atom_features = pp.atom_features(grolines, list_types_atoms,leaflet_residues)
 
     print("Finished:determining atom features")
 
@@ -189,10 +193,10 @@ if __name__ == "__main__":
     for key, v in atom_features.items(): #need .items if there are multiple items in the value of the key of a dictionary 
         if v[0] == "GL2":
             if v[1] == "upper":
-                gl2_beads_upper[key] = v[2]*10 #add coords of gl2 beads but multiply by 10 to bring units to A
+                gl2_beads_upper[key] = v[2]
                 gl2_beads_upper_resnumber[key] = v[4]
             if v[1] == "lower":
-                gl2_beads_lower[key] = v[2]*10 #add coords of gl2 beads but multiply by 10 to bring units to A
+                gl2_beads_lower[key] = v[2]
                 gl2_beads_lower_resnumber[key] = v[4]
 
 
@@ -203,9 +207,9 @@ if __name__ == "__main__":
     all_atoms_lower = {}
     for key, v in atom_features.items(): #need .items if there are multiple items in the value of the key of a dictionary 
         if v[1] == "upper":
-            all_atoms_upper[key] = (v[4], v[2]*10) #adds resnumber and coords(A, that's why multiply by 10)
+            all_atoms_upper[key] = (v[4], v[2])
         if v[1] == "lower":
-            all_atoms_lower[key] = (v[4], v[2]*10) #adds resnumber and coords(A, that's why multiply by 10)
+            all_atoms_lower[key] = (v[4], v[2]) 
 
 
     #######################################
@@ -261,20 +265,25 @@ if __name__ == "__main__":
     
     print("Start: atom ray projection")
 
-    ## grid_coords_np: is the (x,y,z) coordinates of the atoms in the upper leaflet
-    ## grid_upper_num: is a list of grid numbers in the upper leaflet 
+    ## grid_coords_np: is the (x,y,z) coordinates of the grid in the designated leaflet
+    ## grid_upper_num: is a list of grid numbers in the designated leaflet
     grid_upper_num, grid_coords_upper_np = ry.extract_grid_coords(centroid_triangles_u)
     grid_lower_num, grid_coords_lower_np = ry.extract_grid_coords(centroid_triangles_l)
 
+
+    ## atoms_coords_upper_np: is the (x,y,z) coordinates of the atom in the designated leaflet
+    ## atom_upper_num: is a list of atom numbers in the upper leaflet 
     atom_upper_num, atoms_coords_upper_np = ry.extract_atoms(atom_features, "upper")
     atom_lower_num, atoms_coords_lower_np = ry.extract_atoms(atom_features, "lower")
  
 
+
+
     #atom_grid_neighborhood_assignment_lower this needs to be in the input somewhere
     #output: neighborhood_grid_id: {atom number: list of grid number}
     #ouput: neighborhood_projections: {atom number: list of array(x,y,z)}
-    #neighborhood_projections_upper, neighborhood_grid_id_upper = ry.neighborhood_project_atoms_to_triangles(atom_upper_num, grid_upper_num, grid_coords_upper_np, norm_vector_triangles_up, atom_grid_neighborhood_assignment_upper)
-    #neighborhood_projections_lower, neighborhood_grid_id_lower = ry.neighborhood_project_atoms_to_triangles(atom_lower_num, grid_lower_num, grid_coords_lower_np, norm_vector_triangles_l, atom_grid_neighborhood_assignment_lower)
+    # neighborhood_projections_upper, neighborhood_grid_id_upper = ry.neighborhood_project_atoms_to_triangles(atom_upper_num, grid_upper_num, grid_coords_upper_np, norm_vector_triangles_up, atom_grid_neighborhood_assignment_upper)
+    # neighborhood_projections_lower, neighborhood_grid_id_lower = ry.neighborhood_project_atoms_to_triangles(atom_lower_num, grid_lower_num, grid_coords_lower_np, norm_vector_triangles_l, atom_grid_neighborhood_assignment_lower)
 
     print("Finished: atom ray projection")
 
@@ -290,8 +299,8 @@ if __name__ == "__main__":
 
     #output: neighborhood_grid_id: {atom number: list of grid number}
     #atom mapping to matrix quantifying polar vs nonpolar 
-    #atom_grid_assignment_upper  {atom number: res_number, coords, list of close by grids}
-    triangle_atom_assignment_upper = agm.sum_atom_mapping_upper(atom_features, radius, aliphatic, edges_triangles_upper, atom_grid_neighborhood_assignment_upper, coords_triangles_upper, grid_upper_num, args.frame_num )
+ m mmm                                                
+    triangl ne_atom_assignment_upper = agm.sum_atom_mapping_upper(atom_features, radius, aliphatic, edges_triangles_upper, atom_grid_neighborhood_assignment_upper, coords_triangles_upper, grid_upper_num, grid_coords_upper_np, norm_vector_triangles_up, args.frame_num)
     #triangle_atom_assignment_lower = agm.sum_atom_mapping_lower(atom_features, radius, aliphatic, edges_triangles_lower, neighborhood_grid_id_lower, coords_triangles_lower, grid_lower_num)
 
     print("completed frame")
