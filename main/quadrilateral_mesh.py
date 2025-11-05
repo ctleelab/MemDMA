@@ -26,6 +26,9 @@ def mesh(gro, selection, step ):
     #u = mda.Universe(gro, str(traj) , continous=True)
     u = mda.Universe(gro, continous=True)
 
+    print("units of the file", u.trajectory.units) #which is nm 
+ 
+
     # Average box dimensions over trajectory
     # might not need since I'm in the NVT ensemble
     avg_dim_x = np.mean([ts.dimensions[0] for ts in u.trajectory])
@@ -43,9 +46,11 @@ def mesh(gro, selection, step ):
 
     # Bin centers for plotting
     # I don't think this is being used in the MembraneSpectralAnalysis function
-    x_centers = 0.5 * (x_edges[:-1] + x_edges[1:])
-    y_centers = 0.5 * (y_edges[:-1] + y_edges[1:])
+    x_centers = ((0.5 * (x_edges[:-1] + x_edges[1:])))/10
+    y_centers = ((0.5 * (y_edges[:-1] + y_edges[1:])))/10
     X, Y = np.meshgrid(x_centers, y_centers, indexing="ij")
+
+ 
 
     # Checking z-range of lower glycerol bead
     ag = u.atoms.select_atoms("name GL2")
@@ -55,6 +60,7 @@ def mesh(gro, selection, step ):
     #print("z spread:", np.ptp(z_coords))
 
     # Run MembraneSpectralAnalysis to get the quadrilateral mesh 
+    # does it turn the units to angstroms internally?
     mc = MembraneSpectralAnalysis(
         u,
         select=selection,
@@ -66,8 +72,10 @@ def mesh(gro, selection, step ):
         interpolate=True
     ).run(verbose=True)
 
-    z_data_upper = mc.results["z_surface"]["upper"]
-    z_data_lower = mc.results["z_surface"]["lower"]
+    
+
+    z_data_upper = (mc.results["z_surface"]["upper"])/10
+    z_data_lower = (mc.results["z_surface"]["lower"])/10
     bin_area = mc.bin_areas
 
     # # Save only the results I care about. No need to save entire mc object
@@ -82,6 +90,7 @@ def mesh(gro, selection, step ):
     # with open("membrane_curvature_smooth_.5A.pickle", "wb") as handle:
     #     pickle.dump({"X":X, "Y": Y, "Z_upper": z_data_upper ,"Z_lower": z_data_lower, "bin_area": bin_area}, handle, protocol=pickle.HIGHEST_PROTOCOL)
     z_midplane = .5 * (z_data_upper + z_data_lower)
+
     
     return (X, Y, z_data_upper, z_data_lower,  leaflet, leaflet_residues, z_midplane)
 # jobs = []
