@@ -71,13 +71,25 @@ def centroid_quadrilaterals(X,Y,Zupper_2d, Zlower_2d):
 #the output of this is the same for all keys
 #grid_dict: grid with it's neighborhood
 #i
-def grid_assignment(gl2_coords, grid_matrix, tree_upper, grid_keys_upper, centroids_upper, cutoff):
+def grid_assignment(gl2_coords:dict, grid_matrix, tree_upper, grid_keys_upper:list, centroids_upper, cutoff:int):
+    """
+    Assigns a grid to a GL2 bead then computes its neighborhood using cKDTree.
+    Args:
+        gl2_coords (dict): A dictionary containing GL2 bead coordinates.
+        grid_matrix (np.ndarray): A matrix of grid coordinates.
+        tree_upper (cKDTree): A cKDTree object for efficient spatial queries.
+        grid_keys_upper (list): A list of grid keys corresponding to the grid matrix.
+        centroids_upper (np.ndarray): An array of centroid coordinates for the upper grid.
+        cutoff (int): The cutoff distance for neighborhood determination.
+
+    Returns:
+        gl2_grid_assignment (dict): A dictionary with GL2 (key): (closet grid_index, grid_coords of closest grid_index, neighborhood_list of the grid_idex).
+    """
 
     gl2_grid_assignment = {} #create an empty dictionary with the same keys
 
     for key, gl2_points in gl2_coords.items():
         #print(grid_matrix.shape)
-        #multiply gl2_points by 10 because its in A
         distance = np.linalg.norm((grid_matrix - gl2_points), axis = 1 ) #compute the euclidean distance between grid and gl2, and sum along each row
         min_distance_index = np.argmin(distance) #return the smallest value of the distance array index value
 
@@ -85,12 +97,9 @@ def grid_assignment(gl2_coords, grid_matrix, tree_upper, grid_keys_upper, centro
         #rather then grid_coords I want grid_number
 
         #match the grid_coords to the grid_dict and pull out the key 
-        #add one because grid_dict starts at 1, no zero
         list_neighborhood = ng.neighborhood(cutoff, min_distance_index, tree_upper, grid_keys_upper, centroids_upper) 
 
-        #list_neighborhood = grid_dict[min_distance_index +1 ]
-
-        gl2_grid_assignment[key] = (min_distance_index, grid_coords, list_neighborhood )
+        gl2_grid_assignment[key] = (min_distance_index, grid_coords, list_neighborhood)
 
     for k, v in list(gl2_coords.items())[:5]:
         print(k, np.round(v, 3))
