@@ -211,49 +211,13 @@ if __name__ == "__main__":
         if v[1] == "lower":
             all_atoms_lower[key] = (v[4], v[2]) 
 
-    #1-2) turn dictionary into a matrix, and have the keys. The index matches the keys to the matrix
-    #gl2_beads_upper_keys = {k: None for k in gl2_beads_upper.keys()}
-    #gl2_beads_upper_matrix = np.array(list(gl2_beads_upper.values()))
-    #gl2_beads_lower_keys = {k: None for k in gl2_beads_lower.keys()}
-    #gl2_beads_lower_matrix = np.array(list(gl2_beads_lower.values()))
 
+    #######################################
+    ###create a cKDtree of the centroids###
+    #######################################
+    tree_upper, grid_keys_upper, centroids_upper = ng.cKDtree_grid_neighborhood(centroid_triangles_u)
 
-    ##########################################
-    ##calculations for quadrilateral grids####
-    ##########################################
-    # #2-1) create a matrix of the center of mass of each mesh grid for quadrilaterals
-    #upper_centroids, lower_centroids, centroids_upper_dict, centroids_lower_dict  = qc.centroid_quadrilaterals(X_f, Y_f, zupper_f, zlower_f)
-    # #2-2a) ##create neighborhood for each grid that has an upper limit of 10A with the quadrilaterals
-    # upper_neighborhood = ng.neighborhood(centroids_upper_dict, 1)
-    # lower_neighborhood = ng.neighborhood(centroids_lower_dict, 1)
-
-
-    #2) ##create neighborhood for each grid that has an upper limit of 10A with the triangles
-    print("Start: neighborbood")
-    upper_neighborhood = ng.neighborhood(centroid_triangles_u, args.neighborhood_cutoff)
-
-    # #get more information about the neighborhood created
-    # with open ("upper_neighborhood_cKDtree.csv", "w", newline= "") as f:
-    #     writer = csv.writer(f)
-    #     for key, value in upper_neighborhood.items():
-    #         writer.writerow([key, value])
-
-    lower_neighborhood = ng.neighborhood(centroid_triangles_l, args.neighborhood_cutoff)
-    print("Finished: neighborbood")
-
-    # ##############################################
-    # ######troubleshooting neighborhood grids######
-    # ##############################################
-    # if 50 in upper_neighborhood:
-    #     print(upper_neighborhood[50])
-    # else:
-    #     print("not found")
-
-    # if 100 in upper_neighborhood:
-    #     print(upper_neighborhood[100])
-    # else:
-    #     print("not found")
-
+    tree_lower, grid_keys_lower, centroids_lower = ng.cKDtree_grid_neighborhood(centroid_triangles_l)
 
 
     #3) calculate the euclidean distance between the Gl2 and the grids in the mesh
@@ -262,11 +226,9 @@ if __name__ == "__main__":
     #inputs will be the centroids of each grid and the gl2 bead coordinates
     #output : {'4': (np.int64(42), array([ 8.09204793,  1.12890854, 19.91730258]}
     #output : {gl2 atom_number: grid_number, (coords of grid), list of neighborhood grids}
-    #for some reason the gl2_beads_upper is in nm 
-
     print("Start: gl2 grid assignment")
-    gl2_grid_assignment_upper = qc.grid_assignment(gl2_beads_upper, centroid_triangles_upper_matrix, upper_neighborhood) 
-    gl2_grid_assignment_lower = qc.grid_assignment(gl2_beads_lower, centroid_triangles_lower_matrix, lower_neighborhood) 
+    gl2_grid_assignment_upper = qc.grid_assignment(gl2_beads_upper, centroid_triangles_upper_matrix, tree_upper, grid_keys_upper, centroids_upper, 10) 
+    gl2_grid_assignment_lower = qc.grid_assignment(gl2_beads_lower, centroid_triangles_lower_matrix, tree_lower, grid_keys_lower, centroids_lower, 10)
     print("Finished: gl2 grid assignment")
 
     neigh_graph.plot_gl2_grid_assignment(gl2_grid_assignment_upper, gl2_grid_assignment_lower,gl2_beads_lower)
@@ -275,8 +237,6 @@ if __name__ == "__main__":
     # ########## assign the neighborhood to each atom  ############
     # #############################################################
 
-    #note: this is taking alot of memory...
-    # #4) 
     #goal: assign to each atom a neighborhood of grids
     #matchs by res_number by using the Gl2 bead
     #output {atom number: res_number, coords, list of close by grids}
@@ -333,42 +293,17 @@ if __name__ == "__main__":
     
     print("Start: atom mapping to triangles")
 
-    # with open("neighborhood_projections_upper_test.pickle", "rb") as f:
-    #     neighborhood_projections_upper = pickle.load(f)
-
-    # with open("neighborhood_projections_atom_id_test.pickle", "rb") as f:
-    #     neighborhood_grid_id_upper = pickle.load(f)
-
-    
     triangle_atom_assignment_upper  = {} 
     triangle_atom_assignment_lower  = {} 
 
-    #trouble-shooting    
-    #success = [] 
-    #fails = [] 
-    #print(max(neighborhood_grid_id_upper) )
 
     #output: neighborhood_grid_id: {atom number: list of grid number}
     #atom mapping to matrix quantifying polar vs nonpolar 
-
-    triangle_atom_assignment_upper = agm.sum_atom_mapping_upper(atom_features, radius, aliphatic, edges_triangles_upper, atom_grid_neighborhood_assignment_upper, coords_triangles_upper, grid_upper_num, grid_coords_upper_np, norm_vector_triangles_up, args.frame_num)
+ m mmm                                                
+    triangl ne_atom_assignment_upper = agm.sum_atom_mapping_upper(atom_features, radius, aliphatic, edges_triangles_upper, atom_grid_neighborhood_assignment_upper, coords_triangles_upper, grid_upper_num, grid_coords_upper_np, norm_vector_triangles_up, args.frame_num)
     #triangle_atom_assignment_lower = agm.sum_atom_mapping_lower(atom_features, radius, aliphatic, edges_triangles_lower, neighborhood_grid_id_lower, coords_triangles_lower, grid_lower_num)
 
     print("completed frame")
     #Issue: too many grids are empty 
 
-    #############################################
-    #####plot the grid with the atom_mappings####
-    #############################################
-
-    #match grid number to coords of centroids
-    #input: centroid_triangles_u and triangle_atom_assignment_upper 
-    #I need x and y
-
-    #first plot the x,y 
-
-    #pull out the (x,y) from all triangle numbers
-
-
-      
     
