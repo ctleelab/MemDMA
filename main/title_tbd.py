@@ -28,7 +28,7 @@ def create_triangle_edge_and_coord_arrays(list_of_neighborhood_grids, edges_tria
     lipid_ids_all_edges_dict = {}
 
     for lipid_id, grid_id_list in list_of_neighborhood_grids.items():
-        sorted_grid_ids = sorted(grid_id_list)
+        sorted_grid_ids = sorted(grid_id_list) #by adding this sorting function the order of the grid list matches the index of the numpy array
 
         all_edges = []
         all_coords = []
