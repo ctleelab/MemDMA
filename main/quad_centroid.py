@@ -71,7 +71,7 @@ def centroid_quadrilaterals(X,Y,Zupper_2d, Zlower_2d):
 #the output of this is the same for all keys
 #grid_dict: grid with it's neighborhood
 #i
-def grid_assignment(gl2_coords:dict, grid_matrix, tree_upper, grid_keys_upper:list, centroids_upper, cutoff:int):
+def grid_assignment(gl2_coords:dict, grid_matrix, tree_upper, grid_keys_upper:list, centroids_upper, cutoff:int, atom_features:dict ):
     """
     Assigns a grid to a GL2 bead then computes its neighborhood using cKDTree.
     Args:
@@ -84,9 +84,11 @@ def grid_assignment(gl2_coords:dict, grid_matrix, tree_upper, grid_keys_upper:li
 
     Returns:
         gl2_grid_assignment (dict): A dictionary with GL2 (key): (closet grid_index, grid_coords of closest grid_index, neighborhood_list of the grid_idex).
+        lipid_grid_assignment (dict): A dictionary with lipid (key): (neighborhood_list of the grid_idex)
     """
 
     gl2_grid_assignment = {} #create an empty dictionary with the same keys
+    lipid_grid_assignment = {}
 
     for key, gl2_points in gl2_coords.items():
         #print(grid_matrix.shape)
@@ -101,10 +103,17 @@ def grid_assignment(gl2_coords:dict, grid_matrix, tree_upper, grid_keys_upper:li
 
         gl2_grid_assignment[key] = (min_distance_index, grid_coords, list_neighborhood)
 
+        lipid_res = atom_features[key][4]
+
+        #store lipid_res as the key and the neighborhood list as the value
+        lipid_grid_assignment[lipid_res] = list_neighborhood
+
+        
+
     for k, v in list(gl2_coords.items())[:5]:
         print(k, np.round(v, 3))
 
-    return gl2_grid_assignment
+    return gl2_grid_assignment, lipid_grid_assignment
 
 
 #gl2_neighborhood_grids: {gl2_atom_number: grid_number, (coords of grid), list of neighborhood grids}
