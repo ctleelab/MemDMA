@@ -219,11 +219,152 @@ def plot_triangle_grid_assignment(triangle_centroids_upper, triangle_centroids_l
 
 
 
+def atom_mapping_centroids(triangle_centroids, triangle_atom_assignment):
+    triangle_grid_all = []
+    X_triangle_all = []
+    Y_triangle_all = []
+    Z_triangle_all = []
+    count_for_triangle = []
+
+    for key, value in triangle_centroids.items():
+        centroid_num = key
+        gl2_bead_coords = np.array(value)
+        X = gl2_bead_coords[0]
+        Y = gl2_bead_coords[1]
+        Z = gl2_bead_coords[2]
+        triangle_grid_all.append(centroid_num)
+        X_triangle_all.append(X)
+        Y_triangle_all.append(Y)
+        Z_triangle_all.append(Z)
+        count_for_triangle.append(triangle_atom_assignment.get(centroid_num, 0))  # Get count, default to 0 if not found
+
+    # Create Plotly figure
+    fig = go.Figure()
+
+    # Add scatter plot for triangle centroids with count as hover text
+    fig.add_trace(go.Scatter3d(
+        x=X_triangle_all,
+        y=Y_triangle_all,
+        z=Z_triangle_all,
+        mode='markers',
+        name='Triangle Centroids',
+        marker=dict(
+            size=6,
+            color=count_for_triangle,  # Color based on count
+            colorscale='Viridis',  # Color scale
+            opacity=0.8,
+            colorbar=dict(title="Count")  # Add color bar for counts
+        ),
+        text=[f"Grid: {grid}, Count: {count}" for grid, count in zip(triangle_grid_all, count_for_triangle)],  # Hover text
+        hoverinfo="text"
+    ))
+
+    fig.update_layout(
+        title="Triangle Centroids with Atom Count",
+        scene=dict(
+            xaxis_title="X",
+            yaxis_title="Y",
+            zaxis_title="Z height",
+        )
+    )
+
+    # Save as standalone HTML
+    fig.write_html("triangle_centroids_with_counts.html")
+    del fig
+    print("Interactive plot with counts completed")
 
 
+# goal graph gl2 bead and highlight the surrounding neighborhood
+# input: gl2 beads
+# input: grid neighborhoods 
+def gl2_neighborhood(gl2_beads, triangle_centroids, gl2_grid_assignment):
+    """
+        graphs the neighborhood for each gl2 bead
 
- 
+    Args:
+        gl2_beads (dict): A dictionary with GL2 (atom #): array([x y z]) coordinates of the GL2 bead
+        gl2_grid_assignment (dict): A dictionary with GL2 (key): (closest grid_index, grid_coords of closest grid_index, neighborhood_list of the grid_index).
+        triangle_centroids (dict): A dictionary with triangle number (key): [x y z] coordinates of the triangle centroid
+    Returns:
+        
+    """
+    # Extract triangle centroids
+    triangle_grid_all = []
+    X_triangle_all = []
+    Y_triangle_all = []
+    Z_triangle_all = []
 
+    for key, value in triangle_centroids.items():
+        centroid_num = key
+        coords = np.array(value)
+        X_triangle_all.append(coords[0])
+        Y_triangle_all.append(coords[1])
+        Z_triangle_all.append(coords[2])
+        triangle_grid_all.append(centroid_num)
 
+    # Extract GL2 bead data
+    gl2_bead_coords = list(gl2_beads.values())[0]  # Take the first GL2 bead
+    gl2_bead_x, gl2_bead_y, gl2_bead_z = gl2_bead_coords 
 
- 
+    # Get the grid assignment and neighborhood for the GL2 bead
+    gl2_bead_key = list(gl2_beads.keys())[0]
+    grid_assignment = gl2_grid_assignment[gl2_bead_key]
+    neighborhood_list = grid_assignment[2]
+
+    # Extract neighborhood centroids
+    neighborhood_x = []
+    neighborhood_y = []
+    neighborhood_z = []
+
+    for neighbor in neighborhood_list:
+        neighbor_coords = triangle_centroids[neighbor]
+        neighborhood_x.append(neighbor_coords[0])
+        neighborhood_y.append(neighbor_coords[1])
+        neighborhood_z.append(neighbor_coords[2])
+
+    # Create Plotly figure
+    fig = go.Figure()
+
+    # Plot triangle centroids
+    fig.add_trace(go.Scatter3d(
+        x=X_triangle_all,
+        y=Y_triangle_all,
+        z=Z_triangle_all,
+        mode='markers',
+        name='Triangle Centroids',
+        marker=dict(size=4, color='gray', opacity=0.6)
+    ))
+
+    # Plot GL2 bead
+    fig.add_trace(go.Scatter3d(
+        x=[gl2_bead_x],
+        y=[gl2_bead_y],
+        z=[gl2_bead_z],
+        mode='markers',
+        name='GL2 Bead',
+        marker=dict(size=6, color='red', opacity=1.0)
+    ))
+
+    # Plot neighborhood centroids
+    fig.add_trace(go.Scatter3d(
+        x=neighborhood_x,
+        y=neighborhood_y,
+        z=neighborhood_z,
+        mode='markers',
+        name='Neighborhood',
+        marker=dict(size=5, color='blue', opacity=0.8)
+    ))
+
+    fig.update_layout(
+        title="GL2 Bead and Neighborhood",
+        scene=dict(
+            xaxis_title="X",
+            yaxis_title="Y",
+            zaxis_title="Z height",
+        )
+    )
+
+    # Save as standalone HTML
+    fig.write_html("gl2_neighborhood.html")
+    del fig
+    print("GL2 neighborhood plot completed")
