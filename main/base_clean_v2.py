@@ -151,6 +151,14 @@ if __name__ == "__main__":
 
     list_types_atoms = util.list_types_atoms_lipid  #just loads in the types of atoms in the .gro file
     atom_features = pp.atom_features(grolines, list_types_atoms,leaflet_residues)
+    
+    #csv file of atom_features (purpose visualization of data)
+    with open(util.trajectory_path/ f"{args.outputname}_atom_features.csv", "w", newline="") as csvfile:
+        writer = csv.writer(csvfile)
+        writer.writerow(["Atom Number", "Atom Type", "Leaflet", "Coordinates", "Lipid Type", "Residue Number"])
+        for atom_num, features in atom_features.items():
+            writer.writerow([atom_num, *features])
+
 
     print("Finished:determining atom features")
 
@@ -243,10 +251,17 @@ if __name__ == "__main__":
     # ######### create numpy array of coords and edges ############
     # #############################################################
     
-    lipid_ids_all_edges_upper, lipid_ids_all_coords_upper, lipid_ids_all_norms_upper, lipid_ids_all_centroid_coords_upper, lipid_ids_all_grid_neighborhood_upper, lipid_ids_all_edges_dict_upper = tbd.create_triangle_edge_and_coord_arrays(lipid_grid_assignment_upper, edges_triangles_upper, coords_triangles_upper, norm_vector_triangles_up,centroid_triangles_u)
-    lipid_ids_all_edges_lower, lipid_ids_all_coords_lower, lipid_ids_all_norms_lower, lipid_ids_all_centroid_coords_lower, lipid_ids_all_grid_neighborhood_lower, lipid_ids_all_edges_dict_lower  = tbd.create_triangle_edge_and_coord_arrays(lipid_grid_assignment_lower, edges_triangles_lower, coords_triangles_lower, norm_vector_triangles_l,centroid_triangles_l)
+    lipid_ids_all_edges_upper, lipid_ids_all_coords_upper, lipid_ids_all_norms_upper, lipid_ids_all_centroid_coords_upper, lipid_ids_all_grid_neighborhood_upper = tbd.create_triangle_edge_and_coord_arrays(lipid_grid_assignment_upper, edges_triangles_upper, coords_triangles_upper, norm_vector_triangles_up,centroid_triangles_u)
+    lipid_ids_all_edges_lower, lipid_ids_all_coords_lower, lipid_ids_all_norms_lower, lipid_ids_all_centroid_coords_lower, lipid_ids_all_grid_neighborhood_lower = tbd.create_triangle_edge_and_coord_arrays(lipid_grid_assignment_lower, edges_triangles_lower, coords_triangles_lower, norm_vector_triangles_l,centroid_triangles_l)
     
-    
+    #convert lipid_ids_all_grid_neighborhood_upper to csv
+    with open(util.trajectory_path / f"lipid_ids_all_grid_neighborhood_upper.csv", "w", newline="") as csvfile:
+        writer = csv.writer(csvfile)
+        writer.writerow(["Lipid ID", "Grid Neighborhood"])
+        for lipid_id, grid_neighborhood in lipid_ids_all_grid_neighborhood_upper.items():
+            writer.writerow([lipid_id, grid_neighborhood])
+
+
     # #############################################################
     # ########## assign the neighborhood to each atom  ############
     # #############################################################
@@ -257,6 +272,15 @@ if __name__ == "__main__":
 
     atom_grid_neighborhood_assignment_upper = qc.atom_grid_mapping(all_atoms_upper, gl2_grid_assignment_upper, gl2_beads_upper_resnumber)
     atom_grid_neighborhood_assignment_lower = qc.atom_grid_mapping(all_atoms_lower, gl2_grid_assignment_lower, gl2_beads_lower_resnumber)
+
+
+    #save atom_grid_neighborhood_assignment_upper as a csv
+    with open(util.trajectory_path / f"atom_grid_neighborhood_upper.csv", "w", newline="") as csvfile:
+        writer = csv.writer(csvfile)
+        writer.writerow(["Atom Number", "Residue Number", "Coordinates", "Neighborhood Grids"])
+        for atom_num, (res_num, coords, neighborhood) in atom_grid_neighborhood_assignment_upper.items():
+            writer.writerow([atom_num, res_num, coords.tolist(), neighborhood])
+
 
     print("Finished:GL2 grid neighborhood assignment")
 
@@ -318,9 +342,7 @@ if __name__ == "__main__":
 
     triangle_atom_assignment_upper_sorted = agm.sum_atom_mapping_upper_np_array(atom_features, radius, aliphatic,
                                                                                 lipid_ids_all_edges_upper, lipid_ids_all_coords_upper, lipid_ids_all_norms_upper, lipid_ids_all_centroid_coords_upper , lipid_ids_all_grid_neighborhood_upper, 
-                                                                                lipid_ids_all_edges_dict_upper, 
                                                                                 atom_grid_neighborhood_assignment_upper, grid_upper_num, args.frame_num)
-
 
 
     neigh_graph.atom_mapping_centroids(centroid_triangles_u, triangle_atom_assignment_upper_sorted)
