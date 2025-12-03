@@ -35,7 +35,7 @@ import neighborhood_grids as ng
 import ray_tracing_quads as rq
 import atom_grid_mapping as agm
 import neighborhood_grid_graph as neigh_graph
-import title_tbd as tbd
+import convert_array as ca
 
 
 ##this chunk of code will only be run if the script is executed directly
