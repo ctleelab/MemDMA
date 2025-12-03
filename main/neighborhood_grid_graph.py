@@ -368,3 +368,161 @@ def gl2_neighborhood(gl2_beads, triangle_centroids, gl2_grid_assignment):
     fig.write_html("gl2_neighborhood.html")
     del fig
     print("GL2 neighborhood plot completed")
+
+
+#this graph should display the original atom coords and the projected atom coords
+#input: atom coords, projected atom coords, a defined grid
+#let's just try with gl2 beads
+#def projected_atom_coords(gl2_beads, triangle_centroids, gl2_grid_assignment):
+
+def projected_atom_grid(atom_coords_projections_absolute, neighborhood_centroid_coords_array, neighborhood_coords_array,atom_coords, neighborhood_norms_array,atom_num):
+    """
+        Graphs the projected atom coords for each grid. The coordinate for the centroid grid should match the projected atom coordination, by color.
+        I also want to plot the triangle.
+
+    Args:
+        atom_coords_projections_absolute: List of projected atom coordinates.
+        neighborhood_centroid_coords_array: List of neighborhood centroid coordinates.
+        neighborhood_coords_array: List of vertices of (triangles) for each neighborhood.
+        atom_cords: coordinates of atom 
+    Returns:
+        None
+    """
+    print("atom_coords:",atom_coords)
+    # Prepare data for plotting
+    X_projected = []
+    Y_projected = []
+    Z_projected = []
+    X_centroid = []
+    Y_centroid = []
+    Z_centroid = []
+    X_norms = []
+    Y_norms =  []
+    Z_norms = []
+    vertex_X = []
+    vertex_Y = []
+    vertex_Z = []
+    colors = []
+
+    for i, atom in enumerate(atom_coords_projections_absolute):
+        if i < 10 :
+            # Projected atom coordinates
+            X_projected.append(atom[0])
+            Y_projected.append(atom[1])
+            Z_projected.append(atom[2])
+
+            # Centroid coordinates
+            centroid = neighborhood_centroid_coords_array[i]
+            X_centroid.append(centroid[0])
+            Y_centroid.append(centroid[1])
+            Z_centroid.append(centroid[2])
+
+            # Triangle edges (3 vertices per triangle)
+            grid = neighborhood_coords_array[i]
+            for vertex in grid:
+                vertex_X.append(vertex[0])
+                vertex_Y.append(vertex[1])
+                vertex_Z.append(vertex[2])
+
+            #normal vectors of grids
+            grid_norm = neighborhood_norms_array[i]
+            X_norms.append(grid_norm[0])
+            Y_norms.append(grid_norm[1])
+            Z_norms.append(grid_norm[2])
+
+
+            # Assign a unique color for each index
+            colors.append(i)
+
+    # Create Plotly figure
+    fig = go.Figure()
+
+    # Plot projected atom coordinates
+    fig.add_trace(go.Scatter3d(
+        x=X_projected,
+        y=Y_projected,
+        z=Z_projected,
+        mode='markers',
+        name='Projected Atoms',
+        marker=dict(
+            size=6,
+            color=colors,  # Color based on index
+            colorscale='Viridis',
+            opacity=0.8,
+            colorbar=dict(title="Index")
+        )
+    ))
+
+    # Plot centroid coordinates
+    fig.add_trace(go.Scatter3d(
+        x=X_centroid,
+        y=Y_centroid,
+        z=Z_centroid,
+        mode='markers',
+        name='Centroid Grids',
+        marker=dict(
+            size=6,
+            color=colors,  # Match color with projected atoms
+            colorscale='Viridis',
+            opacity=0.8
+        )
+    ))
+
+    # Plot triangle edges
+    fig.add_trace(go.Scatter3d(
+        x=vertex_X,
+        y=vertex_Y,
+        z=vertex_Z,
+        mode='lines',
+        name='Triangle vertices',
+        line=dict(color='blue', width=2)
+    ))
+
+    # # Plot normal vectors of grids
+    # for i in range(len(X_centroid)):
+    #     fig.add_trace(go.Scatter3d(
+    #         x=[X_centroid[i], X_centroid[i] + X_norms[i]],
+    #         y=[Y_centroid[i], Y_centroid[i] + Y_norms[i]],
+    #         z=[Z_centroid[i], Z_centroid[i] + Z_norms[i]],
+    #         mode='lines',
+    #         name=f'Normal Vector {i}',
+    #         line=dict(color='green', width=2)
+    #     ))
+
+    # Plot original atom 
+    fig.add_trace(go.Scatter3d(
+        x= [atom_coords[0]],
+        y= [atom_coords[1]],
+        z= [atom_coords[2]],
+        mode='markers',
+        name = 'Original atom coordinates',
+        marker = dict(
+            size = 6,
+            color = 'red',
+            opacity = .8
+        )
+
+    ))
+
+    fig.update_layout(
+        title="Projected Atom Coordinates and Centroid Grids",
+        scene=dict(
+            xaxis_title="X",
+            yaxis_title="Y",
+            zaxis_title="Z height",
+        )
+    )
+
+    # Save as standalone HTML
+    fig.write_html(f"projected_atom_grid_atom_num{atom_num}.html")
+    print("Projected atom grid plot completed")
+
+
+
+
+
+
+    
+
+
+    
