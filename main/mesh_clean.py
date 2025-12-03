@@ -1,7 +1,8 @@
 import pickle 
 from pathlib import Path
 import numpy as np
-import MDAnalysis as mda
+import MDAnalysis as mda 
+import csv
 
 #loading data from mc and formating data for analysis
 def format_data(X,Y,Zupper, Zlower):
@@ -55,10 +56,9 @@ def normal_vector_triangles(X, Y, Zupper_2d, Zlower_2d, normalize=True):
     triangle_lower = 1
     quad_num = 1
 
-    # precompute vertex coordinates in bulk for vectorized operations
     for i in range(nx - 1):
         for j in range(ny - 1):
-            # corners
+            # corners of the original grid
             p0 = (i, j)
             p1 = (i + 1, j)
             p2 = (i + 1, j + 1)
@@ -77,17 +77,18 @@ def normal_vector_triangles(X, Y, Zupper_2d, Zlower_2d, normalize=True):
             tri2 = quad_u[[0, 2, 3]]
 
             # centroids
-            cent1 = tri1.mean(axis=0)
+            cent1 = tri1.mean(axis=0) #average across coordinates of the triangle
             cent2 = tri2.mean(axis=0)
+
             centroid_triangles_upper[triangle_upper] = cent1
             centroid_triangles_upper[triangle_upper + 1] = cent2
             centroid_upper_list.extend([cent1, cent2])
 
             # normals
-            n1 = np.cross(tri1[1] - tri1[0], tri1[2] - tri1[0])
+            n1 = np.cross(tri1[1] - tri1[0], tri1[2] - tri1[0]) #cross product between two edge vectors 
             n2 = np.cross(tri2[1] - tri2[0], tri2[2] - tri2[0])
             if normalize:
-                n1 /= np.linalg.norm(n1) + 1e-12
+                n1 /= np.linalg.norm(n1) + 1e-12 #turn into a unit normal vector, by dividing by its magnitude
                 n2 /= np.linalg.norm(n2) + 1e-12
 
             normal_vector_triangles_upper[triangle_upper] = n1
@@ -154,6 +155,16 @@ def normal_vector_triangles(X, Y, Zupper_2d, Zlower_2d, normalize=True):
     centroid_triangles_upper_matrix = np.vstack(centroid_upper_list)
     centroid_triangles_lower_matrix = np.vstack(centroid_lower_list)
 
+
+    with open(
+        f"centroid_triangle.csv",
+        "w",
+        newline="",
+    ) as f:
+        writer = csv.writer(f)
+        writer.writerow(["triangle_id", "coordinates"])  # optional header
+        for key, value in centroid_triangles_upper.items():
+            writer.writerow([key, value])
     return (
         centroid_triangles_upper,
         centroid_triangles_lower,
