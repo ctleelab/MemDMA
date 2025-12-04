@@ -26,6 +26,7 @@ def create_triangle_edge_and_coord_arrays(list_of_neighborhood_grids, edges_tria
     lipid_ids_all_centroid_coords_array = {}
     lipid_ids_all_grid_neighborhood = {}
     lipid_ids_all_edges_dict = {}
+    lipid_ids_all_centroid_coords_array_dict = {}
 
     for lipid_id, grid_id_list in list_of_neighborhood_grids.items():
         sorted_grid_ids = sorted(grid_id_list) #by adding this sorting function the order of the grid list matches the index of the numpy array
@@ -35,7 +36,8 @@ def create_triangle_edge_and_coord_arrays(list_of_neighborhood_grids, edges_tria
         all_norms = []
         all_centroids_coords = []
         all_neighborhood_grids = []
-        grid_id_dict_and_edges = {}
+        grid_id_dict_and_centroids = {}
+        
         for grid_id in sorted_grid_ids:
 
             # Extract 3 edge vectors → (3,3) array
@@ -55,8 +57,9 @@ def create_triangle_edge_and_coord_arrays(list_of_neighborhood_grids, edges_tria
 
             all_edges.append(edges)
 
-            #create a dict of grid id: edges 
-            grid_id_dict_and_edges[grid_id] = edges
+            #create a dict of grid id: centroids
+            grid_id_dict_and_centroids[grid_id] = centroids_coords
+
 
             all_coords.append(coords)
             all_norms.append(norms)
