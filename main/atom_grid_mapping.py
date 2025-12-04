@@ -268,7 +268,7 @@ def sum_atom_mapping_upper_np_array(atom_features:dict, radius:dict,aliphatic:di
             atom_num
         )  # changes atom_num to a int so I can apply the if statement
        
-        if atom_num > 3: #change if want to troubleshoot 
+        if atom_num < 3: #change if want to troubleshoot 
             atom_num = str(
                 atom_num
             )  # changes atom_num to a string so it matches atom_features keys
@@ -282,8 +282,11 @@ def sum_atom_mapping_upper_np_array(atom_features:dict, radius:dict,aliphatic:di
             lipid_atm_name = atom_features[atom_num][3] #determine the resdiue number of the atom
             #print(lipid_atm_name)
             atom_coords = atom_features[atom_num][2] #gets the coordianates of the atom
+            print("atom number:", atom_num)
+            print("atom cords:", atom_coords)
             #print("atom coords:", atom_coords)
-            atm_radius = [radius[lipid_atm_name]]/10 #gets the radius of the atom 
+            atm_radius = [radius[lipid_atm_name]] #gets the radius of the atom 
+            print("atom radius:", atm_radius)
             atm_type = aliphatic[lipid_atm_name] #gets the atom type (polar vs non-polar)
 
             #deals with an atom number that does not exist in the atom features dictionary
@@ -312,7 +315,7 @@ def sum_atom_mapping_upper_np_array(atom_features:dict, radius:dict,aliphatic:di
                 ####Project the atom onto the same plane as the triangle
                 ####Something is wrong here
 
-                # Calculate vector from atom to the triangle centroids 
+                # Calculate vector from triangle centroids to atom
                 w_vectors =  atom_coords - neighborhood_centroid_coords_array
 
 
@@ -331,18 +334,25 @@ def sum_atom_mapping_upper_np_array(atom_features:dict, radius:dict,aliphatic:di
                 #each row in the array represents the projection of the atom onto a different triangle plane
                 #get the vector parallel to the plane 
                 #describes: How far do I move from the atom to reach its projection onto the plane
-                atom_coords_projections = w_vectors - n_contribution 
+
+                #-----either I can move the atom down or move the centroid over, both should give the same results-----
+                #check this 
+                #more intuitive to take atom and move down the normal component of w
 
                 #takes the original coordinate of atom and moves it by atom_coords_projections
-                atom_coords_projections_absolute = neighborhood_centroid_coords_array + atom_coords_projections
+                atom_coords_projections = atom_coords - n_contribution
 
                 #graph of projected atom coordinates, grid centroid, and the vertices of the triangle 
-                #ngg.projected_atom_grid(atom_coords_projections_absolute, neighborhood_centroid_coords_array,neighborhood_coords_array, atom_coords, neighborhood_norms_array, atom_num) 
+                ngg.projected_atom_grid(atom_coords_projections, neighborhood_centroid_coords_array,neighborhood_coords_array, atom_coords, neighborhood_norms_array, atom_num) 
 
+                
+                
+                
+                
                 #-----Determine if the atom lies within the triangle-----
 
                 #output: array (N,3,3)(triangle number, point number, x/y/z)
-                vertex_to_atom = atom_coords_projections_absolute[:, None, :] - neighborhood_coords_array #each of the three points of the triangle get subtracted from the atom_coords_projections
+                vertex_to_atom = atom_coords_projections[:, None, :] - neighborhood_coords_array #each of the three points of the triangle get subtracted from the atom_coords_projections
 
             
                 #each row is a different triangle
