@@ -251,8 +251,8 @@ if __name__ == "__main__":
     # ######### create numpy array of coords and edges ############
     # #############################################################
     
-    lipid_ids_all_edges_upper, lipid_ids_all_coords_upper, lipid_ids_all_norms_upper, lipid_ids_all_centroid_coords_upper, lipid_ids_all_grid_neighborhood_upper = tbd.create_triangle_edge_and_coord_arrays(lipid_grid_assignment_upper, edges_triangles_upper, coords_triangles_upper, norm_vector_triangles_up,centroid_triangles_u)
-    lipid_ids_all_edges_lower, lipid_ids_all_coords_lower, lipid_ids_all_norms_lower, lipid_ids_all_centroid_coords_lower, lipid_ids_all_grid_neighborhood_lower = tbd.create_triangle_edge_and_coord_arrays(lipid_grid_assignment_lower, edges_triangles_lower, coords_triangles_lower, norm_vector_triangles_l,centroid_triangles_l)
+    lipid_ids_all_edges_upper, lipid_ids_all_coords_upper, lipid_ids_all_norms_upper, lipid_ids_all_centroid_coords_upper, lipid_ids_all_grid_neighborhood_upper = ca.create_triangle_edge_and_coord_arrays(lipid_grid_assignment_upper, edges_triangles_upper, coords_triangles_upper, norm_vector_triangles_up,centroid_triangles_u)
+    lipid_ids_all_edges_lower, lipid_ids_all_coords_lower, lipid_ids_all_norms_lower, lipid_ids_all_centroid_coords_lower, lipid_ids_all_grid_neighborhood_lower = ca.create_triangle_edge_and_coord_arrays(lipid_grid_assignment_lower, edges_triangles_lower, coords_triangles_lower, norm_vector_triangles_l,centroid_triangles_l)
     
     #convert lipid_ids_all_grid_neighborhood_upper to csv
     with open(util.trajectory_path / f"lipid_ids_all_grid_neighborhood_upper.csv", "w", newline="") as csvfile:
