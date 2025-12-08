@@ -110,6 +110,10 @@ def sum_atom_mapping_upper_np_array(atom_features:dict, radius:dict,aliphatic:di
                 #If the distance shortest than radius of the atom, it is considered a hit 
                 #Input: atom_coords_projections (N,3), neighborhood_grid_vertices_coords_array (N,3,3) (number of triangles, 3 vertices, x/y/z)
 
+
+                #graph of determining if the atom lies within the triangle
+                ngg.atom_projection_grid_assignment(atom_coords_projections, neighborhood_grid_vertices_coords_array, vertex_to_atom) 
+
                 atom_coords_projections_transpose = atom_coords_projections[:, None, :] # reshape to (N,1,3) (number of projections, 1, x/y/z)
 
                 euclidian_distance_vertex_to_atom = bfg.Edist3D(atom_coords_projections_transpose, neighborhood_grid_vertices_coords_array)
