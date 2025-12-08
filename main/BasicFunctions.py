@@ -2,6 +2,7 @@
 # R. Gautier 2014
 # Basic functions for packing defects determination
 
+import numpy as np
 # load file return list[line(string)]
 def read_file(filename):
     try: 
@@ -50,4 +51,9 @@ def dist2D(coord1, coord2):
 # distance for one axis without square root
 def dist_oneAxis(axe1,axe2):
     return (axe1-axe2)**2
+
+# Euclidian distance with square root
+def Edist3D(coord1, coord2):
+    magnitude = np.linalg.norm(coord1 - coord2, axis=-1)
+    return magnitude
 
