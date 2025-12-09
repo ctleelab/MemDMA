@@ -124,9 +124,7 @@ def sum_atom_mapping_upper_np_array(atom_features:dict, radius:dict,aliphatic:di
 
                     # Convert grid ID to row index
                     row = grid_to_row[grid_id]
-                    if (
-                        grid_id not in triangle_atom_assignment_upper
-                    ):  # only initialize the grid if the grid doesn't exist yet
+                    if (grid_id not in triangle_atom_assignment_upper):  # only initialize the grid if the grid doesn't exist yet
                         triangle_atom_assignment_upper[grid_id] = 0
 
                     #-----deal with the vertices cases first-----
@@ -144,8 +142,7 @@ def sum_atom_mapping_upper_np_array(atom_features:dict, radius:dict,aliphatic:di
                     
                     #-----deals with cases where projected atom is closer to edge of triangle rather than vertices of triangle----
 
-                    if min_distance_to_vertices > atm_radius:
-
+                    else:
                         #pulls out the dot product values for the vertexs for a given triangle
                         tri_vertex = dot_product_edge_vertex_to_atom_projection[row]
 
@@ -172,14 +169,11 @@ def sum_atom_mapping_upper_np_array(atom_features:dict, radius:dict,aliphatic:di
                                         atom_maps_to_triangle = True
 
                     if atom_maps_to_triangle:
-                            if (
-                                atm_type == "n"
-                            ):  
-                                triangle_atom_assignment_upper[grid_id] += 1.0
-            
-                            else:
-                                triangle_atom_assignment_upper[grid_id
-                                ] += 0.001
+                        if (atm_type == "n"):  
+                            triangle_atom_assignment_upper[grid_id] += 1.0
+        
+                        else:
+                            triangle_atom_assignment_upper[grid_id] += 0.001
 
 
     for grid in grid_num:
@@ -211,8 +205,8 @@ def sum_atom_mapping_upper_np_array(atom_features:dict, radius:dict,aliphatic:di
             writer.writerow([key, value])
 
     # Count number of grids with assignment < 1
-    #num_grids_less_than_1 = sum(1 for value in triangle_atom_assignment_upper_sorted.values() if value < 1)
+    num_grids_less_than_1 = sum(1 for value in triangle_atom_assignment_upper_sorted.values() if value < 1)
 
-    #print(f"Number of grids with assignment < 1, atom_num{atom_num} atom_type{atm_type}: {num_grids_less_than_1}")
+    print(f"Number of grids with assignment < 1, atom_num{atom_num} atom_type{atm_type}: {num_grids_less_than_1}")
 
     return triangle_atom_assignment_upper_sorted
