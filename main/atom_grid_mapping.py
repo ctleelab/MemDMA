@@ -6,7 +6,7 @@ import neighborhood_grid_graph as ngg
 import BasicFunctions as bfg
 
 def sum_atom_mapping_upper_np_array(atom_features:dict, radius:dict,aliphatic:dict, 
-                                    lipid_ids_all_grid_edges:dict, lipid_ids_all_grid_vertices_coords:dict, lipid_ids_all_norms_upper: dict, lipid_ids_all_centroid_coords_upper:dict, lipid_grid_assignment:dict, lipid_ids_all_grid_edges_2coords:dict, 
+                                    lipid_ids_all_grid_edges:dict, lipid_ids_all_grid_vertices_coords:dict, lipid_ids_all_norms_upper: dict, lipid_ids_all_centroid_coords_upper:dict, lipid_grid_assignment:dict, 
                                     atom_neighborhood_grid_id:dict, grid_num:list, frame:int):
     '''
     For each atom calculate the mapping value for all grids in a neighborhood at once using numpy arrays 
@@ -21,9 +21,6 @@ def sum_atom_mapping_upper_np_array(atom_features:dict, radius:dict,aliphatic:di
         lipid_ids_all_norms_upper (dict): {res_id: array of all neighborhood triangles normal vectors}
         lipid_ids_all_centroid_coords_upper(dict): A dictionary {res_id: array of all neighborhood triangles centroid coordinates}
         lipid_grid_assignment (dict): A dictionary with lipid residue number (key): (neighborhood_list of the grid_idex)
-        ipid_ids_all_grid_edges_2coords (dict): {res_id: array of all neighborhood triangles edges represented as two vertex coordinates}
-
-        lipid_ids_all_edges_dict (dict): {res_id: array of all neighborhood triangles edges {grid id: edges}}
         
         atom_neighborhood_grid_id (dict): A dictionary containing the res_number the atom belongs to, coords of atom, list of close by grids for each atom number
         grid_num (list): a list of all the grids numbers in either the upper or lower leaflet
@@ -55,7 +52,7 @@ def sum_atom_mapping_upper_np_array(atom_features:dict, radius:dict,aliphatic:di
             )  # changes atom_num to a string so it matches atom_features keys
 
 
-            # determine various characteristics of the atom 
+            #-----determine various characteristics of the atom-----
             lipid_atm_name = atom_features[atom_num][3] #determine the resdiue number of the atom
             atom_coords = atom_features[atom_num][2] #gets the coordianates of the atom
             atm_radius = [radius[lipid_atm_name]] #gets the radius of the atom 
@@ -75,7 +72,6 @@ def sum_atom_mapping_upper_np_array(atom_features:dict, radius:dict,aliphatic:di
 
             else:
                 
-                #pulls the array dependent on the lipid residue number the atom belongs to
                 #pulls the array dependent on the lipid residue number the atom belongs to
                 neighborhood_edges_array = lipid_ids_all_grid_edges[res_num][order]
                 neighborhood_grid_vertices_coords_array = lipid_ids_all_grid_vertices_coords[res_num][order]
@@ -105,38 +101,21 @@ def sum_atom_mapping_upper_np_array(atom_features:dict, radius:dict,aliphatic:di
                 
                 #-----Determine if the atom lies within the triangle-----
 
-                #Determine the distance from atom projection to each vertex of the triangle
-                #If the distance shortest than radius of the atom, it is considered a hit 
-                #Input: atom_coords_projections (N,3), neighborhood_grid_vertices_coords_array (N,3,3) (number of triangles, 3 vertices, x/y/z)
-
-
                 #graph of determining if the atom lies within the triangle
                 #ngg.atom_projection_grid_assignment(atom_coords_projections, neighborhood_grid_vertices_coords_array, vertex_to_atom) 
 
-
-                # -----Dealing with special cases where you cannot use the triangle vertex to provide atom assignment-----
-
-                #Determine what type of special case you're working with 
-                #1)dot product between edge of triangle and vector from vertex to atom projection is negative
-                #2)dot product between edge of triangle and vector from vertex to atom is positive, and less than the magnitude of edge vector
-                #3)dot product between edge of triangle and vector from vertex to atom is positive, and greater than the magnitue of edge vector 
-
                 #Computes the vector from each vertex of the traingle to the atom projection
                 vector_from_vetex_to_atom_projection = atom_coords_projections[:, None, :] - neighborhood_grid_vertices_coords_array
-
 
                 #Calculate the euclidian distance from each vertex of the triangle to the atom projection
                 atom_coords_projections_transpose = atom_coords_projections[:, None, :] # reshape to (N,1,3) (number of projections, 1, x/y/z)
                 euclidian_distance_vertex_to_atom = bfg.Edist3D(atom_coords_projections_transpose, neighborhood_grid_vertices_coords_array)
 
-                #dot product between the edge vector and the vector from vertex to atom projection
+                #dot product between each edge of the triangle and the vector from the vertex to the atom projection
                 #shape (N,3) (number of triangles, 3 vertices)
-                #output: the dot product between each edge of the triangle and the vector from the vertex to the atom projection
                 dot_product_edge_vertex_to_atom_projection = np.sum(neighborhood_edges_array * vector_from_vetex_to_atom_projection, axis=2) #shape (N,3) number of triangles, 3 edges
 
-
                 #compute the magnitude of each edge vector of the triangle
-                #this can most likely be precomputed to save time
                 edge_magnitude = np.linalg.norm(neighborhood_edges_array, axis=2)
 
                 for i, grid_id in enumerate(grid_ids_sorted):
@@ -151,7 +130,7 @@ def sum_atom_mapping_upper_np_array(atom_features:dict, radius:dict,aliphatic:di
                         triangle_atom_assignment_upper[grid_id] = 0
 
                     #-----deal with the vertices cases first-----
-                    atom_maps_to_triangle = False 
+                    atom_maps_to_triangle = False #first set the atom not mapping to the triangle, which will hold true if none of the conditions are met
 
                     #gets all distances from atom to all vertices of a given triangle
                     shortest_distance_to_atom_all_vertex = euclidian_distance_vertex_to_atom[row] 
@@ -159,28 +138,26 @@ def sum_atom_mapping_upper_np_array(atom_features:dict, radius:dict,aliphatic:di
                     # Get the minimum distance from atom to all vertices of the triangle
                     min_distance_to_vertices = np.min(shortest_distance_to_atom_all_vertex)   
 
+                    #handles the case where the atom projection is within radius to a vertex of the triangle
                     if min_distance_to_vertices <= atm_radius:
-                        #print("atom maps to triangle")
-                        atom_maps_to_triangle = True   
+                        atom_maps_to_triangle = True
                     
                     #-----deals with cases where projected atom is closer to edge of triangle rather than vertices of triangle----
 
                     if min_distance_to_vertices > atm_radius:
-                        #print("atom does not map to triangle by looking at vertices, checking special cases now")
 
                         #pulls out the dot product values for the vertexs for a given triangle
                         tri_vertex = dot_product_edge_vertex_to_atom_projection[row]
 
                         for tri_vertex_indx, dotproduct in enumerate(tri_vertex):
                             if dotproduct > 0:
-                                #print("positive dot product case", dotproduct)
 
-                                #compare to the magnitude of the edge vector
+                                #pull out the magnitude of the edge vector
                                 edge_magnitude_tri_vertex_indx = edge_magnitude[row][tri_vertex_indx]
 
                                 #atom should be within the length of the edge vector
                                 if dotproduct <= edge_magnitude_tri_vertex_indx:
-                                    #print("atom should be within the length of the edge vector")
+
                                     #-----compute the area of the parallelogram and divide by the base to get the hieght-----
 
                                     #compute the area of the parallelogram formed by the edge vector and the atom projection vector 
@@ -192,29 +169,8 @@ def sum_atom_mapping_upper_np_array(atom_features:dict, radius:dict,aliphatic:di
                                     height_parallelogram = area_parallelogram / base_parallelogram
 
                                     if height_parallelogram <= atm_radius:
-                                        #print("atom maps to triangle by special case 2")
                                         atom_maps_to_triangle = True
 
-                                # #deals with atoms that are beyond the edge in the positive direction 
-                                # if dotproduct > edge_magnitude_tri_vertex_indx:
-
-                                #     minimum_distance_to_vertex_triangle = np.min(euclidian_distance_vertex_to_atom[triangle_vertices])
-
-                                #     #hadling the assignment value based on atom type
-                                #     if minimum_distance_to_vertex_triangle <= atm_radius:
-                                #         atom_maps_to_triangle = True
-
-
-                            # #deals with atoms that are beyond the edge in the negative direction
-                            # elif dotproduct < 0:
-                            #     #print(f"negative dot product case", dotproduct)
-                            #     minimum_distance_to_vertex_triangle = np.min(euclidian_distance_vertex_to_atom[triangle_vertices])
-                            #     if minimum_distance_to_vertex_triangle <= atm_radius:
-
-                            #         #hadling the assignment value based on atom type
-                            #         if minimum_distance_to_vertex_triangle <= atm_radius:
-                            #             atom_maps_to_triangle = True
-                    
                     if atom_maps_to_triangle:
                             if (
                                 atm_type == "n"
@@ -222,66 +178,13 @@ def sum_atom_mapping_upper_np_array(atom_features:dict, radius:dict,aliphatic:di
                                 triangle_atom_assignment_upper[grid_id] += 1.0
             
                             else:
-                                #print("it was a nonpolar atom")
                                 triangle_atom_assignment_upper[grid_id
                                 ] += 0.001
 
 
-                #Construct the appropriate vectors to do the dot product calculation
-                #Defining a vector from the vertex of the triangle to the atom projection
-
-
-                # #output: array (N,3,3)(triangle number, triangle vertice number, x/y/z)
-                # #each of the three points of the triangle get subtracted from the atom_coords_projections
-                # #Defines the vector from the vertex of the triangle to the coordiantes of the projected atom 
-                # vertex_to_atom = atom_coords_projections[:, None, :] - neighborhood_grid_vertices_coords_array 
-
-                # #each column is the area of the parallelogram that is formed by the vector of the atom and each edge of the triangle
-                # area_parallelogram = np.linalg.norm(np.cross(vertex_to_atom, neighborhood_edges_array, axis=2), axis=2)
-                
-                # #computes the magnitude of the vector for each edge of a given triangle
-                # base_parallelogram = np.linalg.norm(neighborhood_edges_array, axis=2)  # base of parallelogram
-                
-                # #shortest distance from atom to each edge of triangle
-                # shortest_distance_to_atom = np.divide(area_parallelogram, base_parallelogram)   
-                
-
-                # min_distance_any_grid = np.min(shortest_distance_to_atom)
-
-                #testing the euclidian distance calculation
-                
-
-                # for i, grid_id in enumerate(grid_ids_sorted):
-                #     # Convert grid ID to row index
-                #     row = grid_to_row[grid_id]
-                #     if (
-                #         grid_id not in triangle_atom_assignment_upper
-                #     ):  # only initialize the grid if the grid doesn't exist yet
-                #         triangle_atom_assignment_upper[grid_id] = 0
-
-                #     #get shortest distance for a given triangle
-                #     shortest_distance_to_atom_all_vertex = euclidian_distance_vertex_to_atom[row] #gives me the shortest distance from the atom to a vertex of
-                    
-                #     # Get the minimum distance from atom to all edges of the triangle
-                #     min_distance_to_edges = np.min(shortest_distance_to_atom_all_vertex)
-                    
-                #     #print("min distance to edges:", min_distance_to_edges, "atom radius:", atm_radius)
-
-                #     #if any of the shortest distances are smaller than atom radius complete the following
-                #     if min_distance_to_edges <= atm_radius:
-                #         if (
-                #             atm_type == "n"
-                #         ):  
-                #             triangle_atom_assignment_upper[grid_id] += 1.0
-        
-                #         else:
-                #             triangle_atom_assignment_upper[grid_id
-                #             ] += 0.001
-
     for grid in grid_num:
         grid_int = int(grid)  # normalize key type
         if grid_int not in triangle_atom_assignment_upper:
-            #print(f"Adding missing grid: {grid_int}")
             triangle_atom_assignment_upper[grid_int] = 0.0
 
     triangle_atom_assignment_upper_sorted = dict(
@@ -295,7 +198,7 @@ def sum_atom_mapping_upper_np_array(atom_features:dict, radius:dict,aliphatic:di
     ) as f:
         pickle.dump(triangle_atom_assignment_upper_sorted, f)
 
-    # use csv file to check code is working
+    # Create a CSV file to store the results
     with open(
         util.trajectory_path
         / f"test_DPPC_triangle_atom_assignment_upper_strain2_frame{frame}.csv",
@@ -308,8 +211,8 @@ def sum_atom_mapping_upper_np_array(atom_features:dict, radius:dict,aliphatic:di
             writer.writerow([key, value])
 
     # Count number of grids with assignment < 1
-    num_grids_less_than_1 = sum(1 for value in triangle_atom_assignment_upper_sorted.values() if value < 1)
+    #num_grids_less_than_1 = sum(1 for value in triangle_atom_assignment_upper_sorted.values() if value < 1)
 
-    print(f"Number of grids with assignment < 1, atom_num{atom_num} atom_type{atm_type}: {num_grids_less_than_1}")
+    #print(f"Number of grids with assignment < 1, atom_num{atom_num} atom_type{atm_type}: {num_grids_less_than_1}")
 
     return triangle_atom_assignment_upper_sorted
