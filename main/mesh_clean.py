@@ -48,6 +48,8 @@ def normal_vector_triangles(X, Y, Zupper_2d, Zlower_2d, normalize=True):
     edges_triangles_lower = {}
     quadrilateral_upper = {}
     quadrilateral_lower = {}
+    edges_triangles_upper_2vertices = {}
+    edges_triangles_lower_2vertices = {}
 
     centroid_upper_list = []
     centroid_lower_list = []
@@ -88,8 +90,8 @@ def normal_vector_triangles(X, Y, Zupper_2d, Zlower_2d, normalize=True):
             n1 = np.cross(tri1[1] - tri1[0], tri1[2] - tri1[0]) #cross product between two edge vectors 
             n2 = np.cross(tri2[1] - tri2[0], tri2[2] - tri2[0])
             if normalize:
-                n1 /= np.linalg.norm(n1) + 1e-12 #turn into a unit normal vector, by dividing by its magnitude
-                n2 /= np.linalg.norm(n2) + 1e-12
+                n1 /= np.linalg.norm(n1) 
+                n2 /= np.linalg.norm(n2) 
 
             normal_vector_triangles_upper[triangle_upper] = n1
             normal_vector_triangles_upper[triangle_upper + 1] = n2
@@ -99,6 +101,9 @@ def normal_vector_triangles(X, Y, Zupper_2d, Zlower_2d, normalize=True):
 
             edges_triangles_upper[triangle_upper] = [tri1[1] - tri1[0], tri1[2] - tri1[1], tri1[0] - tri1[2]]
             edges_triangles_upper[triangle_upper + 1] = [tri2[1] - tri2[0], tri2[2] - tri2[1], tri2[0] - tri2[2]]
+
+            edges_triangles_upper_2vertices[triangle_upper] = [[tri1[0],tri1[1]], [tri1[1], tri1[2]], [tri1[0],tri1[2]]]
+            edges_triangles_upper_2vertices[triangle_upper + 1] = [[tri2[0],tri2[1]], [tri2[1], tri2[2]], [tri2[0],tri2[2]]]
 
             avg_normal_upper = (n1 + n2) / 2
             quadrilateral_upper[quad_num] = [avg_normal_upper]
@@ -124,8 +129,8 @@ def normal_vector_triangles(X, Y, Zupper_2d, Zlower_2d, normalize=True):
             n3 = np.cross(tri3[1] - tri3[0], tri3[2] - tri3[0])
             n4 = np.cross(tri4[1] - tri4[0], tri4[2] - tri4[0])
             if normalize:
-                n3 /= np.linalg.norm(n3) + 1e-12
-                n4 /= np.linalg.norm(n4) + 1e-12
+                n3 /= np.linalg.norm(n3) 
+                n4 /= np.linalg.norm(n4)
 
             normal_vector_triangles_lower[triangle_lower] = n3
             normal_vector_triangles_lower[triangle_lower + 1] = n4
@@ -135,6 +140,9 @@ def normal_vector_triangles(X, Y, Zupper_2d, Zlower_2d, normalize=True):
 
             edges_triangles_lower[triangle_lower] = [tri3[1] - tri3[0], tri3[2] - tri3[1], tri3[0] - tri3[2]]
             edges_triangles_lower[triangle_lower + 1] = [tri4[1] - tri4[0], tri4[2] - tri4[1], tri4[0] - tri4[2]]
+
+            edges_triangles_lower_2vertices[triangle_upper] = [[tri3[0],tri3[1]], [tri3[1], tri3[2]], [tri3[0],tri3[2]]]
+            edges_triangles_lower_2vertices[triangle_upper + 1] = [[tri4[0],tri4[1]], [tri4[1], tri4[2]], [tri4[0],tri4[2]]]
 
             avg_normal_lower = (n3 + n4) / 2
             quadrilateral_lower[quad_num] = [avg_normal_lower]
@@ -176,8 +184,10 @@ def normal_vector_triangles(X, Y, Zupper_2d, Zlower_2d, normalize=True):
         edges_triangles_lower,
         quadrilateral_upper,
         quadrilateral_lower,
-        centroid_triangles_lower_matrix,
         centroid_triangles_upper_matrix,
+        centroid_triangles_lower_matrix,
+        edges_triangles_upper_2vertices,
+        edges_triangles_lower_2vertices
     )
 
 
