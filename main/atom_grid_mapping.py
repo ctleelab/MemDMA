@@ -49,7 +49,7 @@ def sum_atom_mapping_upper_np_array(atom_features:dict, radius:dict,aliphatic:di
             atom_num
         )  # changes atom_num to a int so I can apply the if statement
        
-        if atom_num < 3: #change if want to troubleshoot so only do a set number of atoms
+        if atom_num > 0: #change if want to troubleshoot so only do a set number of atoms
             atom_num = str(
                 atom_num
             )  # changes atom_num to a string so it matches atom_features keys
@@ -163,8 +163,8 @@ def sum_atom_mapping_upper_np_array(atom_features:dict, radius:dict,aliphatic:di
                         #print("atom maps to triangle")
                         atom_maps_to_triangle = True   
                     
-                    #-----deals with cases where projected atom is closer to edge than vertices of triangle----
-                    
+                    #-----deals with cases where projected atom is closer to edge of triangle rather than vertices of triangle----
+
                     if min_distance_to_vertices > atm_radius:
                         #print("atom does not map to triangle by looking at vertices, checking special cases now")
 
@@ -310,6 +310,6 @@ def sum_atom_mapping_upper_np_array(atom_features:dict, radius:dict,aliphatic:di
     # Count number of grids with assignment < 1
     num_grids_less_than_1 = sum(1 for value in triangle_atom_assignment_upper_sorted.values() if value < 1)
 
-    #print(f"Number of grids with assignment < 1, atom_num{atom_num} atom_type{atm_type}: {num_grids_less_than_1}")
+    print(f"Number of grids with assignment < 1, atom_num{atom_num} atom_type{atm_type}: {num_grids_less_than_1}")
 
     return triangle_atom_assignment_upper_sorted
