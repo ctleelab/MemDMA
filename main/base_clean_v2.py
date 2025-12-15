@@ -10,6 +10,8 @@ import MDAnalysis as mda
 import pickle
 from scipy.spatial import cKDTree
 import csv
+import cProfile
+import pstats
 
 
 #library for showing progress bar for runs
@@ -69,7 +71,7 @@ if __name__ == "__main__":
                             help = 'Increase the verbosity')
         parser.add_argument('-f', action = 'store', dest = 'frame_num',
                             help = 'frame number')
-        parser.add_argument('-m', action = 'store', dest = 'mesh_size', default = .1, 
+        parser.add_argument('-m', action = 'store', dest = 'mesh_size', default = .5, 
                             help = 'size of the mesh in nm')
         parser.add_argument('-nc', action = 'store', dest = 'neighborhood_cutoff', default = 1,
                             help = 'sets the size of the neighborhood cutoff for grids in nm.') 
@@ -107,6 +109,7 @@ if __name__ == "__main__":
             print('ERROR : The distance for the -d option must be > 0')
             sys.exit()
         
+        #.gro file is in units of nm
         grolines = bfrg.read_file(args.filename) ##reads line of the pdb file and stores each line  
         radius = bfrg.read_radius(args.filesrad) ##creates a dictionary that stores lipid_atom:radius of atom
 
@@ -151,6 +154,10 @@ if __name__ == "__main__":
 
     list_types_atoms = util.list_types_atoms_lipid  #just loads in the types of atoms in the .gro file
     atom_features = pp.atom_features(grolines, list_types_atoms,leaflet_residues)
+    first_key = next(iter(atom_features))
+    lipid_type_full = atom_features[first_key][3]
+    lipid_type_short = lipid_type_full[:4]
+
     
     #csv file of atom_features (purpose visualization of data)
     with open(util.trajectory_path/ f"{args.outputname}_atom_features.csv", "w", newline="") as csvfile:
@@ -173,7 +180,7 @@ if __name__ == "__main__":
     
 
     print("Start:computing normal vectors of triangle")
-    centroid_triangles_u, centroid_triangles_l, norm_vector_triangles_up, norm_vector_triangles_l, coords_triangles_upper, coords_triangles_lower, edges_triangles_upper, edges_triangles_lower, quadrilateral_normal_upper, quadrilateral_normal_lower, centroid_triangles_lower_matrix, centroid_triangles_upper_matrix = m.normal_vector_triangles(X_f,Y_f,zupper_f,zlower_f)
+    centroid_triangles_u, centroid_triangles_l, norm_vector_triangles_up, norm_vector_triangles_l, coords_triangles_upper, coords_triangles_lower, edges_triangles_upper, edges_triangles_lower, quadrilateral_normal_upper, quadrilateral_normal_lower, centroid_triangles_upper_matrix, centroid_triangles_lower_matrix, edges_triangles_upper_2vertices, edges_triangles_lower_2vertices = m.normal_vector_triangles(X_f,Y_f,zupper_f,zlower_f)
     print("Finished:computing normal vectors of triangle")
 
 
@@ -338,21 +345,34 @@ if __name__ == "__main__":
     triangle_atom_assignment_upper  = {} 
     triangle_atom_assignment_lower  = {} 
 
-
+    profiler = cProfile.Profile()
+    profiler.enable()
 
     triangle_atom_assignment_upper_sorted = agm.sum_atom_mapping_upper_np_array(atom_features, radius, aliphatic,
                                                                                 lipid_ids_all_edges_upper, lipid_ids_all_coords_upper, lipid_ids_all_norms_upper, lipid_ids_all_centroid_coords_upper , lipid_ids_all_grid_neighborhood_upper, 
-                                                                                atom_grid_neighborhood_assignment_upper, grid_upper_num, args.frame_num)
+                                                                                atom_grid_neighborhood_assignment_upper, grid_upper_num, args.frame_num, lipid_type_short)
+    
+    profiler.disable()  
+    
+    # Print top 20 slowest calls sorted by cumulative time
+    stats = pstats.Stats(profiler)
+    stats.strip_dirs()
+    stats.sort_stats('cumulative')
+    stats.print_stats(20)
 
 
-    neigh_graph.atom_mapping_centroids(centroid_triangles_u, triangle_atom_assignment_upper_sorted)
+    #creates a graph that plots the atom centroid (x,y) color with its count value 
+    neigh_graph.atom_mapping_centroids_2d_zvalue(centroid_triangles_u, lipid_type_short, args.frame_num)
+    neigh_graph.atom_mapping_centroids_2d(centroid_triangles_u, triangle_atom_assignment_upper_sorted, lipid_type_short, args.frame_num)
+    neigh_graph.combined_atom_mappin_plot(centroid_triangles_u, triangle_atom_assignment_upper_sorted, lipid_type_short, args.frame_num)
+    
 
     #output: neighborhood_grid_id: {atom number: list of grid number}
     #atom mapping to matrix quantifying polar vs nonpolar                           
     #triangle_atom_assignment_upper = agm.sum_atom_mapping_upper(atom_features, radius, aliphatic, edges_triangles_upper, atom_grid_neighborhood_assignment_upper, coords_triangles_upper, grid_upper_num, grid_coords_upper_np, norm_vector_triangles_up, args.frame_num)
     #triangle_atom_assignment_lower = agm.sum_atom_mapping_lower(atom_features, radius, aliphatic, edges_triangles_lower, neighborhood_grid_id_lower, coords_triangles_lower, grid_lower_num)
 
-    print("completed frame")
-    #Issue: too many grids are empty 
+    print(f"completed frame{args.frame_num}")
+    #Issue: too many grids are empty  
 
     

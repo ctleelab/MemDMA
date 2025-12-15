@@ -4,15 +4,14 @@ import csv
 import util
 import neighborhood_grid_graph as ngg
 import BasicFunctions as bfg
-
 def sum_atom_mapping_upper_np_array(atom_features:dict, radius:dict,aliphatic:dict, 
                                     lipid_ids_all_grid_edges:dict, lipid_ids_all_grid_vertices_coords:dict, lipid_ids_all_norms_upper: dict, lipid_ids_all_centroid_coords_upper:dict, lipid_grid_assignment:dict, 
-                                    atom_neighborhood_grid_id:dict, grid_num:list, frame:int):
+                                    atom_neighborhood_grid_id:dict, grid_num:list, frame:int, lipid_type:str):
     '''
     For each atom calculate the mapping value for all grids in a neighborhood at once using numpy arrays 
 
     Args:
-        atom_features (dict): A dictionary containing features of atoms, including their coordinates and type.output ex: {atm#: GL2', 'lower', array([18.222,  4.37 , 14.85 ]), 'DOPC GL2', resnumber }
+        atom_features (dict): A dictionary containing features of atoms, including their coordinates and type.output ex: {atm#: GL2', 'lower', array([18.222,  4.37 , 14.85 ]), 'DPPC GL2', resnumber }
         radius (dict): A dictionary mapping atom names to their respective radii.
         aliphatic (dict): A dictionary mapping atom names to their type (e.g., polar or non-polar).
         
@@ -25,6 +24,7 @@ def sum_atom_mapping_upper_np_array(atom_features:dict, radius:dict,aliphatic:di
         atom_neighborhood_grid_id (dict): A dictionary containing the res_number the atom belongs to, coords of atom, list of close by grids for each atom number
         grid_num (list): a list of all the grids numbers in either the upper or lower leaflet
         frame (int): the frame number of the trajectory file
+        lipid_type: tells you the type of lipids in the simulation
 
     Returns:
         dict: A dictionary mapping triangle IDs to their respective atom assignment values.
@@ -187,7 +187,7 @@ def sum_atom_mapping_upper_np_array(atom_features:dict, radius:dict,aliphatic:di
     
     with open(
         util.trajectory_path
-        / f"test_DPPC_triangle_atom_assignment_upper_strain2_frame{frame}.pickle",
+        / f"test_{lipid_type}_triangle_atom_assignment_upper_strain2_frame{frame}.pickle",
         "wb",
     ) as f:
         pickle.dump(triangle_atom_assignment_upper_sorted, f)
@@ -195,7 +195,7 @@ def sum_atom_mapping_upper_np_array(atom_features:dict, radius:dict,aliphatic:di
     # Create a CSV file to store the results
     with open(
         util.trajectory_path
-        / f"test_DPPC_triangle_atom_assignment_upper_strain2_frame{frame}.csv",
+        / f"test_{lipid_type}_triangle_atom_assignment_upper_strain2_frame{frame}.csv",
         "w",
         newline="",
     ) as f:
