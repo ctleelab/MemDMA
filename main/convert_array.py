@@ -1,4 +1,6 @@
 import numpy as np
+import util
+import csv
 
 def create_triangle_edge_and_coord_arrays(list_of_neighborhood_grids, edges_triangles, coords_triangles, norm_vector_triangles, centroid_coords_triangles:dict):
     '''
@@ -25,7 +27,7 @@ def create_triangle_edge_and_coord_arrays(list_of_neighborhood_grids, edges_tria
     lipid_ids_all_norms_array = {}
     lipid_ids_all_centroid_coords_array = {}
     lipid_ids_all_grid_neighborhood = {}
-    lipid_ids_all_edges_dict = {}
+    lipid_ids_all_centroid_coords_array_dict = {}
 
     for lipid_id, grid_id_list in list_of_neighborhood_grids.items():
         sorted_grid_ids = sorted(grid_id_list) #by adding this sorting function the order of the grid list matches the index of the numpy array
@@ -35,7 +37,8 @@ def create_triangle_edge_and_coord_arrays(list_of_neighborhood_grids, edges_tria
         all_norms = []
         all_centroids_coords = []
         all_neighborhood_grids = []
-        grid_id_dict_and_edges = {}
+        grid_id_dict_and_centroids = {}
+
         for grid_id in sorted_grid_ids:
 
             # Extract 3 edge vectors → (3,3) array
@@ -55,8 +58,9 @@ def create_triangle_edge_and_coord_arrays(list_of_neighborhood_grids, edges_tria
 
             all_edges.append(edges)
 
-            #create a dict of grid id: edges 
-            grid_id_dict_and_edges[grid_id] = edges
+            #create a dict of grid id: centroids
+            grid_id_dict_and_centroids[grid_id] = centroids_coords
+
 
             all_coords.append(coords)
             all_norms.append(norms)
@@ -76,7 +80,34 @@ def create_triangle_edge_and_coord_arrays(list_of_neighborhood_grids, edges_tria
         lipid_ids_all_norms_array[lipid_id] = all_norms_array
         lipid_ids_all_centroid_coords_array[lipid_id] = all_centroids_coord_array
         lipid_ids_all_grid_neighborhood[lipid_id] = all_neighborhood_grids
-        lipid_ids_all_edges_dict[lipid_id] = grid_id_dict_and_edges
+        lipid_ids_all_centroid_coords_array_dict[lipid_id] = grid_id_dict_and_centroids
+
+    # Create CSV of lipid_ids_all_centroid_coords_array
+    # each line is a new grid that is part of the neighborhood of the lipid
+
+    # identify last lipid processed in loop
+    last_lipid_id = lipid_id  
+
+    # 1) Centroid coords CSV
+    with open(util.trajectory_path / f"lipid_ids_all_centroid_coords_array_{last_lipid_id}.csv", mode='w', newline='') as file:
+        writer = csv.writer(file)
+        writer.writerow(["Triangle index", "Centroid_X", "Centroid_Y", "Centroid_Z"])
+        for idx, centroid in enumerate(lipid_ids_all_centroid_coords_array[last_lipid_id]):
+            writer.writerow([idx, *centroid])
+
+    # 2) Neighborhood grids CSV
+    with open(util.trajectory_path / f"lipid_grid_neighborhood_{last_lipid_id}.csv", mode='w', newline='') as file:
+        writer = csv.writer(file)
+        writer.writerow(["Triangle index", "grid id"])
+        for idx, grid_id in enumerate(lipid_ids_all_grid_neighborhood[last_lipid_id]):
+            writer.writerow([idx, int(grid_id)])
+
+    # 3) Grid→centroid mapping CSV
+    with open(util.trajectory_path / f"name{lipid_id}.csv", mode = 'w', newline = '') as file: 
+        writer = csv.writer(file) 
+        writer.writerow(["Grid id", "Centroid_X", "Centroid_Y", "Centroid_Z"]) 
+        for idx, centroid in enumerate(lipid_ids_all_centroid_coords_array_dict[last_lipid_id].items()): 
+            writer.writerow([idx, *centroid])
 
 
 
@@ -84,4 +115,4 @@ def create_triangle_edge_and_coord_arrays(list_of_neighborhood_grids, edges_tria
 
 
 
-    return  lipid_ids_all_edges_array, lipid_ids_all_coords_array, lipid_ids_all_norms_array, lipid_ids_all_centroid_coords_array, lipid_ids_all_grid_neighborhood, lipid_ids_all_edges_dict
+    return  lipid_ids_all_edges_array, lipid_ids_all_coords_array, lipid_ids_all_norms_array, lipid_ids_all_centroid_coords_array, lipid_ids_all_grid_neighborhood

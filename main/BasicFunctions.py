@@ -2,6 +2,7 @@
 # R. Gautier 2014
 # Basic functions for packing defects determination
 
+import numpy as np
 # load file return list[line(string)]
 def read_file(filename):
     try: 
@@ -11,7 +12,7 @@ def read_file(filename):
         print("ERROR : Something went wrong with the file %s" % filename)
     return data
 
-# open VdW radius -> dict["RES(3L) ATOMname"]=radius in A 
+
 def read_radius(filename):
     dico={}
     data = read_file(filename)
@@ -20,7 +21,7 @@ def read_radius(filename):
         if data[i] != "": ##skip empty lines
             data[i]=data[i].split() ##split the line based upon the whitespaces
             cle=data[i][0]+" "+data[i][1] ##combine lipid and atom name 
-            dico[cle]=float(data[i][2]) ##then store the radius value to the lipid atom name {(DOP_D2A: raidus)}
+            dico[cle]=float(data[i][2])/10 ##then store the radius value to the lipid atom name {(DOP_D2A: raidus)} #divide by 10 because the radius previously presented 10A was in Angstroms, but now 10 in the context represent 10nm 
     return dico
 
 #new 2016-08-18
@@ -36,18 +37,8 @@ def read_aliphatic(filename):
             dico[cle]=data[i][3]
     return dico
 
-# Euclidian distance without square root
-def dist(coord1, coord2):
-    return ((coord1[0]-coord2[0])**2 +
-           (coord1[1]-coord2[1])**2 +
-           (coord1[2]-coord2[2])**2)
-
-# Euclidian distance without square root
-def dist2D(coord1, coord2):
-    return ((coord2[0]-coord1[0])**2 +
-           (coord2[1]-coord1[1])**2)
-
-# distance for one axis without square root
-def dist_oneAxis(axe1,axe2):
-    return (axe1-axe2)**2
+# Euclidian distance 
+def Edist3D(coord1, coord2):
+    magnitude = np.linalg.norm(coord1 - coord2, axis=-1)
+    return magnitude
 
