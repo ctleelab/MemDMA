@@ -35,10 +35,12 @@ def sum_atom_mapping_upper_np_array(atom_features:dict, radius:dict,aliphatic:di
 
     for atom_num, data in atom_neighborhood_grid_id.items():
         res_num = data[0] #will need this to search the array
-        grid_ids_unsorted = np.array(lipid_grid_assignment[res_num], dtype=int) #list of grids in the neighborhood for each resnum
+        grid_ids_sorted = np.array(lipid_grid_assignment[res_num], dtype=int) #list of grids in the neighborhood for each resnum
+        # print(f"unsorted: {grid_ids_unsorted}")
 
-        order = np.argsort(grid_ids_unsorted)
-        grid_ids_sorted = grid_ids_unsorted[order]
+        order = np.argsort(grid_ids_sorted)
+        # grid_ids_sorted = grid_ids_unsorted[order]
+        # print(f"sorted: {grid_ids_sorted}")
 
         grid_to_row = {gid: i for i, gid in enumerate(grid_ids_sorted)} 
 
