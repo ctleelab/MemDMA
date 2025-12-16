@@ -34,15 +34,11 @@ def sum_atom_mapping_upper_np_array(atom_features:dict, radius:dict,aliphatic:di
     triangle_atom_assignment_upper = {}
 
     for atom_num, data in atom_neighborhood_grid_id.items():
-        res_num = data[0] #will need this to search the array
-        grid_ids_sorted = np.array(lipid_grid_assignment[res_num], dtype=int) #list of grids in the neighborhood for each resnum
-        # print(f"unsorted: {grid_ids_unsorted}")
+        res_num = data[0] #pulls out res_num
+        grid_ids = np.asarray(lipid_grid_assignment[res_num], dtype=int)
 
-        order = np.argsort(grid_ids_sorted)
-        # grid_ids_sorted = grid_ids_unsorted[order]
-        # print(f"sorted: {grid_ids_sorted}")
+        grid_to_row = {gid: i for i, gid in enumerate(grid_ids)}
 
-        grid_to_row = {gid: i for i, gid in enumerate(grid_ids_sorted)} 
 
         atom_num = int(
             atom_num
@@ -75,10 +71,10 @@ def sum_atom_mapping_upper_np_array(atom_features:dict, radius:dict,aliphatic:di
             else:
                 
                 #pulls the array dependent on the lipid residue number the atom belongs to
-                neighborhood_edges_array = lipid_ids_all_grid_edges[res_num][order]
-                neighborhood_grid_vertices_coords_array = lipid_ids_all_grid_vertices_coords[res_num][order]
-                neighborhood_norms_array = lipid_ids_all_norms_upper[res_num][order]
-                neighborhood_centroid_coords_array = lipid_ids_all_centroid_coords_upper[res_num][order]
+                neighborhood_edges_array = lipid_ids_all_grid_edges[res_num]
+                neighborhood_grid_vertices_coords_array = lipid_ids_all_grid_vertices_coords[res_num]
+                neighborhood_norms_array = lipid_ids_all_norms_upper[res_num]
+                neighborhood_centroid_coords_array = lipid_ids_all_centroid_coords_upper[res_num]
 
                 #-----Project the atom onto the same plane as the triangle-----
 
@@ -120,7 +116,7 @@ def sum_atom_mapping_upper_np_array(atom_features:dict, radius:dict,aliphatic:di
                 #compute the magnitude of each edge vector of the triangle
                 edge_magnitude = np.linalg.norm(neighborhood_edges_array, axis=2)
 
-                for i, grid_id in enumerate(grid_ids_sorted):
+                for i, grid_id in enumerate(grid_ids):
                     #1) first determine if atom project is within the triangle by looking at the vertices
                     #2) if not, look at the special cases
 
