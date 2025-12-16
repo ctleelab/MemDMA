@@ -35,9 +35,10 @@ def sum_atom_mapping_upper_np_array(atom_features:dict, radius:dict,aliphatic:di
 
     for atom_num, data in atom_neighborhood_grid_id.items():
         res_num = data[0] #pulls out res_num
+
+        #global grid ids that correspond to each residue
         grid_ids = np.asarray(lipid_grid_assignment[res_num], dtype=int)
 
-        grid_to_row = {gid: i for i, gid in enumerate(grid_ids)}
 
 
         atom_num = int(
@@ -107,71 +108,60 @@ def sum_atom_mapping_upper_np_array(atom_features:dict, radius:dict,aliphatic:di
 
                 #Calculate the euclidian distance from each vertex of the triangle to the atom projection
                 atom_coords_projections_transpose = atom_coords_projections[:, None, :] # reshape to (N,1,3) (number of projections, 1, x/y/z)
-                euclidian_distance_vertex_to_atom = bfg.Edist3D(atom_coords_projections_transpose, neighborhood_grid_vertices_coords_array)
+                euclidian_distance_vertex_to_atom = bfg.Edist3D(atom_coords_projections_transpose, neighborhood_grid_vertices_coords_array) #(N,3)
 
                 #dot product between each edge of the triangle and the vector from the vertex to the atom projection
                 #shape (N,3) (number of triangles, 3 vertices)
                 dot_product_edge_vertex_to_atom_projection = np.sum(neighborhood_edges_array * vector_from_vetex_to_atom_projection, axis=2) #shape (N,3) number of triangles, 3 edges
 
-                #compute the magnitude of each edge vector of the triangle
+                #compute the magnitude of each edge vector of each of the triangles
+                #(N,3)
                 edge_magnitude = np.linalg.norm(neighborhood_edges_array, axis=2)
 
-                for i, grid_id in enumerate(grid_ids):
-                    #1) first determine if atom project is within the triangle by looking at the vertices
-                    #2) if not, look at the special cases
 
-                    # Convert grid ID to row index
-                    row = grid_to_row[grid_id]
-                    if (grid_id not in triangle_atom_assignment_upper):  # only initialize the grid if the grid doesn't exist yet
-                        triangle_atom_assignment_upper[grid_id] = 0
+                #computes the shortest distance from atom_projection to any vertice in the triangle grid
+                min_distance_a_vertice  = np.min(euclidian_distance_vertex_to_atom, axis=1 ) #(N,)
 
-                    #-----deal with the vertices cases first-----
-                    atom_maps_to_triangle = False #first set the atom not mapping to the triangle, which will hold true if none of the conditions are met
 
-                    #gets all distances from atom to all vertices of a given triangle
-                    shortest_distance_to_atom_all_vertex = euclidian_distance_vertex_to_atom[row] 
-                    
-                    # Get the minimum distance from atom to all vertices of the triangle
-                    min_distance_to_vertices = np.min(shortest_distance_to_atom_all_vertex)   
+                #compute the area of the parallelogram formed by the edge vector and the atom projection vector 
+                area_parallelogram = np.linalg.norm(np.cross(vector_from_vetex_to_atom_projection, neighborhood_edges_array), axis=2)
 
-                    #handles the case where the atom projection is within radius to a vertex of the triangle
-                    if min_distance_to_vertices <= atm_radius:
-                        atom_maps_to_triangle = True
-                    
-                    #-----deals with cases where projected atom is closer to edge of triangle rather than vertices of triangle----
+                #compute the height of the parallelogram
+                height_parallelogram = area_parallelogram / edge_magnitude
 
+                #-----Compare distances to atom radius-----
+
+                # (1) Vertex test
+                # returns a Boolean 
+                vertex_hit = min_distance_a_vertice <= atm_radius  
+
+                # (2) Edge test
+                edge_projection_valid = (
+                    (dot_product_edge_vertex_to_atom_projection >= 0) &
+                    (dot_product_edge_vertex_to_atom_projection <= edge_magnitude)
+                )
+
+                edge_hit = np.any(
+                    (height_parallelogram <= atm_radius) & edge_projection_valid,
+                    axis=1
+                ) 
+
+                # (3) Final mapping decision
+                atom_maps_to_triangle = vertex_hit | edge_hit  # shape (N,)
+                
+
+                # global IDs where atom maps to triangle
+                mapped_grid_ids = grid_ids[atom_maps_to_triangle]
+
+
+                #goes from the atom specific grid id to its global grid id
+                mapped_grid_ids = grid_ids[atom_maps_to_triangle]
+
+                for gid in mapped_grid_ids:
+                    if atm_type == "n":
+                        triangle_atom_assignment_upper[gid] = triangle_atom_assignment_upper.get(gid, 0) + 1.0
                     else:
-                        #pulls out the dot product values for the vertexs for a given triangle
-                        tri_vertex = dot_product_edge_vertex_to_atom_projection[row]
-
-                        for tri_vertex_indx, dotproduct in enumerate(tri_vertex):
-                            if dotproduct > 0:
-
-                                #pull out the magnitude of the edge vector
-                                edge_magnitude_tri_vertex_indx = edge_magnitude[row][tri_vertex_indx]
-
-                                #atom should be within the length of the edge vector
-                                if dotproduct <= edge_magnitude_tri_vertex_indx:
-
-                                    #-----compute the area of the parallelogram and divide by the base to get the hieght-----
-
-                                    #compute the area of the parallelogram formed by the edge vector and the atom projection vector 
-                                    area_parallelogram = np.linalg.norm(np.cross(vector_from_vetex_to_atom_projection[row][tri_vertex_indx], neighborhood_edges_array[row][tri_vertex_indx]), axis=0)
-                                    
-                                    #computes the magintude of the edge vector, which is the base of the paralleogram
-                                    base_parallelogram = np.linalg.norm(neighborhood_edges_array[row][tri_vertex_indx]) 
-                                    
-                                    height_parallelogram = area_parallelogram / base_parallelogram
-
-                                    if height_parallelogram <= atm_radius:
-                                        atom_maps_to_triangle = True
-
-                    if atom_maps_to_triangle:
-                        if (atm_type == "n"):  
-                            triangle_atom_assignment_upper[grid_id] += 1.0
-        
-                        else:
-                            triangle_atom_assignment_upper[grid_id] += 0.001
+                        triangle_atom_assignment_upper[gid] = triangle_atom_assignment_upper.get(gid, 0) + 0.001
 
 
     for grid in grid_num:
@@ -185,7 +175,7 @@ def sum_atom_mapping_upper_np_array(atom_features:dict, radius:dict,aliphatic:di
     
     with open(
         util.trajectory_path
-        / f"test_{lipid_type}_triangle_atom_assignment_upper_strain2_frame{frame}.pickle",
+        / f"test_1A_{lipid_type}_triangle_atom_assignment_upper_strain2_frame{frame}.pickle",
         "wb",
     ) as f:
         pickle.dump(triangle_atom_assignment_upper_sorted, f)
@@ -193,7 +183,7 @@ def sum_atom_mapping_upper_np_array(atom_features:dict, radius:dict,aliphatic:di
     # Create a CSV file to store the results
     with open(
         util.trajectory_path
-        / f"test_{lipid_type}_triangle_atom_assignment_upper_strain2_frame{frame}.csv",
+        / f"test2_1A_{lipid_type}_triangle_atom_assignment_upper_strain2_frame{frame}.csv",
         "w",
         newline="",
     ) as f:
