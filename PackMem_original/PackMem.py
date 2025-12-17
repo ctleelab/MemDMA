@@ -134,7 +134,7 @@ if __name__ == '__main__':
             atm_name=line_atom[12:16].strip()
             zaxis_byatoms.append(float(line_atom[46:54]))
             xaxis_byatoms.append(float(line_atom[30:38]))
-            yaxis_byatoms.append(float(line_atom[38:46]))
+            yaxis_byatoms.append(float(line_atom[38:45]))
             key = res_name+  "_" + atm_name
             if res_name in LIPID:
                 if key in DICT_3L:
@@ -162,7 +162,7 @@ if __name__ == '__main__':
         print("You have duplicate in lipids residue_number")    
         print("This point is not supported by PackMem, this tool may not work properly !") 
         print("Please, renumerate your residue_number to avoid this problem (for example using editconf Gromacs tool)")  
-        sys.exit()
+        #sys.exit()
 
     ##Cailyn: goes through the list that we created based on all atoms positions in the PDB file, and determines the min and max values for x,y,z 
     xmin, xmax, xmean = l.min_max(xaxis_byatoms)
