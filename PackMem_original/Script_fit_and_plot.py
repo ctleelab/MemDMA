@@ -6,7 +6,7 @@ from scipy.stats import linregress
 ########
 # Set constants
 ########
-PREFIX = "membrane"
+PREFIX = "_"
 LONG_PREFIX = f"Total_{PREFIX}"
 PRECISION = 2
 LIMX = 15
@@ -22,7 +22,6 @@ def fit_decay(x, y, LIMX=LIMX, LIMY=LIMY):
     x_fit = x[mask]
     y_fit = y[mask]
     if len(x_fit) < 2:
-        # Not enough points to fit
         return None
     slope, intercept, _, _, _ = linregress(x_fit, np.log(y_fit))
     return slope, intercept
@@ -45,6 +44,17 @@ def block_averaging(vect):
             decays.append(np.nan)
     return decays
 
+def read_numeric_column(filename, col_index=1):
+    """Read numeric values from a file, skip non-numeric lines."""
+    raw_data = pd.read_csv(filename, sep=r"\s+", header=None, usecols=[col_index], dtype=str).values.flatten()
+    numeric_data = []
+    for x in raw_data:
+        try:
+            numeric_data.append(float(x))
+        except ValueError:
+            continue
+    return np.array(numeric_data)
+
 ################################
 # Packdef constant calculation #
 ################################
@@ -62,9 +72,9 @@ with open(f"Res_{PREFIX}.txt", "w") as f:
 
     for DEFECT in ["deep", "shallow", "all"]:
 
-        # Load data
-        filename = f"{LONG_PREFIX}_{DEFECT}.txt"
-        packdef_data = pd.read_csv(filename, sep="\s+", header=None, usecols=[1]).values.flatten()
+        # Load numeric data
+        filename = f"{LONG_PREFIX}{DEFECT}.txt"
+        packdef_data = read_numeric_column(filename)
 
         # Histogram and global fit
         counts, bins = np.histogram(packdef_data, bins=np.arange(0, np.max(packdef_data)+1)+0.5)
@@ -108,13 +118,14 @@ colors = ["black", "gray", "darkgray", "lightgray", "red"]
 # Barplot of all constants
 plt.figure(figsize=(8,6))
 M = packdef_constants.iloc[0:5].to_numpy()
-bp = plt.bar(np.arange(M.shape[1])-0.2, M[0], width=0.15, color=colors[0], label='Global')
-plt.bar(np.arange(M.shape[1])-0.05, M[1], width=0.15, color=colors[1], label='Block1')
-plt.bar(np.arange(M.shape[1])+0.05, M[2], width=0.15, color=colors[2], label='Block2')
-plt.bar(np.arange(M.shape[1])+0.2, M[3], width=0.15, color=colors[3], label='Block3')
-plt.bar(np.arange(M.shape[1])+0.35, M[4], width=0.15, color=colors[4], label='Mean')
+x_pos = np.arange(M.shape[1])
+plt.bar(x_pos - 0.2, M[0], width=0.15, color=colors[0], label='Global')
+plt.bar(x_pos - 0.05, M[1], width=0.15, color=colors[1], label='Block1')
+plt.bar(x_pos + 0.05, M[2], width=0.15, color=colors[2], label='Block2')
+plt.bar(x_pos + 0.2, M[3], width=0.15, color=colors[3], label='Block3')
+plt.bar(x_pos + 0.35, M[4], width=0.15, color=colors[4], label='Mean')
 plt.ylabel("Defect size constant (A^2)")
-plt.xticks(np.arange(M.shape[1]), ["deep", "shallow", "all"])
+plt.xticks(x_pos, ["deep", "shallow", "all"])
 plt.legend()
 plt.title("Packing defect constants")
 plt.show()
