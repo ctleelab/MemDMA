@@ -1,10 +1,11 @@
-#general plot of defects
+# general plot of defects
 
 import matplotlib.pyplot as plt
 
 import plotly.graph_objects as go
 
 import pickle
+
 
 def bar_graph_defects(pickle_file):
     with open(pickle_file, "rb") as f:
@@ -19,10 +20,10 @@ def bar_graph_defects(pickle_file):
             above_1 += 1
         if sum_atoms < 1:
             below_1 += 1
-    #normalize by total number of grids
-    below_1_norm = below_1/total_grids
-    above_1_norm = above_1/total_grids
-    
+    # normalize by total number of grids
+    below_1_norm = below_1 / total_grids
+    above_1_norm = above_1 / total_grids
+
     # Create Plotly bar chart
     fig = go.Figure(
         data=[
@@ -46,28 +47,43 @@ def bar_graph_defects(pickle_file):
     print("✅ Bar graph saved'")
 
     return below_1_norm, above_1_norm
-    
 
 
-below_1_norm_DOPC_flat, above_1_norm_DOPC_flat = bar_graph_defects("DOPC_triangle_atom_assignment_upper_flat.pickle")
+below_1_norm_DOPC_flat, above_1_norm_DOPC_flat = bar_graph_defects(
+    "DOPC_triangle_atom_assignment_upper_flat.pickle"
+)
 
-below_1_norm_DOPC_strain_2, above_1_norm_DOPC_strain_2 = bar_graph_defects("DOPC_triangle_atom_assignment_upper_buckled.pickle")
+below_1_norm_DOPC_strain_2, above_1_norm_DOPC_strain_2 = bar_graph_defects(
+    "DOPC_triangle_atom_assignment_upper_buckled.pickle"
+)
 
-below_1_norm_DPPC_flat, above_1_norm_DPPC_flat = bar_graph_defects("DPPC_triangle_atom_assignment_upper_flat.pickle")
+below_1_norm_DPPC_flat, above_1_norm_DPPC_flat = bar_graph_defects(
+    "DPPC_triangle_atom_assignment_upper_flat.pickle"
+)
 
-below_1_norm_DPPC_strain_2, above_1_norm_DPPC_strain_2 = bar_graph_defects("DPPC_triangle_atom_assignment_upper_strain2.pickle")
+below_1_norm_DPPC_strain_2, above_1_norm_DPPC_strain_2 = bar_graph_defects(
+    "DPPC_triangle_atom_assignment_upper_strain2.pickle"
+)
 
 
+def bar_graph_defects_all_simulations(
+    below_1_norm_DOPC_flat,
+    below_1_norm_DOPC_strain_2,
+    below_1_norm_DPPC_flat,
+    below_1_norm_DPPC_strain_2,
+):
 
-
-def bar_graph_defects_all_simulations(below_1_norm_DOPC_flat, below_1_norm_DOPC_strain_2, below_1_norm_DPPC_flat, below_1_norm_DPPC_strain_2):
-    
     # Create Plotly bar chart
     fig = go.Figure(
         data=[
             go.Bar(
-                x=["DOPC flat","DPPC flat","DOPC strain .2","DPPC strain .2"],
-                y=[below_1_norm_DOPC_flat,below_1_norm_DPPC_flat,below_1_norm_DOPC_strain_2, below_1_norm_DPPC_strain_2],
+                x=["DOPC flat", "DPPC flat", "DOPC strain .2", "DPPC strain .2"],
+                y=[
+                    below_1_norm_DOPC_flat,
+                    below_1_norm_DPPC_flat,
+                    below_1_norm_DOPC_strain_2,
+                    below_1_norm_DPPC_strain_2,
+                ],
             )
         ]
     )
@@ -83,4 +99,10 @@ def bar_graph_defects_all_simulations(below_1_norm_DOPC_flat, below_1_norm_DOPC_
     fig.write_html("summary_simulations_defects.html")
     print("✅ Bar graph saved'")
 
-bar_graph_defects_all_simulations(below_1_norm_DOPC_flat,below_1_norm_DOPC_strain_2,below_1_norm_DPPC_flat,below_1_norm_DPPC_strain_2)
+
+bar_graph_defects_all_simulations(
+    below_1_norm_DOPC_flat,
+    below_1_norm_DOPC_strain_2,
+    below_1_norm_DPPC_flat,
+    below_1_norm_DPPC_strain_2,
+)
