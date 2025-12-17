@@ -43,27 +43,33 @@ def normal_vector_triangles(X, Y, Zupper_2d, Zlower_2d, normalize=True):
     n_quads = (nx - 1) * (ny - 1)
     n_tri = 2 * n_quads  # two triangles per quad per leaflet
 
-    centroid_triangles_upper = {}
-    centroid_triangles_lower = {}
-    normal_vector_triangles_upper = {}
-    normal_vector_triangles_lower = {}
-    coords_triangles_upper = {}
-    coords_triangles_lower = {}
-    edges_triangles_upper = {}
-    edges_triangles_lower = {}
-    quadrilateral_upper = {}
-    quadrilateral_lower = {}
-    edges_triangles_upper_2vertices = {}
-    edges_triangles_lower_2vertices = {}
+    # Coordinates of triangle centroids
+    centroid_triangles_upper = np.empty((n_tri, 3))
+    centroid_triangles_lower = np.empty((n_tri, 3))
 
-    centroid_upper_list = []
-    centroid_lower_list = []
+    # Normal vectors of each triangle
+    normal_vector_triangles_upper = np.empty((n_tri, 3))
+    normal_vector_triangles_lower = np.empty((n_tri, 3))
 
-    triangle_upper = 1
-    triangle_lower = 1
-    quad_num = 1
+    # Vertex coordinates of each triangle
+    coords_triangles_upper = np.empty((n_tri, 3, 3))
+    coords_triangles_lower = np.empty((n_tri, 3, 3))
+
+    # Edge differences
+    edges_triangles_upper = np.empty((n_tri, 3, 3))
+    edges_triangles_lower = np.empty((n_tri, 3, 3))
+
+    # Quads
+    quadrilateral_upper = np.empty((n_quads, 3, 3))
+    quadrilateral_lower = np.empty((n_quads, 3, 3))
+
+    triangle_upper_index = 0
+    triangle_lower_index = 0
+    quad_index = 0
 
     for i in range(nx - 1):
+        # if i % 100 == 0:
+        #     print(f"Processing row {i} of {nx - 1}, {ny}")
         for j in range(ny - 1):
             # corners of the original grid
             p0 = (i, j)
@@ -89,9 +95,10 @@ def normal_vector_triangles(X, Y, Zupper_2d, Zlower_2d, normalize=True):
             cent1 = tri1.mean(axis=0)  # average across coordinates of the triangle
             cent2 = tri2.mean(axis=0)
 
-            centroid_triangles_upper[triangle_upper] = cent1
-            centroid_triangles_upper[triangle_upper + 1] = cent2
-            centroid_upper_list.extend([cent1, cent2])
+            centroid_triangles_upper[triangle_upper_index] = cent1
+            centroid_triangles_upper[triangle_upper_index + 1] = cent2
+            # centroid_upper_list[triangle_upper_index] = cent1
+            # centroid_upper_list[triangle_upper_index + 1] = cent2
 
             # normals
             n1 = np.cross(
@@ -102,38 +109,30 @@ def normal_vector_triangles(X, Y, Zupper_2d, Zlower_2d, normalize=True):
                 n1 /= np.linalg.norm(n1)
                 n2 /= np.linalg.norm(n2)
 
-            normal_vector_triangles_upper[triangle_upper] = n1
-            normal_vector_triangles_upper[triangle_upper + 1] = n2
+            normal_vector_triangles_upper[triangle_upper_index] = n1
+            normal_vector_triangles_upper[triangle_upper_index + 1] = n2
 
-            coords_triangles_upper[triangle_upper] = tri1
-            coords_triangles_upper[triangle_upper + 1] = tri2
+            coords_triangles_upper[triangle_upper_index] = tri1
+            coords_triangles_upper[triangle_upper_index + 1] = tri2
 
-            edges_triangles_upper[triangle_upper] = [
+            edges_triangles_upper[triangle_upper_index] = [
                 tri1[1] - tri1[0],
                 tri1[2] - tri1[1],
                 tri1[0] - tri1[2],
             ]
-            edges_triangles_upper[triangle_upper + 1] = [
+            edges_triangles_upper[triangle_upper_index + 1] = [
                 tri2[1] - tri2[0],
                 tri2[2] - tri2[1],
                 tri2[0] - tri2[2],
             ]
 
-            edges_triangles_upper_2vertices[triangle_upper] = [
-                [tri1[0], tri1[1]],
-                [tri1[1], tri1[2]],
-                [tri1[0], tri1[2]],
-            ]
-            edges_triangles_upper_2vertices[triangle_upper + 1] = [
-                [tri2[0], tri2[1]],
-                [tri2[1], tri2[2]],
-                [tri2[0], tri2[2]],
-            ]
+            # edges_triangles_upper_2vertices[triangle_upper_index] = [[tri1[0],tri1[1]], [tri1[1], tri1[2]], [tri1[0],tri1[2]]]
+            # edges_triangles_upper_2vertices[triangle_upper_index + 1] = [[tri2[0],tri2[1]], [tri2[1], tri2[2]], [tri2[0],tri2[2]]]
 
             avg_normal_upper = (n1 + n2) / 2
-            quadrilateral_upper[quad_num] = [avg_normal_upper]
+            quadrilateral_upper[quad_index] = [avg_normal_upper]
 
-            triangle_upper += 2
+            triangle_upper_index += 2
 
             # ---- lower leaflet ----
             quad_l = np.array(
@@ -149,9 +148,10 @@ def normal_vector_triangles(X, Y, Zupper_2d, Zlower_2d, normalize=True):
             tri4 = quad_l[[0, 2, 3]]
             cent3 = tri3.mean(axis=0)
             cent4 = tri4.mean(axis=0)
-            centroid_triangles_lower[triangle_lower] = cent3
-            centroid_triangles_lower[triangle_lower + 1] = cent4
-            centroid_lower_list.extend([cent3, cent4])
+            centroid_triangles_lower[triangle_lower_index] = cent3
+            centroid_triangles_lower[triangle_lower_index + 1] = cent4
+            # centroid_lower_list[triangle_lower_index] = cent3
+            # centroid_lower_list[triangle_lower_index + 1] = cent4
 
             n3 = np.cross(tri3[1] - tri3[0], tri3[2] - tri3[0])
             n4 = np.cross(tri4[1] - tri4[0], tri4[2] - tri4[0])
@@ -159,39 +159,32 @@ def normal_vector_triangles(X, Y, Zupper_2d, Zlower_2d, normalize=True):
                 n3 /= np.linalg.norm(n3)
                 n4 /= np.linalg.norm(n4)
 
-            normal_vector_triangles_lower[triangle_lower] = n3
-            normal_vector_triangles_lower[triangle_lower + 1] = n4
+            normal_vector_triangles_lower[triangle_lower_index] = n3
+            normal_vector_triangles_lower[triangle_lower_index + 1] = n4
 
-            coords_triangles_lower[triangle_lower] = tri3
-            coords_triangles_lower[triangle_lower + 1] = tri4
+            coords_triangles_lower[triangle_lower_index] = tri3
+            coords_triangles_lower[triangle_lower_index + 1] = tri4
 
-            edges_triangles_lower[triangle_lower] = [
+            edges_triangles_lower[triangle_lower_index] = [
                 tri3[1] - tri3[0],
                 tri3[2] - tri3[1],
                 tri3[0] - tri3[2],
             ]
-            edges_triangles_lower[triangle_lower + 1] = [
+            edges_triangles_lower[triangle_lower_index + 1] = [
                 tri4[1] - tri4[0],
                 tri4[2] - tri4[1],
                 tri4[0] - tri4[2],
             ]
 
-            edges_triangles_lower_2vertices[triangle_upper] = [
-                [tri3[0], tri3[1]],
-                [tri3[1], tri3[2]],
-                [tri3[0], tri3[2]],
-            ]
-            edges_triangles_lower_2vertices[triangle_upper + 1] = [
-                [tri4[0], tri4[1]],
-                [tri4[1], tri4[2]],
-                [tri4[0], tri4[2]],
-            ]
+            # edges_triangles_lower_2vertices[triangle_upper_index] = [[tri3[0],tri3[1]], [tri3[1], tri3[2]], [tri3[0],tri3[2]]]
+            # edges_triangles_lower_2vertices[triangle_upper_index + 1] = [[tri4[0],tri4[1]], [tri4[1], tri4[2]], [tri4[0],tri4[2]]]
 
             avg_normal_lower = (n3 + n4) / 2
-            quadrilateral_lower[quad_num] = [avg_normal_lower]
+            quadrilateral_lower[quad_index] = [avg_normal_lower]
 
-            triangle_lower += 2
-            quad_num += 1
+            triangle_lower_index += 2
+            quad_index += 1
+
     #####################
     ###troubleshooting###
     #####################
@@ -203,8 +196,8 @@ def normal_vector_triangles(X, Y, Zupper_2d, Zlower_2d, normalize=True):
     # print("min:", min(z_coords))
     # print("max:", max(z_coords))
 
-    centroid_triangles_upper_matrix = np.vstack(centroid_upper_list)
-    centroid_triangles_lower_matrix = np.vstack(centroid_lower_list)
+    # centroid_triangles_upper_matrix = np.vstack(centroid_upper_list)
+    # centroid_triangles_lower_matrix = np.vstack(centroid_lower_list)
 
     with open(
         f"centroid_triangle.csv",
@@ -213,7 +206,7 @@ def normal_vector_triangles(X, Y, Zupper_2d, Zlower_2d, normalize=True):
     ) as f:
         writer = csv.writer(f)
         writer.writerow(["triangle_id", "coordinates"])  # optional header
-        for key, value in centroid_triangles_upper.items():
+        for key, value in enumerate(centroid_triangles_upper):
             writer.writerow([key, value])
     return (
         centroid_triangles_upper,
@@ -226,10 +219,10 @@ def normal_vector_triangles(X, Y, Zupper_2d, Zlower_2d, normalize=True):
         edges_triangles_lower,
         quadrilateral_upper,
         quadrilateral_lower,
-        centroid_triangles_upper_matrix,
-        centroid_triangles_lower_matrix,
-        edges_triangles_upper_2vertices,
-        edges_triangles_lower_2vertices,
+        # centroid_triangles_upper_matrix,
+        # centroid_triangles_lower_matrix,
+        # edges_triangles_upper_2vertices,
+        # edges_triangles_lower_2vertices
     )
 
 

@@ -139,7 +139,7 @@ def plot_triangle_grid_assignment(triangle_centroids_upper, triangle_centroids_l
     Y_triangle_upper_all = []
     Z_triangle_upper_all = []
 
-    for key, value in triangle_centroids_upper.items():
+    for key, value in enumerate(triangle_centroids_upper):
         centroid_num_upper = key
 
         gl2_bead_coords = np.array(value)
@@ -156,7 +156,7 @@ def plot_triangle_grid_assignment(triangle_centroids_upper, triangle_centroids_l
     Y_triangle_lower_all = []
     Z_triangle_lower_all = []
 
-    for key1, value1 in triangle_centroids_lower.items():
+    for key1, value1 in enumerate(triangle_centroids_lower):
         centroid_num_lower = key1
 
         gl2_bead_coords = np.array(value1)
@@ -220,7 +220,7 @@ def atom_mapping_centroids(triangle_centroids, triangle_atom_assignment):
     Z_triangle_all = []
     count_for_triangle = []
 
-    for key, value in triangle_centroids.items():
+    for key, value in enumerate(triangle_centroids):
         centroid_num = key
         gl2_bead_coords = np.array(value)
         X = gl2_bead_coords[0]
@@ -294,7 +294,7 @@ def gl2_neighborhood(gl2_beads, triangle_centroids, gl2_grid_assignment):
     Y_triangle_all = []
     Z_triangle_all = []
 
-    for key, value in triangle_centroids.items():
+    for key, value in enumerate(triangle_centroids):
         centroid_num = key
         coords = np.array(value)
         X_triangle_all.append(coords[0])
@@ -640,7 +640,7 @@ def atom_mapping_centroids_2d(
     Y_triangle_all = []
     count_for_triangle = []
 
-    for key, value in triangle_centroids.items():
+    for key, value in enumerate(triangle_centroids):
         centroid_num = key
         gl2_bead_coords = np.array(value)
         X = gl2_bead_coords[0]
@@ -700,7 +700,7 @@ def atom_mapping_centroids_2d_zvalue(triangle_centroids, lipid_type, frame):
     Y_triangle_all = []
     Z_triangle_all = []
 
-    for key, value in triangle_centroids.items():
+    for key, value in enumerate(triangle_centroids):
         centroid_num = key
         gl2_bead_coords = np.array(value)
         X = gl2_bead_coords[0]
@@ -755,7 +755,7 @@ def combined_atom_mappin_plot(
     Z_triangle_all = []
     count_for_triangle = []
 
-    for key, value in triangle_centroids.items():
+    for key, value in enumerate(triangle_centroids):
         centroid_num = key
         gl2_bead_coords = np.array(value)
         X = gl2_bead_coords[0]

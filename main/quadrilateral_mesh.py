@@ -71,7 +71,7 @@ def mesh(gro, selection, step):
 
     z_data_upper = (mc.results["z_surface"]["upper"]) / 10
     z_data_lower = (mc.results["z_surface"]["lower"]) / 10
-    bin_area = mc.bin_areas
+    # bin_area = mc.bin_areas
 
     # # Save only the results I care about. No need to save entire mc object
     # with open("membrane_curvature_smooth.pickle", "wb") as handle:

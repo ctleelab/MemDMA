@@ -15,8 +15,8 @@ def cKDtree_grid_neighborhood(grid_centroids: dict):
         centroids: Numpy array of centroid coordinates for each grid
     """
 
-    grid_keys = list(
-        grid_centroids.keys()
+    grid_keys = np.arange(
+        0, len(grid_centroids)
     )  # creates a list of the keys of all centroids of the grid points
     centroids = np.array(
         [grid_centroids[k][:3] for k in grid_keys]

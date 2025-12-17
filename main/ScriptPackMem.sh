@@ -6,9 +6,9 @@
 # set prefix of the pdb files
 prefix=""
 
-# set absolute path
-PackMemPATH=/home/casakurai/scratch/packmem/main
-trajectoryPATH=/home/casakurai/scratch/packmem/simulation_data/extracted_frames/DPPC_strain.2
+# set PackMem absolute path
+PackMemPATH=/Users/ctlee/PackMem-leelab/main
+trajectoryPATH=/Users/ctlee/PackMem-leelab/simulation_data/
 
 # # For looping over frames
 # # set the total number of frames
@@ -27,4 +27,3 @@ pdbnum=200
                               -p ${PackMemPATH}/param_CGMartini3_openbeta2.txt \
                               -o ${pdbnum} -d 1.0 -t deep \
                               -f ${pdbnum}
-

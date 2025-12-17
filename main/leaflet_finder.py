@@ -1,6 +1,6 @@
-
 from MDAnalysis.analysis.leaflet import LeafletFinder
 import MDAnalysis as mda
+
 
 def largest_groups(atoms):
     """
@@ -25,7 +25,7 @@ def largest_groups(atoms):
     return (largest_index, second_largest_index)
 
 
-def determine_leaflets(universe, selection = "all"):
+def determine_leaflets(universe, selection="all"):
     """
     From a selection of phosphates, determine which belong to the upper and lower leaflets.
 
@@ -41,49 +41,51 @@ def determine_leaflets(universe, selection = "all"):
 
     # apply the MDAnalysis LeafletFinder graph-based method to determine the two largest groups which
     #  should correspond to the upper and lower leaflets
-    phosphates = LeafletFinder(universe,selection)
+    phosphates = LeafletFinder(universe, selection)
 
     # find the two largest groups - required as the first two returned by LeafletFinder, whilst usually are the largest, this is not always so
     (a, b) = largest_groups(phosphates.sizes())
 
     # check to see where the first leaflet lies
     if phosphates.group(a).centroid()[2] > bilayerCentre:
-        leaflets['upper'] = phosphates.group(a)
-        leaflets['lower'] = phosphates.group(b)
+        leaflets["upper"] = phosphates.group(a)
+        leaflets["lower"] = phosphates.group(b)
     else:
-        leaflets['lower'] = phosphates.group(a)
-        leaflets['upper'] = phosphates.group(b)
+        leaflets["lower"] = phosphates.group(a)
+        leaflets["upper"] = phosphates.group(b)
     # --- Map residue IDs to leaflets ---
-    #if I have issues with indexing the list might be due to how the resids are being saved as Numpy
+    # if I have issues with indexing the list might be due to how the resids are being saved as Numpy
     # residue_leaflet_map = {
     #     'upper': list(leaflets['upper'].resids),
     #     'lower': list(leaflets['lower'].resids)
-    #}
+    # }
     ##Cailyn took out because this has the format for each residue number it states upper vs lower, rather than having a list upper vs lower with all residues belonging to the appropriate leaflet
     # residue_leaflet_map ={}
     # for resid in leaflets['upper'].resids:
     #     residue_leaflet_map[resid] = 'upper'
     # for resid in leaflets['lower'].resids:
     #     residue_leaflet_map[resid] = 'lower'
-   
+
     ##Cailyn added
-    #make it nicer so two list upper vs lower
+    # make it nicer so two list upper vs lower
     leaflet_residues = {
-        'upper': [int(r) for r in leaflets['upper'].resids],
-        'lower': [int(r) for r in leaflets['lower'].resids]
+        "upper": [int(r) for r in leaflets["upper"].resids],
+        "lower": [int(r) for r in leaflets["lower"].resids],
     }
 
     # Return both AtomGroups and the residue map
     return leaflets, leaflet_residues
 
-# #Cailyn: troubleshooting to determine if the residue is being named to the correct upper or lower leaflet 
+
+# #Cailyn: troubleshooting to determine if the residue is being named to the correct upper or lower leaflet
 # from pathlib import Path
 # path = Path("/home/casakurai/scratch/packmem/")
 # gro = path / "dopcdope_CGMartini.pdb"
 # u = mda.Universe(gro, continous=True)
 # determine_leaflets(u, "name PO4")
 
-#Cailyn: I made to deal with buckled bilayers, but I didn't need it 
+
+# Cailyn: I made to deal with buckled bilayers, but I didn't need it
 def determine_leaflets_local(universe, selection="all", step=0.5, sigma=2):
     from scipy.ndimage import gaussian_filter
     import numpy as np
@@ -113,9 +115,6 @@ def determine_leaflets_local(universe, selection="all", step=0.5, sigma=2):
     x_centers = 0.5 * (x_edges[:-1] + x_edges[1:])
     y_centers = 0.5 * (y_edges[:-1] + y_edges[1:])
     X, Y = np.meshgrid(x_centers, y_centers)
-    
-    
-
 
     # Assign atoms to bins
     x_bins = np.digitize(positions[:, 0], x_edges) - 1
@@ -138,6 +137,7 @@ def determine_leaflets_local(universe, selection="all", step=0.5, sigma=2):
     mask = np.isnan(local_midplane)
     if np.any(mask):
         from scipy.interpolate import NearestNDInterpolator
+
         coords = np.array(np.nonzero(~mask)).T
         values = local_midplane[~mask]
         interp = NearestNDInterpolator(coords, values)

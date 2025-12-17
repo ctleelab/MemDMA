@@ -25,10 +25,10 @@ def extract_atoms(atom_features, leaflet):
 # Extract the grid coords in the given leaflet, used to create the shared memory
 # input: centroid_triangle dictionary {grid_num: (x,y,z)}
 def extract_grid_coords(centroid_triangles):
-    grid_num = [grid_num for grid_num in centroid_triangles.keys()]
-    grid_coords = list(centroid_triangles.values())
-    grid_coords_np = np.array(grid_coords)
-    return grid_num, grid_coords_np
+    # grid_num = [grid_num for grid_num in centroid_triangles.keys()]
+    # grid_coords = list(centroid_triangles.values())
+    # grid_coords_np = np.array(grid_coords)
+    return np.arange(0, len(centroid_triangles)), centroid_triangles
 
 
 # Creates a shared memory of the grid coordinates array
