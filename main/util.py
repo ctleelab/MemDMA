@@ -7,4 +7,5 @@ lipid = "name NC3 PO4 GL1 GL2 C1A D2A C3A C4A C1B D2B C3B C4B C2A C2B"
 membrane_sel = "resname DPPC DOPC"
 
 
-trajectory_path = Path("/home/casakurai/scratch/packmem/simulation_data/extracted_frames/DPPC_strain.2/defect_analysis")
+trajectory_path = Path("/home/casakurai/scratch/packmem/simulation_data/extracted_frames/DPPC_strain.2/prod")
+analysis_path = Path("/home/casakurai/scratch/packmem/simulation_data/extracted_frames/DPPC_strain.2/defect_analysis_prod")
