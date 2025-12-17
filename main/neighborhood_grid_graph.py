@@ -127,7 +127,7 @@ def plot_gl2_grid_assignment(
     )
 
     # Save as standalone HTML
-    fig.write_html(util.analysis_path/"testing.html")
+    fig.write_html(util.analysis_path / "testing.html")
     del fig
     print("plot completed")
 
@@ -208,11 +208,7 @@ def plot_triangle_grid_assignment(triangle_centroids_upper, triangle_centroids_l
     )
 
     # Save as standalone HTML
-<<<<<<< HEAD
-    fig.write_html(util.analysis_path/"troubleshooting_triangle_centroids.html")
-=======
-    fig.write_html(util.trajectory_path / "troubleshooting_triangle_centroids.html")
->>>>>>> 125f3b7ba3cdd3786fd76dea649628ba763c29da
+    fig.write_html(util.analysis_path / "troubleshooting_triangle_centroids.html")
     del fig
     print("plot completed")
 
@@ -273,11 +269,7 @@ def atom_mapping_centroids(triangle_centroids, triangle_atom_assignment):
     )
 
     # Save as standalone HTML
-<<<<<<< HEAD
-    fig.write_html(util.analysis_path/"triangle_centroids_with_counts.html")
-=======
-    fig.write_html(util.trajectory_path / "triangle_centroids_with_counts.html")
->>>>>>> 125f3b7ba3cdd3786fd76dea649628ba763c29da
+    fig.write_html(util.analysis_path / "triangle_centroids_with_counts.html")
     del fig
     print("Interactive plot with counts completed")
 
@@ -379,11 +371,7 @@ def gl2_neighborhood(gl2_beads, triangle_centroids, gl2_grid_assignment):
     )
 
     # Save as standalone HTML
-<<<<<<< HEAD
-    fig.write_html(util.analysis_path/"gl2_neighborhood.html")
-=======
-    fig.write_html(util.trajectory_path / "gl2_neighborhood.html")
->>>>>>> 125f3b7ba3cdd3786fd76dea649628ba763c29da
+    fig.write_html(util.analysis_path / "gl2_neighborhood.html")
     del fig
     print("GL2 neighborhood plot completed")
 
@@ -545,13 +533,7 @@ def projected_atom_grid(
     )
 
     # Save as standalone HTML
-<<<<<<< HEAD
-    fig.write_html(util.analysis_path/f"projected_atom_grid_atom_num{atom_num}.html")
-=======
-    fig.write_html(
-        util.trajectory_path / f"projected_atom_grid_atom_num{atom_num}.html"
-    )
->>>>>>> 125f3b7ba3cdd3786fd76dea649628ba763c29da
+    fig.write_html(util.analysis_path / f"projected_atom_grid_atom_num{atom_num}.html")
     print("Projected atom grid plot completed")
 
 
@@ -647,11 +629,7 @@ def atom_projection_grid_assignment(
             )
         )
 
-<<<<<<< HEAD
-    fig.write_html(util.analysis_path/f"atom_projection_grid_assignment.html")
-=======
-    fig.write_html(util.trajectory_path / f"atom_projection_grid_assignment.html")
->>>>>>> 125f3b7ba3cdd3786fd76dea649628ba763c29da
+    fig.write_html(util.analysis_path / f"atom_projection_grid_assignment.html")
 
 
 def atom_mapping_centroids_2d(
@@ -708,14 +686,10 @@ def atom_mapping_centroids_2d(
     )
 
     # Save as standalone HTML
-<<<<<<< HEAD
-    fig.write_html(util.analysis_path/f"{lipid_type}_1A_strain2_triangle_centroids_with_counts_2d_frame{frame}.html")
-=======
     fig.write_html(
-        util.trajectory_path
-        / f"{lipid_type}_strain2_triangle_centroids_with_counts_2d_frame{frame}.html"
+        util.analysis_path
+        / f"{lipid_type}_1A_strain2_triangle_centroids_with_counts_2d_frame{frame}.html"
     )
->>>>>>> 125f3b7ba3cdd3786fd76dea649628ba763c29da
     del fig
     print("Interactive 2D plot with counts completed")
 
@@ -763,14 +737,10 @@ def atom_mapping_centroids_2d_zvalue(triangle_centroids, lipid_type, frame):
     )
 
     # Save as standalone HTML
-<<<<<<< HEAD
-    fig.write_html(util.analysis_path/f"{lipid_type}_1A_strain2_triangle_centroids_with_zvalues_2d_frame{frame}.html")
-=======
     fig.write_html(
-        util.trajectory_path
+        util.analysis_path
         / f"{lipid_type}_strain2_triangle_centroids_with_zvalues_2d_frame{frame}.html"
     )
->>>>>>> 125f3b7ba3cdd3786fd76dea649628ba763c29da
     del fig
     print("Interactive 2D plot with counts completed")
 
@@ -858,16 +828,9 @@ def combined_atom_mappin_plot(
     )
 
     # Save as standalone HTML
-<<<<<<< HEAD
-    fig.write_html(util.analysis_path/f"{lipid_type}_1A_strain2_triangle_centroids_with_zvalues_2d_frame{frame_num}_combined.html")
-    del fig
-    print("Interactive 2D plot with counts completed")
-
-=======
     fig.write_html(
-        util.trajectory_path
-        / f"{lipid_type}_strain2_triangle_centroids_with_zvalues_2d_frame{frame_num}_combined.html"
+        util.analysis_path
+        / f"{lipid_type}_1A_strain2_triangle_centroids_with_zvalues_2d_frame{frame_num}_combined.html"
     )
     del fig
     print("Interactive 2D plot with counts completed")
->>>>>>> 125f3b7ba3cdd3786fd76dea649628ba763c29da
