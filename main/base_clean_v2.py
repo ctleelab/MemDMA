@@ -250,8 +250,6 @@ if __name__ == "__main__":
         edges_triangles_lower,
         quadrilateral_normal_upper,
         quadrilateral_normal_lower,
-        centroid_triangles_upper_matrix,
-        centroid_triangles_lower_matrix,
     ) = m.normal_vector_triangles(X_f, Y_f, zupper_f, zlower_f)
     print("Finished:computing normal vectors of triangle")
 
@@ -326,7 +324,7 @@ if __name__ == "__main__":
     print("Start: gl2 grid assignment")
     gl2_grid_assignment_upper, lipid_grid_assignment_upper = qc.grid_assignment(
         gl2_beads_upper,
-        centroid_triangles_upper_matrix,
+        centroid_triangles_u,
         tree_upper,
         grid_keys_upper,
         centroids_upper,
@@ -335,7 +333,7 @@ if __name__ == "__main__":
     )
     gl2_grid_assignment_lower, lipid_grid_assignment_lower = qc.grid_assignment(
         gl2_beads_lower,
-        centroid_triangles_lower_matrix,
+        centroid_triangles_l,
         tree_lower,
         grid_keys_lower,
         centroids_lower,
