@@ -519,6 +519,12 @@ if __name__ == "__main__":
         args.frame_num,
     )
 
+    neigh_graph.atom_mapping_centroids_2d_matplotlib(
+        centroid_triangles_u,
+        triangle_atom_assignment_upper_sorted,
+        lipid_type_short,
+        args.frame_num,
+    )
     # output: neighborhood_grid_id: {atom number: list of grid number}
     # atom mapping to matrix quantifying polar vs nonpolar
     # triangle_atom_assignment_upper = agm.sum_atom_mapping_upper(atom_features, radius, aliphatic, edges_triangles_upper, atom_grid_neighborhood_assignment_upper, coords_triangles_upper, grid_upper_num, grid_coords_upper_np, norm_vector_triangles_up, args.frame_num)
