@@ -24,7 +24,7 @@ def read_radius(filename):
             data[i] = data[i].split()  ##split the line based upon the whitespaces
             cle = data[i][0] + " " + data[i][1]  ##combine lipid and atom name
             dico[cle] = (
-                float(data[i][2]) / 10
+                float(data[i][2]) / 10 #divide by 10 to put the radius in units of nm rather than A
             )  ##then store the radius value to the lipid atom name {(DOP_D2A: raidus)} #divide by 10 because the radius previously presented 10A was in Angstroms, but now 10 in the context represent 10nm
     return dico
 
