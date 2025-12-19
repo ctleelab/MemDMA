@@ -3,7 +3,7 @@
 # general libraries
 import argparse
 import sys
-import pdb as pdb
+import pdbfile
 import numpy as np
 import re
 import MDAnalysis as mda
@@ -105,7 +105,7 @@ if __name__ == "__main__":
             "-m",
             action="store",
             dest="mesh_size",
-            default=0.5,
+            default=0.1,
             help="size of the mesh in nm",
         )
         parser.add_argument(
@@ -171,7 +171,7 @@ if __name__ == "__main__":
 
     # extract num_frame in pdb file (line MODEL) or 1 by default
     ##one per each pdb file, because you feed in pdb files one at a time
-    num_frame = pdb.find_numframe(grolines)
+    num_frame = pdbfile.find_numframe(grolines)
 
     #####################################################################
     ########## create a quadrilateral mesh of the membrane ##############
@@ -248,9 +248,19 @@ if __name__ == "__main__":
         coords_triangles_lower,
         edges_triangles_upper,
         edges_triangles_lower,
-        quadrilateral_normal_upper,
-        quadrilateral_normal_lower,
-    ) = m.normal_vector_triangles(X_f, Y_f, zupper_f, zlower_f)
+    ) = m.vectorized_normal_vector_triangles(X_f, Y_f, zupper_f, zlower_f)
+    # (
+    #     centroid_triangles_u,
+    #     centroid_triangles_l,
+    #     norm_vector_triangles_up,
+    #     norm_vector_triangles_l,
+    #     coords_triangles_upper,
+    #     coords_triangles_lower,
+    #     edges_triangles_upper,
+    #     edges_triangles_lower,
+    #     # quadrilateral_normal_upper,
+    #     # quadrilateral_normal_lower,
+    # ) = m.normal_vector_triangles(X_f, Y_f, zupper_f, zlower_f)
     print("Finished:computing normal vectors of triangle")
 
     # neigh_graph.plot_triangle_grid_assignment(

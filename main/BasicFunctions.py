@@ -47,3 +47,17 @@ def read_aliphatic(filename):
 def Edist3D(coord1, coord2):
     magnitude = np.linalg.norm(coord1 - coord2, axis=-1)
     return magnitude
+
+
+def cross(v1, v2):
+    return np.array(
+        [
+            v1[1] * v2[2] - v1[2] * v2[1],
+            v1[2] * v2[0] - v1[0] * v2[2],
+            v1[0] * v2[1] - v1[1] * v2[0],
+        ]
+    )
+
+
+def norm(v):
+    return np.sqrt(np.dot(v, v))
