@@ -476,9 +476,6 @@ if __name__ == "__main__":
     triangle_atom_assignment_upper = {}
     triangle_atom_assignment_lower = {}
 
-    profiler = cProfile.Profile()
-    profiler.enable()
-
     triangle_atom_assignment_upper_sorted = agm.sum_atom_mapping_upper_np_array(
         atom_features,
         radius,
@@ -494,14 +491,6 @@ if __name__ == "__main__":
         lipid_type_short,
     )
 
-    profiler.disable()
-
-    # Print top 20 slowest calls sorted by cumulative time
-    stats = pstats.Stats(profiler)
-    stats.strip_dirs()
-    stats.sort_stats("cumulative")
-    stats.print_stats(20)
-
     # creates a graph that plots the atom centroid (x,y) color with its count value
     neigh_graph.atom_mapping_centroids_2d_zvalue(
         centroid_triangles_u, lipid_type_short, args.frame_num
@@ -513,6 +502,13 @@ if __name__ == "__main__":
         args.frame_num,
     )
     neigh_graph.combined_atom_mappin_plot(
+        centroid_triangles_u,
+        triangle_atom_assignment_upper_sorted,
+        lipid_type_short,
+        args.frame_num,
+    )
+
+    neigh_graph.atom_mapping_centroids_2d_matplotlib(
         centroid_triangles_u,
         triangle_atom_assignment_upper_sorted,
         lipid_type_short,
