@@ -218,24 +218,24 @@ def sum_atom_mapping_upper_np_array(
         sorted(triangle_atom_assignment_upper.items())
     )
 
-    with open(
-        util.trajectory_path
-        / f"test_1A_{lipid_type}_triangle_atom_assignment_upper_strain2_frame{frame}.pickle",
-        "wb",
-    ) as f:
-        pickle.dump(triangle_atom_assignment_upper_sorted, f)
+    # with open(
+    #     util.trajectory_path
+    #     / f"test_1A_{lipid_type}_triangle_atom_assignment_upper_strain2_frame{frame}.pickle",
+    #     "wb",
+    # ) as f:
+    #     pickle.dump(triangle_atom_assignment_upper_sorted, f)
 
-    # Create a CSV file to store the results
-    with open(
-        util.trajectory_path
-        / f"test2_1A_{lipid_type}_triangle_atom_assignment_upper_strain2_frame{frame}.csv",
-        "w",
-        newline="",
-    ) as f:
-        writer = csv.writer(f)
-        writer.writerow(["triangle_id", "assignment"])  # optional header
-        for key, value in triangle_atom_assignment_upper_sorted.items():
-            writer.writerow([key, value])
+    # # Create a CSV file to store the results
+    # with open(
+    #     util.trajectory_path
+    #     / f"test2_1A_{lipid_type}_triangle_atom_assignment_upper_strain2_frame{frame}.csv",
+    #     "w",
+    #     newline="",
+    # ) as f:
+    #     writer = csv.writer(f)
+    #     writer.writerow(["triangle_id", "assignment"])  # optional header
+    #     for key, value in triangle_atom_assignment_upper_sorted.items():
+    #         writer.writerow([key, value])
 
     # Count number of grids with assignment < 1
     num_grids_less_than_1 = sum(
