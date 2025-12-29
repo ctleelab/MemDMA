@@ -209,23 +209,23 @@ if __name__ == "__main__":
     lipid_type_full = atom_features[first_key][3]
     lipid_type_short = lipid_type_full[:4]
 
-    # csv file of atom_features (purpose visualization of data)
-    with open(
-        util.trajectory_path / f"{args.outputname}_atom_features.csv", "w", newline=""
-    ) as csvfile:
-        writer = csv.writer(csvfile)
-        writer.writerow(
-            [
-                "Atom Number",
-                "Atom Type",
-                "Leaflet",
-                "Coordinates",
-                "Lipid Type",
-                "Residue Number",
-            ]
-        )
-        for atom_num, features in atom_features.items():
-            writer.writerow([atom_num, *features])
+    # # csv file of atom_features (purpose visualization of data)
+    # with open(
+    #     util.trajectory_path / f"{args.outputname}_atom_features.csv", "w", newline=""
+    # ) as csvfile:
+    #     writer = csv.writer(csvfile)
+    #     writer.writerow(
+    #         [
+    #             "Atom Number",
+    #             "Atom Type",
+    #             "Leaflet",
+    #             "Coordinates",
+    #             "Lipid Type",
+    #             "Residue Number",
+    #         ]
+    #     )
+    #     for atom_num, features in atom_features.items():
+    #         writer.writerow([atom_num, *features])
 
     print("Finished:determining atom features")
 
@@ -263,9 +263,9 @@ if __name__ == "__main__":
     # ) = m.normal_vector_triangles(X_f, Y_f, zupper_f, zlower_f)
     print("Finished:computing normal vectors of triangle")
 
-    neigh_graph.plot_triangle_grid_assignment(
-        centroid_triangles_u, centroid_triangles_l
-    )
+    # neigh_graph.plot_triangle_grid_assignment(
+    #     centroid_triangles_u, centroid_triangles_l
+    # )
 
     #################################################################################
     ########## Determine the grid closest to the GL2 bead of each lipid #############
@@ -352,15 +352,15 @@ if __name__ == "__main__":
     )
     print("Finished: gl2 grid assignment")
 
-    # plot coords of Gl2 grid assignments and then the GL2 bead of the lower
-    neigh_graph.plot_gl2_grid_assignment(
-        gl2_grid_assignment_upper, gl2_grid_assignment_lower, gl2_beads_lower
-    )
+    # # plot coords of Gl2 grid assignments and then the GL2 bead of the lower
+    # neigh_graph.plot_gl2_grid_assignment(
+    #     gl2_grid_assignment_upper, gl2_grid_assignment_lower, gl2_beads_lower
+    # )
 
-    # graph neighborhoods of the first gl2 bead
-    neigh_graph.gl2_neighborhood(
-        gl2_beads_upper, centroid_triangles_u, gl2_grid_assignment_upper
-    )
+    # # graph neighborhoods of the first gl2 bead
+    # neigh_graph.gl2_neighborhood(
+    #     gl2_beads_upper, centroid_triangles_u, gl2_grid_assignment_upper
+    # )
 
     # #############################################################
     # ######### create numpy array of coords and edges ############
@@ -393,19 +393,19 @@ if __name__ == "__main__":
         centroid_triangles_l,
     )
 
-    # convert lipid_ids_all_grid_neighborhood_upper to csv
-    with open(
-        util.trajectory_path / f"lipid_ids_all_grid_neighborhood_upper.csv",
-        "w",
-        newline="",
-    ) as csvfile:
-        writer = csv.writer(csvfile)
-        writer.writerow(["Lipid ID", "Grid Neighborhood"])
-        for (
-            lipid_id,
-            grid_neighborhood,
-        ) in lipid_ids_all_grid_neighborhood_upper.items():
-            writer.writerow([lipid_id, grid_neighborhood])
+    # # convert lipid_ids_all_grid_neighborhood_upper to csv
+    # with open(
+    #     util.trajectory_path / f"lipid_ids_all_grid_neighborhood_upper.csv",
+    #     "w",
+    #     newline="",
+    # ) as csvfile:
+    #     writer = csv.writer(csvfile)
+    #     writer.writerow(["Lipid ID", "Grid Neighborhood"])
+    #     for (
+    #         lipid_id,
+    #         grid_neighborhood,
+    #     ) in lipid_ids_all_grid_neighborhood_upper.items():
+    #         writer.writerow([lipid_id, grid_neighborhood])
 
     # #############################################################
     # ########## assign the neighborhood to each atom  ############
@@ -422,20 +422,20 @@ if __name__ == "__main__":
         all_atoms_lower, gl2_grid_assignment_lower, gl2_beads_lower_resnumber
     )
 
-    # save atom_grid_neighborhood_assignment_upper as a csv
-    with open(
-        util.trajectory_path / f"atom_grid_neighborhood_upper.csv", "w", newline=""
-    ) as csvfile:
-        writer = csv.writer(csvfile)
-        writer.writerow(
-            ["Atom Number", "Residue Number", "Coordinates", "Neighborhood Grids"]
-        )
-        for atom_num, (
-            res_num,
-            coords,
-            neighborhood,
-        ) in atom_grid_neighborhood_assignment_upper.items():
-            writer.writerow([atom_num, res_num, coords.tolist(), neighborhood])
+    # # save atom_grid_neighborhood_assignment_upper as a csv
+    # with open(
+    #     util.trajectory_path / f"atom_grid_neighborhood_upper.csv", "w", newline=""
+    # ) as csvfile:
+    #     writer = csv.writer(csvfile)
+    #     writer.writerow(
+    #         ["Atom Number", "Residue Number", "Coordinates", "Neighborhood Grids"]
+    #     )
+    #     for atom_num, (
+    #         res_num,
+    #         coords,
+    #         neighborhood,
+    #     ) in atom_grid_neighborhood_assignment_upper.items():
+    #         writer.writerow([atom_num, res_num, coords.tolist(), neighborhood])
 
     print("Finished:GL2 grid neighborhood assignment")
 
@@ -486,9 +486,6 @@ if __name__ == "__main__":
     triangle_atom_assignment_upper = {}
     triangle_atom_assignment_lower = {}
 
-    # profiler = cProfile.Profile()
-    # profiler.enable()
-
     triangle_atom_assignment_upper_sorted = agm.sum_atom_mapping_upper_np_array(
         atom_features,
         radius,
@@ -504,25 +501,26 @@ if __name__ == "__main__":
         lipid_type_short,
     )
 
-    profiler.disable()
+    # # creates a graph that plots the atom centroid (x,y) color with its count value
+    # neigh_graph.atom_mapping_centroids_2d_zvalue(
+    #     centroid_triangles_u, lipid_type_short, args.frame_num
+    # )
+    # neigh_graph.atom_mapping_centroids_2d(
+    #     centroid_triangles_u,
+    #     triangle_atom_assignment_upper_sorted,
+    #     lipid_type_short,
+    #     args.frame_num,
+    # )
 
-    # Print top 20 slowest calls sorted by cumulative time
-    stats = pstats.Stats(profiler)
-    stats.strip_dirs()
-    stats.sort_stats("cumulative")
-    stats.print_stats(20)
-
-    # creates a graph that plots the atom centroid (x,y) color with its count value
-    neigh_graph.atom_mapping_centroids_2d_zvalue(
-        centroid_triangles_u, lipid_type_short, args.frame_num
-    )
-    neigh_graph.atom_mapping_centroids_2d(
+    #also creates a csv file of (x,y,z, atom count)
+    neigh_graph.combined_atom_mappin_plot(
         centroid_triangles_u,
         triangle_atom_assignment_upper_sorted,
         lipid_type_short,
         args.frame_num,
     )
-    neigh_graph.combined_atom_mappin_plot(
+
+    neigh_graph.atom_mapping_centroids_2d_matplotlib(
         centroid_triangles_u,
         triangle_atom_assignment_upper_sorted,
         lipid_type_short,

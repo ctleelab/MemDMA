@@ -71,6 +71,7 @@ def sum_atom_mapping_upper_np_array(
                 2
             ]  # gets the coordianates of the atom
             atm_radius = [radius[lipid_atm_name]]  # gets the radius of the atom
+
             atm_type = aliphatic[
                 lipid_atm_name
             ]  # gets the atom type (polar vs non-polar)
@@ -107,6 +108,10 @@ def sum_atom_mapping_upper_np_array(
                 # Calculate the normal direction of w_vector by computing the dot product the w_vector to the triangle normal vector
                 # sum across rows (sum of x,y,z components) to get the scalar projection of w onto the normal vector
                 dot_products = np.sum(w_vectors * neighborhood_norms_array, axis=1)
+
+                # getting the distance from the atom to the plane where the grid of interst exists using Euclidean Distance
+                atom_centroid_distance_to_grid = np.abs(dot_products)
+                atom_distance_to_grid = atom_centroid_distance_to_grid - atm_radius
 
                 # Computes the normal component of the w_vector
                 # dot_products[:, None] changes from row of number to column of numbers to do the multiplication
@@ -181,14 +186,18 @@ def sum_atom_mapping_upper_np_array(
                     (height_parallelogram <= atm_radius) & edge_projection_valid, axis=1
                 )
 
+                # (3) distance check, is required to be within 1A (.1nm) from the grid of interest
+                distance_less_1A = atom_distance_to_grid <= 0.1
+
                 # (3) Final mapping decision
                 atom_maps_to_triangle = vertex_hit | edge_hit  # shape (N,)
 
-                # global IDs where atom maps to triangle
-                mapped_grid_ids = grid_ids[atom_maps_to_triangle]
+                atom_maps_to_triangle_within_1A = (
+                    atom_maps_to_triangle & distance_less_1A
+                )
 
-                # goes from the atom specific grid id to its global grid id
-                mapped_grid_ids = grid_ids[atom_maps_to_triangle]
+                # global IDs where atom maps to triangle
+                mapped_grid_ids = grid_ids[atom_maps_to_triangle_within_1A]
 
                 for gid in mapped_grid_ids:
                     if atm_type == "n":
@@ -209,24 +218,24 @@ def sum_atom_mapping_upper_np_array(
         sorted(triangle_atom_assignment_upper.items())
     )
 
-    with open(
-        util.trajectory_path
-        / f"test_1A_{lipid_type}_triangle_atom_assignment_upper_strain2_frame{frame}.pickle",
-        "wb",
-    ) as f:
-        pickle.dump(triangle_atom_assignment_upper_sorted, f)
+    # with open(
+    #     util.trajectory_path
+    #     / f"test_1A_{lipid_type}_triangle_atom_assignment_upper_strain2_frame{frame}.pickle",
+    #     "wb",
+    # ) as f:
+    #     pickle.dump(triangle_atom_assignment_upper_sorted, f)
 
-    # Create a CSV file to store the results
-    with open(
-        util.trajectory_path
-        / f"test2_1A_{lipid_type}_triangle_atom_assignment_upper_strain2_frame{frame}.csv",
-        "w",
-        newline="",
-    ) as f:
-        writer = csv.writer(f)
-        writer.writerow(["triangle_id", "assignment"])  # optional header
-        for key, value in triangle_atom_assignment_upper_sorted.items():
-            writer.writerow([key, value])
+    # # Create a CSV file to store the results
+    # with open(
+    #     util.trajectory_path
+    #     / f"test2_1A_{lipid_type}_triangle_atom_assignment_upper_strain2_frame{frame}.csv",
+    #     "w",
+    #     newline="",
+    # ) as f:
+    #     writer = csv.writer(f)
+    #     writer.writerow(["triangle_id", "assignment"])  # optional header
+    #     for key, value in triangle_atom_assignment_upper_sorted.items():
+    #         writer.writerow([key, value])
 
     # Count number of grids with assignment < 1
     num_grids_less_than_1 = sum(
