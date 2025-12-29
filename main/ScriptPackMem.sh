@@ -7,8 +7,9 @@
 prefix=""
 
 # set PackMem absolute path
-PackMemPATH=/Users/ctlee/PackMem-leelab/main
-trajectoryPATH=/Users/ctlee/PackMem-leelab/simulation_data/
+PackMemPATH=/home/casakurai/scratch/packmem/main
+trajectoryPATH=/home/casakurai/scratch/packmem/tests
+
 
 # # For looping over frames
 # # set the total number of frames
