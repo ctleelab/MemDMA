@@ -78,13 +78,6 @@ if __name__ == "__main__":
             help="(default value 1.0)",
         )
         parser.add_argument(
-            "-t",
-            action="store",
-            dest="pd_type",
-            default="all",
-            help="Packing Defect Type (all/shallow/deep) default all",
-        )
-        parser.add_argument(
             "-p",
             action="store",
             dest="paramFile",
@@ -132,19 +125,6 @@ if __name__ == "__main__":
         # 2) RESNAME_GLYC lipid name: GL2 bead head ex:"{'DPPC': 'GL2', 'DOPC': 'GL2'}"
         # 3) LIPID lipid name (3-letters) ex:"['DPPC', 'DOPC']"
         DICT_3L, RESNAME_GLYC, LIPID = p.set_params(args.paramFile)
-
-        # determine packing defect type (all/shallow/deep)
-        if args.pd_type == "all":
-            FlagPDtype = 0
-        elif args.pd_type == "shallow":
-            FlagPDtype = 2
-        elif args.pd_type == "deep":
-            FlagPDtype = 1
-        else:
-            print(
-                "ERROR : Packing defect type not known. Please choose : all/deep/shallow"
-            )
-            sys.exit()
 
         ##error handling if the choosen distance is negative. This distance is key when determining where each bead falls within the mesh grid.
         if args.dist_suppl_Z < 0.0:
@@ -512,7 +492,7 @@ if __name__ == "__main__":
     #     args.frame_num,
     # )
 
-    #also creates a csv file of (x,y,z, atom count)
+    # also creates a csv file of (x,y,z, atom count)
     neigh_graph.combined_atom_mappin_plot(
         centroid_triangles_u,
         triangle_atom_assignment_upper_sorted,
