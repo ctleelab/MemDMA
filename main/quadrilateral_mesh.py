@@ -21,7 +21,7 @@ def mesh(gro, selection, step):
     import numpy as np
     import MDAnalysis as mda
     from membrane_spectral_analysis.base import MembraneSpectralAnalysis
-    import leaflet_finder as leaflet_finder
+    import leaflet_finder
 
     # gro, selection, traj, path = args
     # u = mda.Universe(gro, str(traj) , continous=True)
@@ -30,10 +30,8 @@ def mesh(gro, selection, step):
     print("units of the file", u.trajectory.units)  # which is nm
 
     # Average box dimensions over trajectory
-    # might not need since I'm in the NVT ensemble
     avg_dim_x = np.mean([ts.dimensions[0] for ts in u.trajectory])
     avg_dim_y = np.mean([ts.dimensions[1] for ts in u.trajectory])
-    print(avg_dim_y)
 
     # Determine number of bins
     num_bins_x = int(avg_dim_x / step)
@@ -44,20 +42,12 @@ def mesh(gro, selection, step):
     y_edges = np.linspace(0, avg_dim_y, num_bins_y + 1)
 
     # Bin centers for plotting
-    # I don't think this is being used in the MembraneSpectralAnalysis function
     x_centers = ((0.5 * (x_edges[:-1] + x_edges[1:]))) / 10
     y_centers = ((0.5 * (y_edges[:-1] + y_edges[1:]))) / 10
+
     X, Y = np.meshgrid(x_centers, y_centers, indexing="ij")
 
-    # Checking z-range of lower glycerol bead
-    ag = u.atoms.select_atoms("name GL2")
-    z_coords = ag.positions[:, 2]
-    # ("min z:", np.min(z_coords))
-    # print("max z:", np.max(z_coords))
-    # print("z spread:", np.ptp(z_coords))
-
     # Run MembraneSpectralAnalysis to get the quadrilateral mesh
-    # does it turn the units to angstroms internally?
     mc = MembraneSpectralAnalysis(
         u,
         select=selection,
@@ -69,47 +59,11 @@ def mesh(gro, selection, step):
         interpolate=True,
     ).run(verbose=True)
 
+    ## pulls out the GL2 beads that belong to the upper and lower leaflet
     z_data_upper = (mc.results["z_surface"]["upper"]) / 10
     z_data_lower = (mc.results["z_surface"]["lower"]) / 10
-    # bin_area = mc.bin_areas
 
-    # # Save only the results I care about. No need to save entire mc object
-    # with open("membrane_curvature_smooth.pickle", "wb") as handle:
-    #     pickle.dump({"X":X, "Y": Y, "Z_upper": z_data_upper ,"Z_lower": z_data_lower}, handle, protocol=pickle.HIGHEST_PROTOCOL)
-
+    ## create a dictionary of
     leaflet, leaflet_residues = leaflet_finder.determine_leaflets(u, selection)
 
-    # # Save only the results I care about. No need to save entire mc object
-    # with open("membrane_curvature_smooth_.5A.pickle", "wb") as handle:
-    #     pickle.dump({"X":X, "Y": Y, "Z_upper": z_data_upper ,"Z_lower": z_data_lower, "bin_area": bin_area}, handle, protocol=pickle.HIGHEST_PROTOCOL)
-    z_midplane = 0.5 * (z_data_upper + z_data_lower)
-
-    return (X, Y, z_data_upper, z_data_lower, leaflet, leaflet_residues, z_midplane)
-
-
-# jobs = []
-# systems = ["test"]
-# lipid = "test"
-# time = "test"
-
-
-# for sys in systems:
-#     #gro file
-#     gro = path / "dopcdope_CGMartini.pdb"
-#     #traj file
-#     #selection
-#     selection = f"name GL2"
-#     inputs = (gro, selection, path)
-#     jobs.append(inputs)
-
-# process_map(mesh, jobs, max_workers=64)
-
-
-# interpolate over the z_midplane z coordinates
-def midplane_interpolated(z_midplane):
-    from scipy.interpolate import RegularGridInterpolator
-
-    x = X[:, 0]
-    y = Y[0, :]
-    f_mid = RegularGridInterpolator((x, y, z_midplane))
-    return f_mid
+    return (X, Y, z_data_upper, z_data_lower, leaflet_residues)

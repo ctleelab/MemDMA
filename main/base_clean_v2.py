@@ -108,14 +108,12 @@ if __name__ == "__main__":
             help="sets the size of the neighborhood cutoff for grids in nm.",
         )
 
-        ## parse_args() will read the arguments that the user gives. 
+        ## parse_args() will read the arguments that the user gives.
         ## This line of code then stores this information into the python variable args.
         args = parser.parse_args()
 
         ## This ensures that more than one argument is provided by the user
-        if (
-            len(sys.argv) == 1
-        ):  
+        if len(sys.argv) == 1:
             parser.print_usage()  ##tells the user what arguments are expected
             sys.exit()
 
@@ -157,13 +155,13 @@ if __name__ == "__main__":
     ########## create a quadrilateral mesh of the membrane ##############
     #####################################################################
 
-    # inputs: grofile, selection of beads for mesh, step size for mesh grid (nm)
-    # outputs: (X, Y, Z_upper, Z_lower) these are all coordinates
+    ## inputs: grofile, selection of beads that create the mesh, size for mesh grid (nm)
+    ## outputs: (X, Y, Z_upper, Z_lower) these are all coordinates
     ## leaflet_residues_new: {upper:[1,2,3], lower:[4,5,6]}
     ##note this also calculates the mesh information
 
     print("Start: running mesh")
-    X, Y, zupper, zlower, leaflet, leaflet_residues, z_midplane = qm.mesh(
+    X, Y, zupper, zlower, leaflet_residues = qm.mesh(
         args.filename, "name GL2", args.mesh_size
     )
     print("Finished:running mesh")
@@ -479,7 +477,7 @@ if __name__ == "__main__":
         grid_upper_num,
         args.frame_num,
         lipid_type_short,
-        args.dist
+        args.dist,
     )
 
     # # creates a graph that plots the atom centroid (x,y) color with its count value
