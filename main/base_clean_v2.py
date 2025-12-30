@@ -158,9 +158,9 @@ if __name__ == "__main__":
     ## inputs: grofile, selection of beads that create the mesh, size for mesh grid (nm)
     ## outputs: (X, Y, Z_upper, Z_lower) these are all coordinates
     ## leaflet_residues_new: {upper:[1,2,3], lower:[4,5,6]}
-    ##note this also calculates the mesh information
 
     print("Start: running mesh")
+
     X, Y, zupper, zlower, leaflet_residues = qm.mesh(
         args.filename, "name GL2", args.mesh_size
     )
@@ -182,28 +182,13 @@ if __name__ == "__main__":
     list_types_atoms = (
         util.list_types_atoms_lipid
     )  # just loads in the types of atoms in the .gro file
+
     atom_features = pp.atom_features(grolines, list_types_atoms, leaflet_residues)
+
+    ## determines the lipids in system, to be used for naming files
     first_key = next(iter(atom_features))
     lipid_type_full = atom_features[first_key][3]
     lipid_type_short = lipid_type_full[:4]
-
-    # # csv file of atom_features (purpose visualization of data)
-    # with open(
-    #     util.trajectory_path / f"{args.outputname}_atom_features.csv", "w", newline=""
-    # ) as csvfile:
-    #     writer = csv.writer(csvfile)
-    #     writer.writerow(
-    #         [
-    #             "Atom Number",
-    #             "Atom Type",
-    #             "Leaflet",
-    #             "Coordinates",
-    #             "Lipid Type",
-    #             "Residue Number",
-    #         ]
-    #     )
-    #     for atom_num, features in atom_features.items():
-    #         writer.writerow([atom_num, *features])
 
     print("Finished:determining atom features")
 

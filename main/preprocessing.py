@@ -1,7 +1,3 @@
-# preprocessing
-# create a list that contains {atom number, atom_name, leaflet assignment, coords of atom }
-# only create this list once to save on computing time
-
 import re
 import numpy as np
 import grid_slicing as gs
