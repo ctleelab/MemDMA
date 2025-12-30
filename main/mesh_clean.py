@@ -15,7 +15,7 @@ def format_data(X, Y, Zupper, Zlower):
 
     Zupper_2d = Zupper.squeeze()  # removes the dimension representing the Z column
     Zlower_2d = Zlower.squeeze()  # removes the dimension representing the Z column
-    Y_np = np.array(Y) 
+    Y_np = np.array(Y)
     X_np = np.array(X)
 
     return X_np, Y_np, Zupper_2d, Zlower_2d
@@ -35,6 +35,7 @@ def residue_leaflet_determine(u, selection):
 
 # {triangle number : centroid [(x1,y1,z1), normal vector (x2,y2,z2)}
 # goal: calculate the center for the each triangle
+
 
 def vectorized_normal_vector_triangles(X, Y, Zupper, Zlower, normalize=True):
     import pdb
