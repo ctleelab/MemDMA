@@ -13,14 +13,10 @@ def format_data(X, Y, Zupper, Zlower):
     # remove the extra dimension from Z_upper
     # (X,Y) should be vertices of the quadrilateral
 
-    # Zupper_2d = np.divide(Zupper.squeeze(), 10) #removes the dimension representing the Z column
-    # Zlower_2d = np.divide(Zlower.squeeze(), 10) #removes the dimension representing the Z column
     Zupper_2d = Zupper.squeeze()  # removes the dimension representing the Z column
     Zlower_2d = Zlower.squeeze()  # removes the dimension representing the Z column
-    Y_np = np.array(Y)
+    Y_np = np.array(Y) 
     X_np = np.array(X)
-    # np.savetxt("Y_np", Y_np)
-    # np.savetxt("X_np", X_np)
 
     return X_np, Y_np, Zupper_2d, Zlower_2d
 
