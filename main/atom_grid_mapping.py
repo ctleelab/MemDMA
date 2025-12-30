@@ -19,6 +19,7 @@ def sum_atom_mapping_upper_np_array(
     grid_num: list,
     frame: int,
     lipid_type: str,
+    distance_cutoff: float
 ):
     """
     For each atom calculate the mapping value for all grids in a neighborhood at once using numpy arrays
@@ -187,7 +188,7 @@ def sum_atom_mapping_upper_np_array(
                 )
 
                 # (3) distance check, is required to be within 1A (.1nm) from the grid of interest
-                distance_less_1A = atom_distance_to_grid <= 0.1
+                distance_less_1A = atom_distance_to_grid <= distance_cutoff
 
                 # (3) Final mapping decision
                 atom_maps_to_triangle = vertex_hit | edge_hit  # shape (N,)

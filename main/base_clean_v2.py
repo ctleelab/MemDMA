@@ -8,7 +8,6 @@ import numpy as np
 import re
 import MDAnalysis as mda
 import pickle
-from scipy.spatial import cKDTree
 import csv
 import cProfile
 import pstats
@@ -72,10 +71,10 @@ if __name__ == "__main__":
         parser.add_argument(
             "-d",
             action="store",
-            dest="dist_suppl_Z",
-            default=1.0,
+            dest="dist",
+            default=0.1,
             type=float,
-            help="(default value 1.0)",
+            help="(default value .1nm)",
         )
         parser.add_argument(
             "-p",
@@ -109,13 +108,14 @@ if __name__ == "__main__":
             help="sets the size of the neighborhood cutoff for grids in nm.",
         )
 
-        ##parse_args() will read the arguments that the user gives. These agruments were added to parser. This line of code then stores this information into the python variable args.
+        ## parse_args() will read the arguments that the user gives. 
+        ## This line of code then stores this information into the python variable args.
         args = parser.parse_args()
 
-        ##This is just front-end error handling with the user. Ensure that the user gives a pdb file
+        ## This ensures that more than one argument is provided by the user
         if (
             len(sys.argv) == 1
-        ):  ##sys.argv is the list of all arguments that the user gives when executing the script
+        ):  
             parser.print_usage()  ##tells the user what arguments are expected
             sys.exit()
 
@@ -127,7 +127,7 @@ if __name__ == "__main__":
         DICT_3L, RESNAME_GLYC, LIPID = p.set_params(args.paramFile)
 
         ##error handling if the choosen distance is negative. This distance is key when determining where each bead falls within the mesh grid.
-        if args.dist_suppl_Z < 0.0:
+        if args.dist < 0.0:
             print("ERROR : The distance for the -d option must be > 0")
             sys.exit()
 
@@ -479,6 +479,7 @@ if __name__ == "__main__":
         grid_upper_num,
         args.frame_num,
         lipid_type_short,
+        args.dist
     )
 
     # # creates a graph that plots the atom centroid (x,y) color with its count value

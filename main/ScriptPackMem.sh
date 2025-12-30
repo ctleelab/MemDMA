@@ -26,5 +26,5 @@ pdbnum=200
     ${PackMemPATH}/base_clean_v2.py -i ${trajectoryPATH}/${pdbnum}.gro \
                               -r ${PackMemPATH}/vdw_radii_CGMartini3_openbeta2_updated.txt \
                               -p ${PackMemPATH}/param_CGMartini3_openbeta2.txt \
-                              -o ${pdbnum} -d 1.0 
+                              -o ${pdbnum} -d 0.1 \
                               -f ${pdbnum}
