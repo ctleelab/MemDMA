@@ -7,7 +7,7 @@ def cKDtree_grid_neighborhood(grid_centroids: dict):
     This function creates a CKDtree from the grid_centroids.
 
     Args:
-        grid_centroids (dict): A dictionary with grid numbers as keys and their centroids as values.
+        grid_centroids (dict): {grid number: centroid (x,y,z)}
 
     Returns:
         tree: The cKDTree object for spatial queries.
@@ -15,22 +15,19 @@ def cKDtree_grid_neighborhood(grid_centroids: dict):
         centroids: Numpy array of centroid coordinates for each grid
     """
 
-    grid_keys = np.arange(
-        0, len(grid_centroids)
-    )  # creates a list of the keys of all centroids of the grid points
+    grid_keys = np.arange(0, len(grid_centroids))  # creates a list of the grid numbers
     centroids = np.array(
         [grid_centroids[k][:3] for k in grid_keys]
-    )  # take the coordinates for each grid in grid_keys and creates a numpy array
+    )  # take the coordinates for each grid in grid_centroids and creates a numpy array
+
     tree = cKDTree(centroids)
+
     return tree, grid_keys, centroids
 
 
-# something is not working properly
-# neighborhood of all grids
-# only compute the neighborhood for the particular grid
 def neighborhood(cutoff: int, grid_number: int, tree, grid_keys: list, centroids):
     """
-    This function creating a neighborhood.
+    This function creates a neighborhood for each grid with a specified cutoff value.
 
     Args:
         cuttoff (int): The neighborhood cutoff distance in nm.
@@ -42,12 +39,9 @@ def neighborhood(cutoff: int, grid_number: int, tree, grid_keys: list, centroids
     Returns:
         list: A list of nearby grids determined through cDKtree query.
     """
-    # create neighborhood grid for each grid
-    nearby_grids = tree.query_ball_point(
-        centroids[grid_number], cutoff
-    )  # takes the grid point and pulls out the centroid coordinates
-    # cutoff determines the points within the radius(cutoff), note this gives the indices into the array used to build the KDtree
-    nearby_keys = [
-        grid_keys[j] for j in nearby_grids
-    ]  # turns the nearby_grids into a dictionary
+    # create neighborhood grid for each grid, using the centroid coordinates of the grid within the distance of the cutoff value
+    nearby_grids = tree.query_ball_point(centroids[grid_number], cutoff)
+
+    # convert the nearby_grid index to a actual grid value
+    nearby_keys = [grid_keys[j] for j in nearby_grids]
     return nearby_keys
