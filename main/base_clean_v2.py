@@ -225,13 +225,14 @@ if __name__ == "__main__":
     #################################################################################
 
     # outline of code
-    # 1) pull out gl2 bead and its coordinates
+    # 1) create a dictionary of gl2 bead with its coordinates and all atoms with their coordinates
     # 2) create a neighborhood by cKDtree
     # 3) determine which grid is closest to the GL2 bead by euclidean distance
     # 5) assign a neighborhood to each bead based on lipid it belongs too
 
     print("Start:GL2 grid neighborhood assignment")
-    # 1-1) creating dictionaries for gl2 beads and all atoms
+
+    ## 1) create a dictionary for gl2 beads
     #  gl2_beads_upper a dictionary of just gl2 beads {atm#: coords}
     #  gl2_beads_upper_resnumber a dictionary of just gl2 beads {atm#: resnumber}
     gl2_beads_upper = {}
@@ -241,9 +242,7 @@ if __name__ == "__main__":
     for (
         key,
         v,
-    ) in (
-        atom_features.items()
-    ):  # need .items if there are multiple items in the value of the key of a dictionary
+    ) in atom_features.items():
         if v[0] == "GL2":
             if v[1] == "upper":
                 gl2_beads_upper[key] = v[2]
@@ -252,7 +251,7 @@ if __name__ == "__main__":
                 gl2_beads_lower[key] = v[2]
                 gl2_beads_lower_resnumber[key] = v[4]
 
-    ##1-2) all atom dictionary
+    ## 1) create a dictionary for all atoms
     ## output {atom number: res_number, coords} {3183': (12053, array([ 72.14,  58.45, 194.69]))}
     all_atoms_upper = {}
     all_atoms_lower = {}
