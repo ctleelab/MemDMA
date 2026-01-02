@@ -212,20 +212,10 @@ if __name__ == "__main__":
         edges_triangles_upper,
         edges_triangles_lower,
     ) = m.vectorized_normal_vector_triangles(X_f, Y_f, zupper_f, zlower_f)
-    # (
-    #     centroid_triangles_u,
-    #     centroid_triangles_l,
-    #     norm_vector_triangles_up,
-    #     norm_vector_triangles_l,
-    #     coords_triangles_upper,
-    #     coords_triangles_lower,
-    #     edges_triangles_upper,
-    #     edges_triangles_lower,
-    #     # quadrilateral_normal_upper,
-    #     # quadrilateral_normal_lower,
-    # ) = m.normal_vector_triangles(X_f, Y_f, zupper_f, zlower_f)
+
     print("Finished:computing normal vectors of triangle")
 
+    ##plot for centroids of the triangle grids
     # neigh_graph.plot_triangle_grid_assignment(
     #     centroid_triangles_u, centroid_triangles_l
     # )
@@ -238,7 +228,7 @@ if __name__ == "__main__":
     # 1) pull out gl2 bead and its coordinates
     # 2) create a neighborhood by cKDtree
     # 3) determine which grid is closest to the GL2 bead by euclidean distance
-    # 5) assign a neighborhood to each bead based on lipid it belongs too.
+    # 5) assign a neighborhood to each bead based on lipid it belongs too
 
     print("Start:GL2 grid neighborhood assignment")
     # 1-1) creating dictionaries for gl2 beads and all atoms
