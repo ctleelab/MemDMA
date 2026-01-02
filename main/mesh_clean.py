@@ -32,6 +32,28 @@ def residue_leaflet_determine(u, selection):
 
 
 def vectorized_normal_vector_triangles(X, Y, Zupper, Zlower, normalize=True):
+    """
+    Takes the parallelogram grids that create the membrane mesh, and splits each one to create two triangle grids.
+    Computes the triangle grid centroid, vector of triangular grid, coordinates of each vertex of triangle, edges of each triangle.
+
+    Args:
+        X (np.array): x-coordinate of the centroid of the parallelogram grids 
+        Y (np.array): y-coordinate of the centroid of the parallelogram grids 
+        Zupper (np.array): z-coordinate of the centroid of the parallelogram grids for the upper leaflet 
+        Zlower (np.array): z-coordinate of the centroid of the parallelogram grids for the upper lower
+
+    Returns: 
+        centroid_triangles_upper (np.array): centroid coordinates for each triangle in the upper leaflet 
+        centroid_triangles_lower (np.array): centroid coordinates for each triangle in the lower leaflet 
+        normal_vector_triangles_upper (np.array): normal vector coordinates for each triangle in the upper leaflet 
+        normal_vector_triangles_lower (np.array): normal vector coordinates for each triangle in the lower leaflet 
+        coords_triangles_upper (np.array): vertex coordinates for each triangle in the upper leaflet 
+        coords_triangles_lower (np.array): vertex coordinates for each triangle in the lower leaflet 
+        edges_triangles_upper (np.array): edge coordinates for each triangle in the upper leaflet 
+        edges_triangles_lower (np.array): edge coordinates for each triangle in the lower leaflet 
+
+
+    """
     import pdb
 
     nx, ny = X.shape
