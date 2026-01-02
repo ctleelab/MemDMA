@@ -139,26 +139,22 @@ def grid_assignment(
 # gl2_beads_resnumber: {gl2_atom_number: resnumber}
 
 
-def atom_grid_mapping(all_atom, gl2_neighborhood_grids, gl2_beads_resnumber):
+def atom_grid_mapping(
+    all_atom: dict, gl2_neighborhood_grids: dict, gl2_beads_resnumber: dict
+):
+    """
+    Append a list of neighborhood grids to the all_atoms dictionary.
+    Args:
+        all_atom (dict): {atom number: res_number, coords}
+        gl2_neighborhood_grids (dict): {A dictionary with GL2 atom number: (closet grid_index, grid_coords of closest grid_index, neighborhood_list of the grid_idex)}
+        gl2_beads_resnumber (dict): {atom number of gl2 bead: res_number}
+    Returns:
+        all_atom (dict): {atom number: res_number, coords, list of neighborhood grid number}
+    """
 
-    # Precompute reverse lookup: residue number -> gl2_atom
+    # Precompute reverse lookup. Mapping residue number -> gl2_atom
     res_to_gl2_atom = {v: str(k).strip() for k, v in gl2_beads_resnumber.items()}
-    # print("res_to_gl2_atom:", res_to_gl2_atom)
 
-    # for k, v in gl2_beads_resnumber.items():
-    #     print("Key:", k, "Type:", type(k))
-    #     print("Value:", v, "Type:", type(v))
-    #     break  # just check the first item
-
-    # trouble-shooting why GL2 atoms are missing neighborhood
-    # print("gl2_neighborhood_grids:", gl2_neighborhood_grids)
-    # if '2392' in gl2_neighborhood_grids:
-    #     print(gl2_neighborhood_grids['2392'])
-
-    # all_atom_neighborhood ={}
-    print(list(all_atom.keys())[:5])
-
-    # the keys start at 1
     for key1, v1 in all_atom.items():
 
         res_number = v1[0]  # pulls out residue number
@@ -166,26 +162,21 @@ def atom_grid_mapping(all_atom, gl2_neighborhood_grids, gl2_beads_resnumber):
         # Find corresponding GL2 atom for each residue number
         gl2_atom = res_to_gl2_atom.get(res_number)
 
-        if gl2_atom is None:  # residue not present in GL2 mapping (need to check this)
-            print("Stop issue!")
+        if (
+            gl2_atom is None
+        ):  # Error handeling of residues that are not present in GL2 mapping
+            print("Error, residue not found in the Gl2 mapping.")
+            break
 
-        values_1 = gl2_neighborhood_grids.get(gl2_atom)
+        values_1 = gl2_neighborhood_grids.get(
+            gl2_atom
+        )  # pulls out the values of the gl2_neighborhood_grids dictionary
 
-        # print("Values 1:", values_1)
-        if values_1 is None or len(values_1) < 3:
-            print("Gl2_atom", gl2_atom)
-            print("Values 1:", values_1)
-            print("Issue")
+        neighborhood_list = values_1[
+            2
+        ]  # pulls out the neighborhood grid list of the gl2_neighborhood_grids dictionary
 
-            continue  # skip if not enough data or missing key
-
-        neighborhood_list = values_1[2]
-
-        # Append neighborhood list to atom entry (preserves original data)
+        # Append neighborhood list to atom entry and preserves the original data
         all_atom[key1] = (*v1, neighborhood_list)
-        # all_atom_neighborhood[key1] = (res_number,  neighborhood_list)
-
-        # print("atom num:", key1)
-        # print(all_atom[key1])
 
     return all_atom
