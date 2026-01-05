@@ -8,7 +8,6 @@ import numpy as np
 import re
 import MDAnalysis as mda
 import pickle
-from scipy.spatial import cKDTree
 import csv
 import cProfile
 import pstats
@@ -72,17 +71,10 @@ if __name__ == "__main__":
         parser.add_argument(
             "-d",
             action="store",
-            dest="dist_suppl_Z",
-            default=1.0,
+            dest="dist",
+            default=0.1,
             type=float,
-            help="(default value 1.0)",
-        )
-        parser.add_argument(
-            "-t",
-            action="store",
-            dest="pd_type",
-            default="all",
-            help="Packing Defect Type (all/shallow/deep) default all",
+            help="(default value .1nm)",
         )
         parser.add_argument(
             "-p",
@@ -116,13 +108,12 @@ if __name__ == "__main__":
             help="sets the size of the neighborhood cutoff for grids in nm.",
         )
 
-        ##parse_args() will read the arguments that the user gives. These agruments were added to parser. This line of code then stores this information into the python variable args.
+        ## parse_args() will read the arguments that the user gives.
+        ## This line of code then stores this information into the python variable args.
         args = parser.parse_args()
 
-        ##This is just front-end error handling with the user. Ensure that the user gives a pdb file
-        if (
-            len(sys.argv) == 1
-        ):  ##sys.argv is the list of all arguments that the user gives when executing the script
+        ## This ensures that more than one argument is provided by the user
+        if len(sys.argv) == 1:
             parser.print_usage()  ##tells the user what arguments are expected
             sys.exit()
 
@@ -133,21 +124,8 @@ if __name__ == "__main__":
         # 3) LIPID lipid name (3-letters) ex:"['DPPC', 'DOPC']"
         DICT_3L, RESNAME_GLYC, LIPID = p.set_params(args.paramFile)
 
-        # determine packing defect type (all/shallow/deep)
-        if args.pd_type == "all":
-            FlagPDtype = 0
-        elif args.pd_type == "shallow":
-            FlagPDtype = 2
-        elif args.pd_type == "deep":
-            FlagPDtype = 1
-        else:
-            print(
-                "ERROR : Packing defect type not known. Please choose : all/deep/shallow"
-            )
-            sys.exit()
-
         ##error handling if the choosen distance is negative. This distance is key when determining where each bead falls within the mesh grid.
-        if args.dist_suppl_Z < 0.0:
+        if args.dist < 0.0:
             print("ERROR : The distance for the -d option must be > 0")
             sys.exit()
 
@@ -177,13 +155,13 @@ if __name__ == "__main__":
     ########## create a quadrilateral mesh of the membrane ##############
     #####################################################################
 
-    # inputs: grofile, selection of beads for mesh, step size for mesh grid (nm)
-    # outputs: (X, Y, Z_upper, Z_lower) these are all coordinates
+    ## inputs: grofile, selection of beads that create the mesh, size for mesh grid (nm)
+    ## outputs: (X, Y, Z_upper, Z_lower) these are all coordinates
     ## leaflet_residues_new: {upper:[1,2,3], lower:[4,5,6]}
-    ##note this also calculates the mesh information
 
     print("Start: running mesh")
-    X, Y, zupper, zlower, leaflet, leaflet_residues, z_midplane = qm.mesh(
+
+    X, Y, zupper, zlower, leaflet_residues = qm.mesh(
         args.filename, "name GL2", args.mesh_size
     )
     print("Finished:running mesh")
@@ -198,34 +176,17 @@ if __name__ == "__main__":
     ####################################################
 
     print("Start:determining atom features")
-    ##input: grolines, list of the types of atoms in the gro file, which residues are in the upper vs lower leaflet
-    ##output: {atm#: GL2', 'lower', array([18.222,  4.37 , 14.85 ]), 'DOPC GL2', resnumber }
 
     list_types_atoms = (
         util.list_types_atoms_lipid
     )  # just loads in the types of atoms in the .gro file
+
     atom_features = pp.atom_features(grolines, list_types_atoms, leaflet_residues)
+
+    ## determines the lipids in system, to be used for naming files
     first_key = next(iter(atom_features))
     lipid_type_full = atom_features[first_key][3]
     lipid_type_short = lipid_type_full[:4]
-
-    # # csv file of atom_features (purpose visualization of data)
-    # with open(
-    #     util.trajectory_path / f"{args.outputname}_atom_features.csv", "w", newline=""
-    # ) as csvfile:
-    #     writer = csv.writer(csvfile)
-    #     writer.writerow(
-    #         [
-    #             "Atom Number",
-    #             "Atom Type",
-    #             "Leaflet",
-    #             "Coordinates",
-    #             "Lipid Type",
-    #             "Residue Number",
-    #         ]
-    #     )
-    #     for atom_num, features in atom_features.items():
-    #         writer.writerow([atom_num, *features])
 
     print("Finished:determining atom features")
 
@@ -249,20 +210,10 @@ if __name__ == "__main__":
         edges_triangles_upper,
         edges_triangles_lower,
     ) = m.vectorized_normal_vector_triangles(X_f, Y_f, zupper_f, zlower_f)
-    # (
-    #     centroid_triangles_u,
-    #     centroid_triangles_l,
-    #     norm_vector_triangles_up,
-    #     norm_vector_triangles_l,
-    #     coords_triangles_upper,
-    #     coords_triangles_lower,
-    #     edges_triangles_upper,
-    #     edges_triangles_lower,
-    #     # quadrilateral_normal_upper,
-    #     # quadrilateral_normal_lower,
-    # ) = m.normal_vector_triangles(X_f, Y_f, zupper_f, zlower_f)
+
     print("Finished:computing normal vectors of triangle")
 
+    ##plot for centroids of the triangle grids
     # neigh_graph.plot_triangle_grid_assignment(
     #     centroid_triangles_u, centroid_triangles_l
     # )
@@ -272,15 +223,16 @@ if __name__ == "__main__":
     #################################################################################
 
     # outline of code
-    # 1) pull out gl2 bead and its coordinates
+    # 1) create a dictionary of gl2 bead with its coordinates and all atoms with their coordinates
     # 2) create a neighborhood by cKDtree
     # 3) determine which grid is closest to the GL2 bead by euclidean distance
-    # 5) assign a neighborhood to each bead based on lipid it belongs too.
+    # 5) assign a neighborhood to each bead based on lipid it belongs too
 
     print("Start:GL2 grid neighborhood assignment")
-    # 1-1) creating dictionaries for gl2 beads and all atoms
-    #  gl2_beads_upper a dictionary of just gl2 beads {atm#: coords}
-    #  gl2_beads_upper_resnumber a dictionary of just gl2 beads {atm#: resnumber}
+
+    ##  create a dictionary for gl2 beads
+    ##  gl2_beads_upper a dictionary of just gl2 beads {atm#: coords}
+    ##  gl2_beads_upper_resnumber a dictionary of just gl2 beads {atm#: resnumber}
     gl2_beads_upper = {}
     gl2_beads_lower = {}
     gl2_beads_upper_resnumber = {}
@@ -288,9 +240,7 @@ if __name__ == "__main__":
     for (
         key,
         v,
-    ) in (
-        atom_features.items()
-    ):  # need .items if there are multiple items in the value of the key of a dictionary
+    ) in atom_features.items():
         if v[0] == "GL2":
             if v[1] == "upper":
                 gl2_beads_upper[key] = v[2]
@@ -299,7 +249,7 @@ if __name__ == "__main__":
                 gl2_beads_lower[key] = v[2]
                 gl2_beads_lower_resnumber[key] = v[4]
 
-    ##1-2) all atom dictionary
+    ## create a dictionary for all atoms
     ## output {atom number: res_number, coords} {3183': (12053, array([ 72.14,  58.45, 194.69]))}
     all_atoms_upper = {}
     all_atoms_lower = {}
@@ -317,6 +267,7 @@ if __name__ == "__main__":
     #######################################
     ###create a cKDtree of the centroids###
     #######################################
+
     tree_upper, grid_keys_upper, centroids_upper = ng.cKDtree_grid_neighborhood(
         centroid_triangles_u
     )
@@ -325,13 +276,12 @@ if __name__ == "__main__":
         centroid_triangles_l
     )
 
-    # 3) calculate the euclidean distance between the Gl2 and the grids in the mesh
-    # can compare the array of Gl2 coordinates to the array of mesh COM (this should be quick because can do matrix math). Will compare by euclidean distance.
+    ## To determine which grid is the closest to the GL2 bead, the euclidean distance between the Gl2 bead and the grids centroid was calculated
 
     # inputs will be the centroids of each grid and the gl2 bead coordinates
     # output : {'4': (np.int64(42), array([ 8.09204793,  1.12890854, 19.91730258]}
     # output : {gl2 atom_number: grid_number, (coords of grid), list of neighborhood grids}
-    print("Start: gl2 grid assignment")
+
     gl2_grid_assignment_upper, lipid_grid_assignment_upper = qc.grid_assignment(
         gl2_beads_upper,
         centroid_triangles_u,
@@ -350,14 +300,13 @@ if __name__ == "__main__":
         args.neighborhood_cutoff,
         atom_features,
     )
-    print("Finished: gl2 grid assignment")
 
-    # # plot coords of Gl2 grid assignments and then the GL2 bead of the lower
+    ## graph the coords of Gl2 grid assignments and then the GL2 bead coordinates of the lower leaflet only
     # neigh_graph.plot_gl2_grid_assignment(
     #     gl2_grid_assignment_upper, gl2_grid_assignment_lower, gl2_beads_lower
     # )
 
-    # # graph neighborhoods of the first gl2 bead
+    ## graph neighborhoods of the first gl2 bead
     # neigh_graph.gl2_neighborhood(
     #     gl2_beads_upper, centroid_triangles_u, gl2_grid_assignment_upper
     # )
@@ -393,26 +342,10 @@ if __name__ == "__main__":
         centroid_triangles_l,
     )
 
-    # # convert lipid_ids_all_grid_neighborhood_upper to csv
-    # with open(
-    #     util.trajectory_path / f"lipid_ids_all_grid_neighborhood_upper.csv",
-    #     "w",
-    #     newline="",
-    # ) as csvfile:
-    #     writer = csv.writer(csvfile)
-    #     writer.writerow(["Lipid ID", "Grid Neighborhood"])
-    #     for (
-    #         lipid_id,
-    #         grid_neighborhood,
-    #     ) in lipid_ids_all_grid_neighborhood_upper.items():
-    #         writer.writerow([lipid_id, grid_neighborhood])
+    # ###############################################################################################
+    # ########## assign a grid neighborhood to each atom based on the residue it belongs to #########
+    # ###############################################################################################
 
-    # #############################################################
-    # ########## assign the neighborhood to each atom  ############
-    # #############################################################
-
-    # goal: assign to each atom a neighborhood of grids based on the lipid it is part of
-    # matchs by res_number by using the Gl2 bead
     # output {atom number: res_number, coords, list of close by grids}
 
     atom_grid_neighborhood_assignment_upper = qc.atom_grid_mapping(
@@ -422,71 +355,22 @@ if __name__ == "__main__":
         all_atoms_lower, gl2_grid_assignment_lower, gl2_beads_lower_resnumber
     )
 
-    # # save atom_grid_neighborhood_assignment_upper as a csv
-    # with open(
-    #     util.trajectory_path / f"atom_grid_neighborhood_upper.csv", "w", newline=""
-    # ) as csvfile:
-    #     writer = csv.writer(csvfile)
-    #     writer.writerow(
-    #         ["Atom Number", "Residue Number", "Coordinates", "Neighborhood Grids"]
-    #     )
-    #     for atom_num, (
-    #         res_num,
-    #         coords,
-    #         neighborhood,
-    #     ) in atom_grid_neighborhood_assignment_upper.items():
-    #         writer.writerow([atom_num, res_num, coords.tolist(), neighborhood])
-
     print("Finished:GL2 grid neighborhood assignment")
 
-    # # ##################################################################################################################
-    # # ########## Determine the coordinate of an atom if projected onto the same plane as a given quadrilateral #########
-    # # ##################################################################################################################
-
-    # # #need the inputs of the neighborhood of grids
-    # # #inputs: quadrilateral_upper (which has the average normal vector and the quadrilateral number), atom_coords, upper_centroids (quadrilateral_centroids)
-    # # #quadrilateral_upper {quad_number: coords of normal vector}
-    # # #atom_grid_assignment_upper  {atom number: res_number, coords, list of close by grids}
-    # # #upper_centroids is a matrix
-    # # output = rq.project_block_of_triangles(quadrilateral_normal_upper, atom_grid_assignment_upper , upper_centroids)
-
-    # # ##################################################################################################################
-    # # ########## Determine the coordinate of an atom if projected onto the same plane as a given triangle      #########
-    # # ##################################################################################################################
-
-    print("Start: atom coords and grid coords extraction")
-
-    ## grid_coords_np: is the (x,y,z) coordinates of the grid in the designated leaflet
-    ## grid_upper_num: is a list of grid numbers in the designated leaflet
-    grid_upper_num, grid_coords_upper_np = ry.extract_grid_coords(centroid_triangles_u)
-    grid_lower_num, grid_coords_lower_np = ry.extract_grid_coords(centroid_triangles_l)
-
-    ## atoms_coords_upper_np: is the (x,y,z) coordinates of the atom in the designated leaflet
-    ## atom_upper_num: is a list of atom numbers in the upper leaflet
-    # atom_upper_num, atoms_coords_upper_np = ry.extract_atoms(atom_features, "upper")
-    # atom_lower_num, atoms_coords_lower_np = ry.extract_atoms(atom_features, "lower")
-
-    # atom_grid_neighborhood_assignment_lower this needs to be in the input somewhere
-    # output: neighborhood_grid_id: {atom number: list of grid number}
-    # ouput: neighborhood_projections: {atom number: list of array(x,y,z)}
-    # neighborhood_projections_upper, neighborhood_grid_id_upper = ry.neighborhood_project_atoms_to_triangles(atom_upper_num, grid_upper_num, grid_coords_upper_np, norm_vector_triangles_up, atom_grid_neighborhood_assignment_upper)
-    # neighborhood_projections_lower, neighborhood_grid_id_lower = ry.neighborhood_project_atoms_to_triangles(atom_lower_num, grid_lower_num, grid_coords_lower_np, norm_vector_triangles_l, atom_grid_neighborhood_assignment_lower)
-
-    print("Finished: atom coords and grid coords extraction")
-
-    ########################################################
-    ##  Determine if the atoms lies inside in the triangle##
-    ########################################################
+    # # ###################################################################################################################################
+    # # ########## Determine if the atom projected onto the same plane as a given triangle grid lies in the given triangle grid   #########
+    # # ###################################################################################################################################
 
     print("Start: atom mapping to triangles")
 
-    # create an dictionary {lipid number: neighborhood list}, a numpy array of centroids, and a numpy array of edges
-    # each idex of the numpy array corresponds to the lipid number index
+    ## create a list of grid numbers in the upper and lower leaflet
+    grid_upper_num = np.arange(0, len(centroid_triangles_u))
+    grid_lower_num = np.arange(0, len(centroid_triangles_l))
 
     triangle_atom_assignment_upper = {}
     triangle_atom_assignment_lower = {}
 
-    triangle_atom_assignment_upper_sorted = agm.sum_atom_mapping_upper_np_array(
+    triangle_atom_assignment_upper_sorted = agm.sum_atom_mapping_np_array(
         atom_features,
         radius,
         aliphatic,
@@ -499,6 +383,7 @@ if __name__ == "__main__":
         grid_upper_num,
         args.frame_num,
         lipid_type_short,
+        args.dist,
     )
 
     # # creates a graph that plots the atom centroid (x,y) color with its count value
@@ -512,7 +397,7 @@ if __name__ == "__main__":
     #     args.frame_num,
     # )
 
-    #also creates a csv file of (x,y,z, atom count)
+    # also creates a csv file of (x,y,z, atom count)
     neigh_graph.combined_atom_mappin_plot(
         centroid_triangles_u,
         triangle_atom_assignment_upper_sorted,
@@ -527,10 +412,4 @@ if __name__ == "__main__":
         args.frame_num,
     )
 
-    # output: neighborhood_grid_id: {atom number: list of grid number}
-    # atom mapping to matrix quantifying polar vs nonpolar
-    # triangle_atom_assignment_upper = agm.sum_atom_mapping_upper(atom_features, radius, aliphatic, edges_triangles_upper, atom_grid_neighborhood_assignment_upper, coords_triangles_upper, grid_upper_num, grid_coords_upper_np, norm_vector_triangles_up, args.frame_num)
-    # triangle_atom_assignment_lower = agm.sum_atom_mapping_lower(atom_features, radius, aliphatic, edges_triangles_lower, neighborhood_grid_id_lower, coords_triangles_lower, grid_lower_num)
-
     print(f"completed frame{args.frame_num}")
-    # Issue: too many grids are empty

@@ -24,7 +24,7 @@ pdbnum=200
     echo "$(date): PackMem running on ${trajectoryPATH}/${pdbnum}.gro"
     # launch PackMem for the 3 types of packing defects
     ${PackMemPATH}/base_clean_v2.py -i ${trajectoryPATH}/${pdbnum}.gro \
-                              -r ${PackMemPATH}/vdw_radii_CGMartini3_openbeta2_inaccuratedata_testing.txt \
+                              -r ${PackMemPATH}/vdw_radii_CGMartini3_openbeta2_updated.txt \
                               -p ${PackMemPATH}/param_CGMartini3_openbeta2.txt \
-                              -o ${pdbnum} -d 1.0 -t deep \
+                              -o ${pdbnum} -d 0.1 \
                               -f ${pdbnum}
