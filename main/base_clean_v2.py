@@ -359,27 +359,20 @@ if __name__ == "__main__":
 
     print("Finished:GL2 grid neighborhood assignment")
 
-    # # #####################################################################################################################
-    # # ########## Determine the coordinates of an atom projected onto the same plane as a given triangle grid      #########
-    # # #####################################################################################################################
+    # # ###################################################################################################################################
+    # # ########## Determine if the atom projected onto the same plane as a given triangle grid lies in the given triangle grid   #########
+    # # ###################################################################################################################################
 
     print("Start: atom mapping to triangles")
 
-    ## create a list of grid numbers in the designated leaflet
+    ## create a list of grid numbers in the upper and lower leaflet
     grid_upper_num = np.arange(0, len(centroid_triangles_u))
     grid_lower_num = np.arange(0, len(centroid_triangles_l))
-
-    ########################################################
-    ##  Determine if the atoms lies inside in the triangle##
-    ########################################################
-
-    # create an dictionary {lipid number: neighborhood list}, a numpy array of centroids, and a numpy array of edges
-    # each idex of the numpy array corresponds to the lipid number index
 
     triangle_atom_assignment_upper = {}
     triangle_atom_assignment_lower = {}
 
-    triangle_atom_assignment_upper_sorted = agm.sum_atom_mapping_upper_np_array(
+    triangle_atom_assignment_upper_sorted = agm.sum_atom_mapping_np_array(
         atom_features,
         radius,
         aliphatic,
@@ -421,10 +414,5 @@ if __name__ == "__main__":
         args.frame_num,
     )
 
-    # output: neighborhood_grid_id: {atom number: list of grid number}
-    # atom mapping to matrix quantifying polar vs nonpolar
-    # triangle_atom_assignment_upper = agm.sum_atom_mapping_upper(atom_features, radius, aliphatic, edges_triangles_upper, atom_grid_neighborhood_assignment_upper, coords_triangles_upper, grid_upper_num, grid_coords_upper_np, norm_vector_triangles_up, args.frame_num)
-    # triangle_atom_assignment_lower = agm.sum_atom_mapping_lower(atom_features, radius, aliphatic, edges_triangles_lower, neighborhood_grid_id_lower, coords_triangles_lower, grid_lower_num)
-
     print(f"completed frame{args.frame_num}")
-    # Issue: too many grids are empty
+
