@@ -3,11 +3,23 @@ import numpy as np
 import grid_slicing as gs
 import util as util
 
-# create a dictionary with atom: (atom_name), (leaflet_assignment), (atom_coords), (molecule number)
+
 atoms = {}
 
 
-def atom_features(lines_gro, list_types_atoms, leaflet_residue_new):
+def atom_features(lines_gro: list, list_types_atoms: list, leaflet_residue_new):
+    """
+    Create a dictionary that describes all features of an atom.
+    Args:
+        ##input: grolines, list of the types of atoms in the gro file, which residues are in the upper vs lower leaflet
+        lines_gro (list): lines of the gro file
+        list_types_atoms (list): list of the types of atoms in the gro file
+        leaflet_residue_new (dict): {"upper": [list of residues in upper leaflet],"lower": [list of residues in lower leaflet]}
+
+    Returns:
+        atoms (dict): dictionary of atom features  {atm#: 'GL2', 'lower', array([18.222,  4.37 , 14.85 ]), 'DOPC GL2', resnumber }
+
+    """
     for i, line_atom in enumerate(lines_gro):
         if i > 1 and i < (len(lines_gro) - 1):
             # Extract residue name and number

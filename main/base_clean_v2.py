@@ -176,8 +176,6 @@ if __name__ == "__main__":
     ####################################################
 
     print("Start:determining atom features")
-    ##input: grolines, list of the types of atoms in the gro file, which residues are in the upper vs lower leaflet
-    ##output: {atm#: GL2', 'lower', array([18.222,  4.37 , 14.85 ]), 'DOPC GL2', resnumber }
 
     list_types_atoms = (
         util.list_types_atoms_lipid
@@ -415,4 +413,3 @@ if __name__ == "__main__":
     )
 
     print(f"completed frame{args.frame_num}")
-
