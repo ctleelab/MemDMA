@@ -73,9 +73,9 @@ def atom_grid_mapping(
     """
     Append a list of neighborhood grids to the all_atoms dictionary.
     Args:
-        all_atom (dict): {atom number: res_number, coords}
+        all_atom (dict): {atom number: res_number, coords of centroid of atom}
         gl2_neighborhood_grids (dict): {A dictionary with GL2 atom number: (closet grid_index, grid_coords of closest grid_index, neighborhood_list of the grid_idex)}
-        gl2_beads_resnumber (dict): {atom number of gl2 bead: res_number}
+        gl2_beads_resnumber (dict): {atom number of gl2 bead: res_number of lipid the gl2 bead belongs to}
     Returns:
         all_atom (dict): {atom number: res_number, coords, list of neighborhood grid number}
     """
