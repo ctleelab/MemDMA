@@ -852,9 +852,7 @@ def atom_mapping_centroids_2d_matplotlib(triangle_centroids, triangle_atom_assig
     X_triangle_all = np.array(X_triangle_all)
     Y_triangle_all = np.array(Y_triangle_all)
     count_for_triangle = np.array(count_for_triangle)
-
-    plt.figure(figsize=(8,8))
-
+    
     # Scatter for counts >= 1 with colormap
     mask = count_for_triangle >= 1 
     sc = plt.scatter(
@@ -874,9 +872,10 @@ def atom_mapping_centroids_2d_matplotlib(triangle_centroids, triangle_atom_assig
         label="Count < 1"
     )
 
+    plt.gca().set_aspect('equal', adjustable='box')
     plt.colorbar(sc, label="Atom count")
-    plt.xlabel("X")
-    plt.ylabel("Y")
+    plt.xlabel("X (nm)")
+    plt.ylabel("Y (nm)")
     plt.title(f"Triangle Centroids with Atom Count (2D) - Frame {frame}")
     plt.axis("equal")
     plt.tight_layout()

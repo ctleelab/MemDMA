@@ -4,7 +4,7 @@ Folders
 
 
 Running code: 
-1) go to main folder
+1) go to PackMem-original folder
 2) run the following:
-    ```python base_clean_v2.py -i ../tests/testing_flat_lipid_only.gro  -p param_CGMartini3_openbeta2.txt -r vdw_radii_CGMartini3_openbeta2_inaccuratedata_testing.txt -o output -d 1.0 -t deep```
-3) ouput:
+    ```python PackMem.py -i testing/file.pdb  -p param_CGMartini3_openbeta2.txt -r vdw_radii_CGMartini3_openbeta2_updated.txt -o output -d 1.0 -t deep```
+4) ouput:

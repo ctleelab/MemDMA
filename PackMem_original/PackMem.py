@@ -317,7 +317,6 @@ if __name__ == "__main__":
             coordtmp.append(float(atm_line[46:54]))  # Z
             ##Cailyn:add the atom data (computed above) into the matrix, either the upper or lower depending on which one it belongs to
             ##Cailyn:this code should account for if the matrix has a polar head group
-            ##Cailyn: does this only give the counts of atom per grid?
             # ##################################### Upper leaflet ########################
             if res_id in upper_leaflet:
                 # limit the loop around dfZ
@@ -342,25 +341,15 @@ if __name__ == "__main__":
             if res_id in lower_leaflet:
                 # limit the loop around dfZ
                 dfZ = m.find_Z(coordtmp[2], lower_listZ[res_id])
-                if dfZ > (-1.0 * v):
-                    MatrixLo = m.fill_matrix(
-                        MatrixLo,
-                        coordtmp,
-                        res_id,
-                        res_name,
-                        atom_name,
-                        listX,
-                        listY,
-                        lower_listZ[res_id],
-                        radius_res,
-                        FlagPDtype,
-                        aliph_atom,
-                    )
-
-    # MatrixUp_array = np.array(MatrixUp, dtype=str)
-    # MatrixLo_array = np.array(MatrixLo, dtype=str)
-
+                if dfZ > (-1. * v):
+                    MatrixLo = m.fill_matrix(MatrixLo, coordtmp, res_id, res_name,
+                                            atom_name, listX, listY, lower_listZ[res_id], 
+                                            radius_res, FlagPDtype, aliph_atom)
+    MatrixUp_array = np.array(MatrixUp, dtype=str)
+    MatrixLo_array = np.array(MatrixLo, dtype=str)
+    
     # output defect data (x, y) coordinates for Upper leaflet
+    # will save in pdb folder
     with open(f"{args.filename}_DefectGrid_Upper.txt", "w") as f:
         f.write("X\tY\tValue\n")
 
@@ -370,8 +359,10 @@ if __name__ == "__main__":
                 if val == "NA":
                     val = 0  # replace NA with 0
                 f.write(f"{x:.3f}\t{y:.3f}\t{val}\n")
+    print(f"Defect grid for Upper leaflet saved to {args.filename}_DefectGrid_Upper.txt")
 
-    ########################preliminary process only for shallow defect and problem of the edges
+    
+    ########################preliminary process only for shallow defect and problem of the edges 
     ### to eliminate shallow defects on edges first: binarize on all defects and storage edges coord
     # shallow PDefects (2)
     ## Cailyn: The goal of this script is to find defects on the edge, independent if they are shallow or deep defects. That is why you see the upper and lower limits
@@ -435,7 +426,17 @@ if __name__ == "__main__":
         # add the first coonected_component (edge
         ## Cailyn: Why is this additional modify matrix only done for shallow defects?
         Matrix_Upbin = m.modify_matrix(Matrix_labels_UpM, Matrix_Upbin, clust_edge_UpM)
-        Matrix_Lobin = m.modify_matrix(Matrix_labels_LoM, Matrix_Lobin, clust_edge_LoM)
+        Matrix_Lobin = m.modify_matrix(Matrix_labels_LoM, Matrix_Lobin, clust_edge_LoM)    
+
+    # Convert to NumPy arrays
+    Matrix_UpbinM_array = np.array(Matrix_Upbin, dtype=float)
+    Matrix_LobinM_array = np.array(Matrix_Lobin, dtype=float)
+
+    # Save as text files
+    np.savetxt("Matrix_UpbinM.txt", Matrix_UpbinM_array, delimiter=",", fmt="%.0f")
+    np.savetxt("Matrix_LobinM.txt", Matrix_LobinM_array, delimiter=",", fmt="%.0f")
+    
+    
 
     # # Convert to NumPy arrays
     # Matrix_UpbinM_array = np.array(Matrix_Upbin, dtype=float)

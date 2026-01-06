@@ -9,10 +9,10 @@ prefix=""
 # set PackMem absolute path
 # change this path according to your system 
 #PackMemPATH=/home/clifford/fuchs/test_PackMem/packmem
-PackMemPATH=/home/casakurai/scratch/packmem
+PackMemPATH=/home/casakurai/scratch/packmem/PackMem_original
 
 # set the total number of frames
-total_number_of_frames=1
+total_number_of_frames=0
 # in this example we have membrane0.pdb, membrane1.pdb, ..., membrane400.pdb
 
 ###################
