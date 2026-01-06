@@ -346,6 +346,21 @@ if __name__ == "__main__":
                                             atom_name, listX, listY, lower_listZ[res_id], 
                                             radius_res, FlagPDtype, aliph_atom)
     MatrixUp_array = np.array(MatrixUp, dtype=str)
+    MatrixLo_array = np.array(MatrixLo, dtype=str)
+    
+    # output defect data (x, y) coordinates for Upper leaflet
+    # will save in pdb folder
+    with open(f"{args.filename}_DefectGrid_Upper.txt", "w") as f:
+        f.write("X\tY\tValue\n")
+
+        for i_x, x in enumerate(listX):
+            for i_y, y in enumerate(listY):
+                val = MatrixUp[i_x][i_y]
+                if val == "NA":
+                    val = 0  # replace NA with 0
+                f.write(f"{x:.3f}\t{y:.3f}\t{val}\n")
+    print(f"Defect grid for Upper leaflet saved to {args.filename}_DefectGrid_Upper.txt")
+
     
     ########################preliminary process only for shallow defect and problem of the edges 
     ### to eliminate shallow defects on edges first: binarize on all defects and storage edges coord
