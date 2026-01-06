@@ -15,3 +15,4 @@ simulation_data/
 results/
 *.png
 old-data/
+PackMem_original/*.txt
