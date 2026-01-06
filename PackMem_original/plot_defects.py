@@ -10,7 +10,9 @@ from pathlib import Path
 
 testing_path = Path("/home/casakurai/scratch/packmem/PackMem_original/testing")
 
-filename = "DOPC_flat_DefectGrid_Upper.txt"
+filename = "DOPC_flat_old_radii_DefectGrid_Upper.txt"
+
+system = "DOPC-flat"
 
 
 
@@ -187,16 +189,24 @@ def plot1(txtfile):
     # map colors: red if Value <= 1 white otherwise
     colors = np.where(df["Value"] <= 1, "red", "white")
 
-    plt.figure(figsize=(5, 5))
-    plt.scatter(
-    df["X"],
-    df["Y"],
-    c=colors)
+    x_offset = abs(min(df["X"]))   # Set value to add to X coordinates
+    y_offset = abs(min(df["Y"]))   # Set value to add to Y coordinates
 
-    plt.xlabel("X")
-    plt.ylabel("Y")
-    plt.savefig("Packing-defects.png")
-    plt.close()
+    plt.scatter(
+        df["X"] + x_offset,
+        df["Y"] + y_offset,
+        c=colors,
+        s=10)
+
+    
+
+    plt.gca().set_aspect("equal", adjustable="box")
+
+    plt.xlabel("X (Å)")
+    plt.ylabel("Y (Å)")
+    plt.title(f"{system} Packing Defects")
+    plt.savefig(f"{system}-oldradii-Packing-defects.png")
+    plt.close
 
 plot1(f"{testing_path}/{filename}")
 
