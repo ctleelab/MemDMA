@@ -14,3 +14,4 @@ ExplePackMem/
 simulation_data/
 results/
 *.png
+PackMem_original/*.txt
