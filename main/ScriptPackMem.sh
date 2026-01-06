@@ -19,9 +19,10 @@ trajectoryPATH=/home/casakurai/scratch/packmem/tests
 
 #set certain frame to be evaluated
 pdbnum=200
+shape=DPPC_flat_lipid_only
 
     # print counter to screen
-    echo "$(date): PackMem running on ${trajectoryPATH}/${pdbnum}.gro"
+    echo "$(date): PackMem running on ${trajectoryPATH}/${shape}.gro"
     # launch PackMem for the 3 types of packing defects
     ${PackMemPATH}/base_clean_v2.py -i ${trajectoryPATH}/${pdbnum}.gro \
                               -r ${PackMemPATH}/vdw_radii_CGMartini3_openbeta2_updated.txt \
