@@ -1,7 +1,7 @@
 #-*- coding: utf-8 -*-
 # R. Gautier  A. Bacle 2015
 
-import PackMem_original.BasicFunctions as bfrg
+import BasicFunctions as bfrg
 import re
 import sys
 

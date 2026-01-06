@@ -4,7 +4,7 @@
 
 import math
 import sys
-import PackMem_original.BasicFunctions as bfrg
+import BasicFunctions as bfrg
 
 # matrix size  (square size = 1A)
 SIZE=1.0
