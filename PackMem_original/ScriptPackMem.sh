@@ -7,71 +7,24 @@
 prefix=""
 
 # set PackMem absolute path
-# change this path according to your system 
-#PackMemPATH=/home/clifford/fuchs/test_PackMem/packmem
 PackMemPATH=/home/casakurai/scratch/packmem/PackMem_original
+trajectoryPATH=/home/casakurai/scratch/packmem/PackMem_original/testing
 
-# set the total number of frames
-total_number_of_frames=0
-# in this example we have membrane0.pdb, membrane1.pdb, ..., membrane400.pdb
 
-###################
-# No change below #
-###################
+# # For looping over frames
+# # set the total number of frames
+# total_number_of_frames=0
+# for pdbnum in $(seq 0 ${total_number_of_frames})
 
-# The following Total_*.txt files will contain the statistics for each type of
-# packing defects accumulated over all frames (one file per membrane leaflet)
-# Delete those files if they already exist before launching the main loop
-# (the -f flag avoids an error if the file doesn't exist)
-rm -f Total_Up_${prefix}_deep.txt
-rm -f Total_Lo_${prefix}_deep.txt
-rm -f Total_Up_${prefix}_shallow.txt
-rm -f Total_Lo_${prefix}_shallow.txt
-rm -f Total_Up_${prefix}_all.txt
-rm -f Total_Lo_${prefix}_all.txt
 
-# loop over all frames
-# for example, if we have 400ns with one frame every 1000 ps,
-# we loop from 0 to 400 frames (0-400 ns)
-for pdbnum in $(seq 0 ${total_number_of_frames})
-do
+#set certain frame to be evaluated
+#pdbnum=200
+shape=DPPC_flat_lipid_only
+
     # print counter to screen
-    echo "$(date): PackMem running on pdb/${prefix}${pdbnum}.pdb"
+    echo "$(date): PackMem running on ${trajectoryPATH}/${shape}.pdb"
     # launch PackMem for the 3 types of packing defects
-    ${PackMemPATH}/PackMem.py -i pdb/${prefix}${pdbnum}.pdb \
-                              -r ${PackMemPATH}/vdw_radii_Charmm.txt \
-                              -p ${PackMemPATH}/param_Charmm.txt \
-                              -o ${prefix}${pdbnum} -d 1.0 -t deep
-    ${PackMemPATH}/PackMem.py -i pdb/${prefix}${pdbnum}.pdb \
-                              -r ${PackMemPATH}/vdw_radii_Charmm.txt \
-                              -p ${PackMemPATH}/param_Charmm.txt \
-                              -o ${prefix}${pdbnum} -d 1.0 -t shallow
-    ${PackMemPATH}/PackMem.py -i pdb/${prefix}${pdbnum}.pdb \
-                              -r ${PackMemPATH}/vdw_radii_Charmm.txt \
-                              -p ${PackMemPATH}/param_Charmm.txt \
-                              -o ${prefix}${pdbnum} -d 1.0 -t all
-    # accumulate packing defects of the current frame in Total_*.txt files
-    cat  ${prefix}${pdbnum}_Up_Deep_result.txt >> Total_Up_${prefix}_deep.txt
-    cat  ${prefix}${pdbnum}_Lo_Deep_result.txt >> Total_Lo_${prefix}_deep.txt
-    cat  ${prefix}${pdbnum}_Up_Shallow_result.txt >> Total_Up_${prefix}_shallow.txt
-    cat  ${prefix}${pdbnum}_Lo_Shallow_result.txt >> Total_Lo_${prefix}_shallow.txt
-    cat  ${prefix}${pdbnum}_Up_All_result.txt >> Total_Up_${prefix}_all.txt
-    cat  ${prefix}${pdbnum}_Lo_All_result.txt >> Total_Lo_${prefix}_all.txt
-    # we no longer need the defects of the current frame
-    rm -f ${prefix}${pdbnum}_Up_Deep_result.txt
-    rm -f ${prefix}${pdbnum}_Lo_Deep_result.txt
-    rm -f ${prefix}${pdbnum}_Up_Shallow_result.txt
-    rm -f ${prefix}${pdbnum}_Lo_Shallow_result.txt
-    rm -f ${prefix}${pdbnum}_Up_All_result.txt
-    rm -f ${prefix}${pdbnum}_Lo_All_result.txt
-done
-
-# Finally, concatenate the packing defects statistics of the lower and upper leaflets
-cat Total_Up_${prefix}_deep.txt Total_Lo_${prefix}_deep.txt > Total_${prefix}_deep.txt
-cat Total_Up_${prefix}_shallow.txt Total_Lo_${prefix}_shallow.txt > Total_${prefix}_shallow.txt
-cat Total_Up_${prefix}_all.txt Total_Lo_${prefix}_all.txt > Total_${prefix}_all.txt
-
-# Cleanup the statistics per leaflet
-rm -f Total_Up_${prefix}_deep.txt Total_Lo_${prefix}_deep.txt
-rm -f Total_Up_${prefix}_shallow.txt Total_Lo_${prefix}_shallow.txt
-rm -f Total_Up_${prefix}_all.txt Total_Lo_${prefix}_all.txt
+    ${PackMemPATH}/PackMem.py -i ${trajectoryPATH}/${shape}.pdb \
+                              -r ${PackMemPATH}/vdw_radii_CGMartini3_openbeta2_updated.txt \
+                              -p ${PackMemPATH}/param_CGMartini3_openbeta2.txt \
+                              -o ${shape} -d 0.1 

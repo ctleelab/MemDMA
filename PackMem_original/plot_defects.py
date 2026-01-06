@@ -10,7 +10,7 @@ from pathlib import Path
 
 testing_path = Path("/home/casakurai/scratch/packmem/PackMem_original/testing")
 
-filename = "DOPC_flat_old_radii_DefectGrid_Upper.txt"
+filename = "DOPC_flat_lipid_only_DefectGrid_Upper.txt"
 
 system = "DOPC-flat"
 
@@ -205,7 +205,7 @@ def plot1(txtfile):
     plt.xlabel("X (Å)")
     plt.ylabel("Y (Å)")
     plt.title(f"{system} Packing Defects")
-    plt.savefig(f"{system}-oldradii-Packing-defects.png")
+    plt.savefig(f"{system}-Packing-defects.png")
     plt.close
 
 plot1(f"{testing_path}/{filename}")

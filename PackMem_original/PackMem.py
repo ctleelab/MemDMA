@@ -350,7 +350,7 @@ if __name__ == "__main__":
     
     # output defect data (x, y) coordinates for Upper leaflet
     # will save in pdb folder
-    with open(f"{args.filename}_DefectGrid_Upper.txt", "w") as f:
+    with open(f"{args.outputname}_DefectGrid_Upper.txt", "w") as f:
         f.write("X\tY\tValue\n")
 
         for i_x, x in enumerate(listX):
@@ -359,7 +359,7 @@ if __name__ == "__main__":
                 if val == "NA":
                     val = 0  # replace NA with 0
                 f.write(f"{x:.3f}\t{y:.3f}\t{val}\n")
-    print(f"Defect grid for Upper leaflet saved to {args.filename}_DefectGrid_Upper.txt")
+    print(f"Defect grid for Upper leaflet saved to {args.outputname}_DefectGrid_Upper.txt")
 
     
     ########################preliminary process only for shallow defect and problem of the edges 
@@ -432,9 +432,9 @@ if __name__ == "__main__":
     Matrix_UpbinM_array = np.array(Matrix_Upbin, dtype=float)
     Matrix_LobinM_array = np.array(Matrix_Lobin, dtype=float)
 
-    # Save as text files
-    np.savetxt("Matrix_UpbinM.txt", Matrix_UpbinM_array, delimiter=",", fmt="%.0f")
-    np.savetxt("Matrix_LobinM.txt", Matrix_LobinM_array, delimiter=",", fmt="%.0f")
+    # # Save as text files
+    # np.savetxt("Matrix_UpbinM.txt", Matrix_UpbinM_array, delimiter=",", fmt="%.0f")
+    # np.savetxt("Matrix_LobinM.txt", Matrix_LobinM_array, delimiter=",", fmt="%.0f")
     
     
 
@@ -512,93 +512,93 @@ if __name__ == "__main__":
         area_clusters_Lo = d.del_key_dico(area_clusters_Lo, clust_edge_Lo)
         coor_clusters_Lo = d.del_key_dico(coor_clusters_Lo, clust_edge_Lo)
 
-    # ############################################# output text file  ####################
-    total_size = len(listX) * len(listY)
-    pdb.outputTXT_defects(
-        args.outputname,
-        FlagPDtype,
-        "Up",
-        area_clusters_Up,
-        coor_clusters_Up,
-        total_size,
-        total_edge_Up,
-        listX,
-        listY,
-    )
-    pdb.outputTXT_defects(
-        args.outputname,
-        FlagPDtype,
-        "Lo",
-        area_clusters_Lo,
-        coor_clusters_Lo,
-        total_size,
-        total_edge_Lo,
-        listX,
-        listY,
-    )
+    # # ############################################# output text file  ####################
+    # total_size = len(listX) * len(listY)
+    # pdb.outputTXT_defects(
+    #     args.outputname,
+    #     FlagPDtype,
+    #     "Up",
+    #     area_clusters_Up,
+    #     coor_clusters_Up,
+    #     total_size,
+    #     total_edge_Up,
+    #     listX,
+    #     listY,
+    # )
+    # pdb.outputTXT_defects(
+    #     args.outputname,
+    #     FlagPDtype,
+    #     "Lo",
+    #     area_clusters_Lo,
+    #     coor_clusters_Lo,
+    #     total_size,
+    #     total_edge_Lo,
+    #     listX,
+    #     listY,
+    # )
 
-    ############ output PDB files ########################################################
-    # final matrix values PD (X,Y) with Z cooresponding to the max(Upper/lowerZlevel)
-    if args.pdbout:
-        valzmax = float(d.max_value_dico(upper_listZ))
-        valzmin = float(d.min_value_dico(lower_listZ))
-        pdb.outputPDB_leaflet(
-            pdblines,
-            upper_leaflet,
-            args.outputname + "_Upper.pdb",
-            startID,
-            endID,
-            num_frame,
-        )
-        pdb.outputPDB_leaflet(
-            pdblines,
-            lower_leaflet,
-            args.outputname + "_Lower.pdb",
-            startID,
-            endID,
-            num_frame,
-        )
+    # ############ output PDB files ########################################################
+    # # final matrix values PD (X,Y) with Z cooresponding to the max(Upper/lowerZlevel)
+    # if args.pdbout:
+    #     valzmax = float(d.max_value_dico(upper_listZ))
+    #     valzmin = float(d.min_value_dico(lower_listZ))
+    #     pdb.outputPDB_leaflet(
+    #         pdblines,
+    #         upper_leaflet,
+    #         args.outputname + "_Upper.pdb",
+    #         startID,
+    #         endID,
+    #         num_frame,
+    #     )
+    #     pdb.outputPDB_leaflet(
+    #         pdblines,
+    #         lower_leaflet,
+    #         args.outputname + "_Lower.pdb",
+    #         startID,
+    #         endID,
+    #         num_frame,
+    #     )
 
-        pdb.outputPDB_Total_matrix(
-            args.outputname,
-            FlagPDtype,
-            "Up",
-            num_frame,
-            listX,
-            listY,
-            valzmax,
-            MatrixUp,
-        )
-        pdb.outputPDB_Total_matrix(
-            args.outputname,
-            FlagPDtype,
-            "Lo",
-            num_frame,
-            listX,
-            listY,
-            valzmin,
-            MatrixLo,
-        )
+    #     pdb.outputPDB_Total_matrix(
+    #         args.outputname,
+    #         FlagPDtype,
+    #         "Up",
+    #         num_frame,
+    #         listX,
+    #         listY,
+    #         valzmax,
+    #         MatrixUp,
+    #     )
+    #     pdb.outputPDB_Total_matrix(
+    #         args.outputname,
+    #         FlagPDtype,
+    #         "Lo",
+    #         num_frame,
+    #         listX,
+    #         listY,
+    #         valzmin,
+    #         MatrixLo,
+    #     )
 
-        pdb.outputPDB_defects(
-            args.outputname,
-            FlagPDtype,
-            "Up",
-            num_frame,
-            listX,
-            listY,
-            valzmax,
-            Matrix_labels_Up,
-            clust_edge_Up,
-        )
-        pdb.outputPDB_defects(
-            args.outputname,
-            FlagPDtype,
-            "Lo",
-            num_frame,
-            listX,
-            listY,
-            valzmin,
-            Matrix_labels_Lo,
-            clust_edge_Lo,
-        )
+    #     pdb.outputPDB_defects(
+    #         args.outputname,
+    #         FlagPDtype,
+    #         "Up",
+    #         num_frame,
+    #         listX,
+    #         listY,
+    #         valzmax,
+    #         Matrix_labels_Up,
+    #         clust_edge_Up,
+    #     )
+    #     pdb.outputPDB_defects(
+    #         args.outputname,
+    #         FlagPDtype,
+    #         "Lo",
+    #         num_frame,
+    #         listX,
+    #         listY,
+    #         valzmin,
+    #         Matrix_labels_Lo,
+    #         clust_edge_Lo,
+    #     )

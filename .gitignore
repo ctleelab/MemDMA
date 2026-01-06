@@ -1,10 +1,8 @@
 __pycache__/
 asyn_simulations/
 pdb/
-testing/
 to_delete/
 ExplePackMem/
-*.pdb
 *.html
 *.pickle
 *.log
@@ -15,4 +13,5 @@ simulation_data/
 results/
 *.png
 old-data/
-PackMem_original/*.txt
+PackMem_original/*.pdb
+PackMem_original/testing/*.txt
