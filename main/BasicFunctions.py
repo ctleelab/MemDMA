@@ -24,7 +24,7 @@ def read_radius(filename):
             data[i] = data[i].split()  ##split the line based upon the whitespaces
             cle = data[i][0] + " " + data[i][1]  ##combine lipid and atom name
             dico[cle] = (
-                float(data[i][2]) / 10
+                float(data[i][2]) / 10 #divide by 10 to put the radius in units of nm rather than A
             )  ##then store the radius value to the lipid atom name {(DOP_D2A: raidus)} #divide by 10 because the radius previously presented 10A was in Angstroms, but now 10 in the context represent 10nm
     return dico
 
@@ -47,3 +47,17 @@ def read_aliphatic(filename):
 def Edist3D(coord1, coord2):
     magnitude = np.linalg.norm(coord1 - coord2, axis=-1)
     return magnitude
+
+
+def cross(v1, v2):
+    return np.array(
+        [
+            v1[1] * v2[2] - v1[2] * v2[1],
+            v1[2] * v2[0] - v1[0] * v2[2],
+            v1[0] * v2[1] - v1[1] * v2[0],
+        ]
+    )
+
+
+def norm(v):
+    return np.sqrt(np.dot(v, v))

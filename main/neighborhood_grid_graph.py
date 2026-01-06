@@ -2,6 +2,7 @@ import plotly.graph_objects as go
 import numpy as np
 from plotly.subplots import make_subplots
 import util
+import matplotlib.pyplot as plt
 
 # input upper_neighborhood_cKDtree.csv
 # key is the grid
@@ -127,7 +128,7 @@ def plot_gl2_grid_assignment(
     )
 
     # Save as standalone HTML
-    fig.write_html(util.analysis_path / "testing.html")
+    fig.write_html(util.analysis_path / "coords_grids_up_low_GL2lower.html")
     del fig
     print("plot completed")
 
@@ -208,7 +209,7 @@ def plot_triangle_grid_assignment(triangle_centroids_upper, triangle_centroids_l
     )
 
     # Save as standalone HTML
-    fig.write_html(util.analysis_path / "troubleshooting_triangle_centroids.html")
+    fig.write_html(util.analysis_path / "triangle_centroids.html")
     del fig
     print("plot completed")
 
@@ -834,3 +835,108 @@ def combined_atom_mappin_plot(
     )
     del fig
     print("Interactive 2D plot with counts completed")
+
+
+def atom_mapping_centroids_2d_matplotlib(triangle_centroids, triangle_atom_assignment, lipid_type, frame):
+    X_triangle_all = []
+    Y_triangle_all = []
+    count_for_triangle = []
+
+    for key, value in enumerate(triangle_centroids):
+        centroid_num = key
+        gl2_bead_coords = np.array(value)
+        X_triangle_all.append(gl2_bead_coords[0])
+        Y_triangle_all.append(gl2_bead_coords[1])
+        count_for_triangle.append(triangle_atom_assignment.get(centroid_num, 0))
+
+    X_triangle_all = np.array(X_triangle_all)
+    Y_triangle_all = np.array(Y_triangle_all)
+    count_for_triangle = np.array(count_for_triangle)
+
+    plt.figure(figsize=(8,8))
+
+    # Scatter for counts >= 1 with colormap
+    mask = count_for_triangle >= 1 
+    sc = plt.scatter(
+        X_triangle_all[mask],
+        Y_triangle_all[mask],
+        c=count_for_triangle[mask],
+        cmap="viridis",
+        s=10,
+    )
+
+    # Scatter for counts < 1 in red
+    plt.scatter(
+        X_triangle_all[~mask],
+        Y_triangle_all[~mask],
+        color="red",
+        s=10,
+        label="Count < 1"
+    )
+
+    plt.colorbar(sc, label="Atom count")
+    plt.xlabel("X")
+    plt.ylabel("Y")
+    plt.title(f"Triangle Centroids with Atom Count (2D) - Frame {frame}")
+    plt.axis("equal")
+    plt.tight_layout()
+
+    # Save PNG
+    plt.savefig(
+        util.analysis_path / f"{lipid_type}_triangle_centroids_counts_frame{frame}.png",
+        dpi=300
+    )
+    plt.close()
+    print("Static 2D PNG plot with counts completed (Matplotlib)")
+
+
+def atom_mapping_centroids_2d_zvalue(triangle_centroids, lipid_type, frame):
+    triangle_grid_all = []
+    X_triangle_all = []
+    Y_triangle_all = []
+    Z_triangle_all = []
+
+    for key, value in enumerate(triangle_centroids):
+        centroid_num = key
+        gl2_bead_coords = np.array(value)
+        X = gl2_bead_coords[0]
+        Y = gl2_bead_coords[1]
+        Z = gl2_bead_coords[2]
+        triangle_grid_all.append(centroid_num)
+        X_triangle_all.append(X)
+        Y_triangle_all.append(Y)
+        Z_triangle_all.append(Z)
+
+    # Create Plotly 2D scatter figure
+    fig = go.Figure()
+
+    fig.add_trace(
+        go.Scatter(
+            x=X_triangle_all,
+            y=Y_triangle_all,
+            mode="markers",
+            marker=dict(
+                size=8,
+                color=Z_triangle_all,  # Color by Z value
+                colorscale="Viridis",
+                showscale=True,
+                colorbar=dict(title="Z-value"),
+            ),
+        )
+    )
+
+    fig.update_layout(
+        title="Triangle Centroids with Z value",
+        xaxis_title="X",
+        yaxis_title="Y",
+        template="plotly_white",
+    )
+
+    # Save as standalone HTML
+    fig.write_html(
+        util.analysis_path
+        / f"{lipid_type}_strain2_triangle_centroids_with_zvalues_2d_frame{frame}.html"
+    )
+    del fig
+    print("Interactive 2D plot with counts completed")
+
