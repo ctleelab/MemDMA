@@ -9,7 +9,8 @@ ExplePackMem/
 *.csv
 *_np
 *.html
-simulation_data/
+simulation_data_not_centered/
+simulation_data_centered/
 results/
 *.png
 old-data/
