@@ -2,7 +2,7 @@ import MDAnalysis as mda
 from pathlib import Path
 import numpy as np
 
-system="DOPC_strain.2"
+system="DPPC_strain.2"
 
 #path
 data=Path("/home/casakurai/scratch/packmem/simulation_data_centered/")
@@ -10,7 +10,7 @@ system_path = data / system
 
 #files 
 trajectory= f"{system_path}/production7.7.tpr"
-xtc = f"{system_path}/production7.7_nojump_trajectory.xtc"
+xtc = f"{system_path}/production7.7.xtc"
 output_xtc = f"{system_path}_centered_highest_lipid.xtc"
 
 raidus = 5 # in nm 

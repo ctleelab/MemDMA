@@ -39,6 +39,6 @@ SIZE = 0.5
 lipid = "name NC3 PO4 GL1 GL2 C1A D2A C3A C4A C1B D2B C3B C4B C2A C2B"
 membrane_sel = "resname DPPC DOPC"
 
-
-trajectory_path = Path("/home/casakurai/scratch/packmem/tests")
-analysis_path = Path("/home/casakurai/scratch/packmem/tests")
+system = "DOPC_strain.2"
+trajectory_path = Path(f"/home/casakurai/scratch/packmem/simulation_data_centered/{system}")
+analysis_path = Path(f"/home/casakurai/scratch/packmem/simulation_data_centered/analysis_{system}")
