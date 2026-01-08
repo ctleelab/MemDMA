@@ -11,6 +11,7 @@ ExplePackMem/
 *.html
 simulation_data_not_centered/
 simulation_data_centered/
+simulation_data_centered_radius/
 results/
 *.png
 old-data/
