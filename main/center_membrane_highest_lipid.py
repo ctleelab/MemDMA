@@ -2,43 +2,41 @@ import MDAnalysis as mda
 from pathlib import Path
 import numpy as np
 
-system="DPPC_strain.2"
+system="DOPC_strain.2"
 
 #path
 data=Path("/home/casakurai/scratch/packmem/simulation_data_centered/")
-system_path = data / system
+system_path = Path(f"/home/casakurai/scratch/packmem/simulation_data_centered/{system}")
 
 #files 
 trajectory= f"{system_path}/production7.7.tpr"
 xtc = f"{system_path}/production7.7.xtc"
-output_xtc = f"{system_path}_centered_highest_lipid.xtc"
-
-raidus = 5 # in nm 
+output_xtc = f"{system_path}/production7.7_centered_highest_lipid.xtc"
 
 #load in the universe 
 u = mda.Universe(trajectory, xtc)
 
 #select lipids 
-lipids = u.select_atoms("resname DOPC DPPC")
+lipids = u.select_atoms("resname DOPC DPPC DOPS DPPS DOPA DPPA")
 all_atoms = u.select_atoms("all")
 
 with mda.Writer(output_xtc, all_atoms.n_atoms) as W:
     for ts in u.trajectory:
-        #find the highest leaflet
-        z_positions = lipids.positions[:,2] #pulls out the z positions of all lipids
-        peak_z_coord_indx = np.argmax(z_positions) #finds the max z position of all lipids
-        peak_xy_position = lipids.positions[peak_z_coord_indx, :2]
 
-        #select lipids within a radius around the peak 
-        xy_positions = lipids.positions[:, :2]
-        distance = np.linalg.norm(xy_positions - peak_xy_position, axis=1)
+        z_positions = lipids.positions[:,2] #pulls out the z positions of all lipids
+        peak_z_value = np.max(z_positions) #finds the max z position out of all lipids
+
+        
+        #select lipids within a cuttoff of the highest lipid
+        z_threshold = peak_z_value - 1 #1A below the peak
 
         #create a boolean mask fo lipids that are within the radius
-        peak_lipids_mask = (distance <= raidus)
+        peak_lipids_mask = z_positions <=  z_threshold
 
+        #define the lpids that are within the peak region
         peak_lipids = lipids[peak_lipids_mask]
 
-        #calcuate the center of mass of these lipids 
+        #calcuate the center of mass of the peak lipids
         com_peak = peak_lipids.center_of_mass()
 
         #shift the box center based on the com of the peak lipids
