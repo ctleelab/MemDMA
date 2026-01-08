@@ -17,3 +17,4 @@ results/
 old-data/
 PackMem_original/*.pdb
 PackMem_original/testing/*.txt
+simulation_data_centered_residues/
