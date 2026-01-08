@@ -385,6 +385,22 @@ if __name__ == "__main__":
         lipid_type_short,
         args.dist,
     )
+    
+    # create a .txt of mapped defects
+    triangle_centroid_coords_atom_mapping_upper = {}
+    
+    for triangle_grid_num, coords in enumerate(centroid_triangles_u):
+        triangle_centroid_coords = np.array(coords)
+        count_for_triangle = triangle_atom_assignment_upper_sorted.get(triangle_grid_num, 0)
+        triangle_centroid_coords_atom_mapping_upper[triangle_grid_num] = (triangle_centroid_coords, count_for_triangle)
+
+    # Write the data to a .txt file
+    output_file = util.analysis_path / f"{args.frame_num}_atom_mapping.txt"
+    with open(output_file, "w") as f:
+        f.write("Grid_Number\tCentroid_Coordinates\tAtom_Mapping_Value\n")
+        for grid_num, (centroid_coords, atom_mapping_value) in triangle_centroid_coords_atom_mapping_upper.items():
+            f.write(f"{grid_num}\t{centroid_coords.tolist()}\t{atom_mapping_value}\n")
+    print(f"Atom mapping data written to {output_file}")
 
     # # creates a graph that plots the atom centroid (x,y) color with its count value
     # neigh_graph.atom_mapping_centroids_2d_zvalue(
