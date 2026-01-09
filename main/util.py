@@ -15,6 +15,7 @@ list_types_atoms = [
     "W",
     "NA",
     "CL",
+    "CNO"
     "NC3",
     "PO4",
     "GL1",
@@ -31,6 +32,7 @@ list_types_atoms = [
     "C2B",
 ]
 list_types_atoms_lipid = [
+    "CNO"
     "NC3",
     "PO4",
     "GL1",
