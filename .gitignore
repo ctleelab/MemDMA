@@ -17,4 +17,9 @@ results/
 old-data/
 PackMem_original/*.pdb
 PackMem_original/testing/*.txt
-simulation_data_centered_residues/
+simulation_data_centered_nopbc/
+simulation_data_centered_testing/
+simulation_data_centered_wrongCOM/
+simulation_data_centered_correctCOM_1Acutoff/
+simulation_data_centered_correctCOM_10Acutoff/
+simulation_data_centered_final/

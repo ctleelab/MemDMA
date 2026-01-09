@@ -2,7 +2,7 @@ def rmin_from_sigma(sigma):
     return 2 ** (1 / 6) * sigma
 
 
-# input the sigma value from the martini_v3.0.0.itp
+# input the sigma value from the martini_v3.0.0.itp, in the non-bonded parameters 
 # did the interactions between the same two beads so that you can easily divide by 2 to represent the radii of one bead
 # Q1    Q1  1 4.700000e-01    3.980000e+00
 # NC3
@@ -27,3 +27,8 @@ print("M3 C4h", rmin_from_sigma(3.52) / 2)
 # SC1   SC1  1 4.100000e-01    2.350000e+00
 # C1B
 print("M3 SC1", rmin_from_sigma(2.35) / 2)
+
+
+# P6    P6  1 4.700000e-01    4.990000e+00
+# CNO
+print("M3 P6",rmin_from_sigma(4.99) / 2 )
