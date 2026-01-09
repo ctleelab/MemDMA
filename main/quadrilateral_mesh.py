@@ -15,55 +15,110 @@
 
 # path = Path("/home/casakurai/scratch/packmem/")
 
+from scipy.interpolate import griddata
+import numpy as np
+import MDAnalysis as mda
+import leaflet_finder
 
-def mesh(gro, selection, step):
-    import pickle
-    import numpy as np
-    import MDAnalysis as mda
-    from membrane_spectral_analysis.base import MembraneSpectralAnalysis
-    import leaflet_finder
+import pdb
 
-    # gro, selection, traj, path = args
-    # u = mda.Universe(gro, str(traj) , continous=True)
-    u = mda.Universe(gro, continous=True)
 
-    print("units of the file", u.trajectory.units)  # which is nm
+def get_interpolated_z_surface(coordinates, X, Y, ag=None):
+    """
+    Derive surface from distribution of z coordinates in grid.
 
-    # Average box dimensions over trajectory
-    avg_dim_x = np.mean([ts.dimensions[0] for ts in u.trajectory])
-    avg_dim_y = np.mean([ts.dimensions[1] for ts in u.trajectory])
+    Parameters
+    ----------
+    coordinates : numpy.ndarray
+        Coordinates of AtomGroup. Numpy array of shape=(n_atoms, 3).
+    X : numpy.ndarray
+    Y : numpy.ndarray
 
-    # Determine number of bins
-    num_bins_x = int(avg_dim_x / step)
-    num_bins_y = int(avg_dim_y / step)
+    Returns
+    -------
+    z_surface: np.ndarray
+        Surface derived from set of coordinates in grid of `x_range, y_range` dimensions.
+        Returns Numpy array of floats of shape (`n_x_bins`, `n_y_bins`)
 
-    # Create bin edges
-    x_edges = np.linspace(0, avg_dim_x, num_bins_x + 1)
-    y_edges = np.linspace(0, avg_dim_y, num_bins_y + 1)
+    """
 
-    # Bin centers for plotting
-    x_centers = ((0.5 * (x_edges[:-1] + x_edges[1:]))) / 10
-    y_centers = ((0.5 * (y_edges[:-1] + y_edges[1:]))) / 10
+    if ag is None:
+        raise TypeError("Missing keyword argument 'ag' is required")
+
+    _, _, z_coords = coordinates.T
+    xy = np.delete(coordinates, -1, 1)
+
+    box_x, box_y, _, _, _, _ = ag.dimensions
+    xy_wrapped = np.vstack(
+        (
+            xy,
+            xy + [box_x, 0],
+            xy - [box_x, 0],
+            xy + [0, box_y],
+            xy - [0, box_y],
+            xy + [box_x, box_y],
+            xy - [box_x, box_y],
+            xy + [box_x, -box_y],
+            xy - [box_x, -box_y],
+        )
+    )
+
+    z_wrapped = np.hstack(
+        (
+            z_coords,
+            z_coords,
+            z_coords,
+            z_coords,
+            z_coords,
+            z_coords,
+            z_coords,
+            z_coords,
+            z_coords,
+        )
+    )
+
+    return griddata(xy_wrapped, z_wrapped, (X, Y), method="cubic")
+
+
+def interpolate_cubic_surface(ag, selection, step=1):
+    x_range = (
+        np.min(ag.atoms.positions[:, 0]) // step * step,
+        np.max(ag.atoms.positions[:, 0]) // step * step,
+    )
+    y_range = (
+        np.min(ag.atoms.positions[:, 1]) // step * step,
+        np.max(ag.atoms.positions[:, 1]) // step * step,
+    )
+
+    # # Create bin edges
+    x_edges = np.arange(x_range[0], x_range[1], step)
+    y_edges = np.arange(y_range[0], y_range[1], step)
+
+    # # Bin centers for plotting
+    x_centers = ((0.5 * (x_edges[:-1] + x_edges[1:]))) 
+    y_centers = ((0.5 * (y_edges[:-1] + y_edges[1:])))
 
     X, Y = np.meshgrid(x_centers, y_centers, indexing="ij")
 
-    # Run MembraneSpectralAnalysis to get the quadrilateral mesh
-    mc = MembraneSpectralAnalysis(
-        u,
-        select=selection,
-        n_x_bins=num_bins_x,
-        n_y_bins=num_bins_y,
-        x_range=(0, avg_dim_x),
-        y_range=(0, avg_dim_y),
-        wrap=True,  # enable wrapping to avoid edge artifacts
-        interpolate=True,
-    ).run(verbose=True)
+    P, Q = np.mgrid[
+        x_range[0] : x_range[1] : step,
+        y_range[0] : y_range[1] : step,
+    ]
 
-    ## pulls out the GL2 beads that belong to the upper and lower leaflet
-    z_data_upper = (mc.results["z_surface"]["upper"]) / 10
-    z_data_lower = (mc.results["z_surface"]["lower"]) / 10
+    leaflets, _ = leaflet_finder.determine_leaflets(ag, selection)
 
-    ## create a dictionary of
-    leaflet, leaflet_residues = leaflet_finder.determine_leaflets(u, selection)
+    z_surface = {}
+    z_surface["upper"] = (
+        get_interpolated_z_surface(
+            leaflets["upper"].positions, P, Q, ag=leaflets["upper"]
+        )
+        + 3.6199
+    )
+    z_surface["lower"] = (
+        get_interpolated_z_surface(
+            leaflets["lower"].positions, P, Q, ag=leaflets["lower"]
+        )
+        - 3.6199
+    )
 
-    return (X, Y, z_data_upper, z_data_lower, leaflet_residues)
+    return (P, Q, z_surface, leaflets, X, Y)

@@ -3,7 +3,6 @@ import numpy as np
 import csv
 import util
 import neighborhood_grid_graph as ngg
-import BasicFunctions as bfg
 
 
 def sum_atom_mapping_np_array(

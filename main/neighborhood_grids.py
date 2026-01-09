@@ -1,5 +1,5 @@
 import numpy as np
-from scipy.spatial import cKDTree
+
 
 
 def cKDtree_grid_neighborhood(grid_centroids: dict):
@@ -14,6 +14,7 @@ def cKDtree_grid_neighborhood(grid_centroids: dict):
         grid_keys: List of grid numbers.
         centroids: Numpy array of centroid coordinates for each grid
     """
+    print(type(grid_centroids))
 
     grid_keys = np.arange(0, len(grid_centroids))  # creates a list of the grid numbers
     centroids = np.array(
@@ -25,7 +26,7 @@ def cKDtree_grid_neighborhood(grid_centroids: dict):
     return tree, grid_keys, centroids
 
 
-def neighborhood(cutoff: int, grid_number: int, tree, grid_keys: list, centroids):
+def neighborhood(cutoff: float, grid_number: int, tree, grid_keys: list, centroids):
     """
     This function creates a neighborhood for each grid with a specified cutoff value.
 

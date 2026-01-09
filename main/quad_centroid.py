@@ -1,36 +1,27 @@
 import numpy as np
-import neighborhood_grids as ng
+import neighborhood_grids as neighborhood_grids
 
 
-# get the index of the smallest value (by using the function np.argmin)
-# the output of this is the same for all keys
-# grid_dict: grid with it's neighborhood
-# i
 def grid_assignment(
     gl2_coords: dict,
-    centroid_triangles,
-    tree_upper,
-    grid_keys_upper: list,
-    centroids_upper,
-    cutoff: int,
-    atom_features: dict,
+    centroids,
+    tree,
+    cutoff: float,
 ):
     """
     Assigns a grid to a GL2 bead then computes the grid neighborhood using cKDTree.
 
     Args:
         gl2_coords (dict): A dictionary containing GL2 bead coordinates. {GL2 bead number: (x,y,z)}
-        centroid_triangles (np.ndarray): A matrix of all centroids of the grid, where each index is the grid number.
-        tree_upper (cKDTree): A cKDTree object for efficient spatial queries.
-        grid_keys_upper (list): A list of grid keys corresponding to the grid matrix.
-        centroids_upper (np.ndarray): An array of centroid coordinates for the upper grid.
+        centroids (np.ndarray): A matrix of all centroids of the grid, where each index is the grid number.
+        tree (cKDTree): A cKDTree object for efficient spatial queries.
         cutoff (int): The cutoff distance for neighborhood determination.
         atom_features (dict):{atom: (atom_name), (leaflet_assignment), (atom_coords), (residue number)}
     Returns:
         gl2_grid_assignment (dict): A dictionary with GL2 number (key): (closet grid_index, grid_coords of closest grid_index, neighborhood_list of the grid_idex).
         lipid_grid_assignment (dict): A dictionary with lipid (key): (neighborhood_list of the grid_idex)
     """
-
+    
     gl2_grid_assignment = {}
     lipid_grid_assignment = {}
 
@@ -46,15 +37,12 @@ def grid_assignment(
         grid_coords = centroid_triangles[min_distance_index]
 
         # determine the list of neighborhood grids numbers for the GL2 bead, based on the closest grid centroid coordinates
-        list_neighborhood = ng.neighborhood(
+        list_neighborhood = neighborhood_grids.neighborhood(
             cutoff, min_distance_index, tree_upper, grid_keys_upper, centroids_upper
         )
 
         # add the GL2 bead number to the new dictionary with the following values (index of closest grid, centroid of closest grid, list of neighborhood grid numbers)
         gl2_grid_assignment[key] = (min_distance_index, grid_coords, list_neighborhood)
-
-        # determine the lipid_residue that the GL2 bead belongs to
-        lipid_res = atom_features[key][4]
 
         # creates a dictionary {lipid_res: neighborhood grid list based on GL2 bead in residue}
         lipid_grid_assignment[lipid_res] = list_neighborhood
