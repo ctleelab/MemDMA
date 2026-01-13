@@ -14,4 +14,6 @@ results/
 *.png
 old-data/
 PackMem_original/*.pdb
-PackMem_original/testing/*.txt
+PackMem_original/testing/*.txt# pixi environments
+.pixi/*
+!.pixi/config.toml

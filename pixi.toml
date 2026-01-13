@@ -1,0 +1,18 @@
+[workspace]
+authors = ["Christopher T. Lee <ctlee@ucsd.edu>"]
+channels = ["conda-forge"]
+name = "PackMem-leelab"
+platforms = ["osx-arm64"]
+version = "0.1.0"
+
+[tasks]
+dppc-flat = "main/base_clean_v2.py -i tests/DPPC_flat_lipid_only.gro -r main/vdw_radii_CGMartini3_openbeta2_updated.txt -o DPPC_flat_lipid_only -f DPPC_flat_lipid_only -d 10 -m 1"
+
+[dependencies]
+python = ">=3.14.2,<3.15"
+mdanalysis = ">=2.10.0,<3"
+tqdm = ">=4.67.1,<5"
+scipy = ">=1.16.3,<2"
+
+[pypi-dependencies]
+ctleelab-plothelper = { git = "https://github.com/ctleelab/ctleelab-mpl-utilities.git", branch = "main" }
