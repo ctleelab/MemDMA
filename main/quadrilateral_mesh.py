@@ -80,14 +80,14 @@ def get_interpolated_z_surface(coordinates, X, Y, ag=None):
     return griddata(xy_wrapped, z_wrapped, (X, Y), method="cubic")
 
 
-def interpolate_cubic_surface(ag, selection, step=1):
+def interpolate_cubic_surface(ag, selection, step: float = 1, radius=3.6199):
     x_range = (
-        np.min(ag.atoms.positions[:, 0]) // step * step,
-        np.max(ag.atoms.positions[:, 0]) // step * step,
+        np.floor_divide(np.min(ag.atoms.positions[:, 0]), step) * step,
+        np.floor_divide(np.max(ag.atoms.positions[:, 0]), step) * step,
     )
     y_range = (
-        np.min(ag.atoms.positions[:, 1]) // step * step,
-        np.max(ag.atoms.positions[:, 1]) // step * step,
+        np.floor_divide(np.min(ag.atoms.positions[:, 1]), step) * step,
+        np.floor_divide(np.max(ag.atoms.positions[:, 1]), step) * step,
     )
 
     # # Create bin edges
@@ -95,8 +95,8 @@ def interpolate_cubic_surface(ag, selection, step=1):
     y_edges = np.arange(y_range[0], y_range[1], step)
 
     # # Bin centers for plotting
-    x_centers = ((0.5 * (x_edges[:-1] + x_edges[1:]))) 
-    y_centers = ((0.5 * (y_edges[:-1] + y_edges[1:])))
+    x_centers = 0.5 * (x_edges[:-1] + x_edges[1:])
+    y_centers = 0.5 * (y_edges[:-1] + y_edges[1:])
 
     X, Y = np.meshgrid(x_centers, y_centers, indexing="ij")
 
@@ -110,15 +110,59 @@ def interpolate_cubic_surface(ag, selection, step=1):
     z_surface = {}
     z_surface["upper"] = (
         get_interpolated_z_surface(
-            leaflets["upper"].positions, P, Q, ag=leaflets["upper"]
+            leaflets["upper"].select_atoms(selection).positions,
+            P,
+            Q,
+            ag=leaflets["upper"],
         )
-        + 3.6199
+        + radius
     )
+
     z_surface["lower"] = (
         get_interpolated_z_surface(
-            leaflets["lower"].positions, P, Q, ag=leaflets["lower"]
+            leaflets["lower"].select_atoms(selection).positions,
+            P,
+            Q,
+            ag=leaflets["lower"],
         )
-        - 3.6199
+        - radius
     )
+
+    return (P, Q, z_surface, leaflets, X, Y)
+
+
+def get_flat_surface(ag, selection, step: float = 1, radius=3.6199):
+    x_range = (
+        np.floor_divide(np.min(ag.atoms.positions[:, 0]), step) * step,
+        np.floor_divide(np.max(ag.atoms.positions[:, 0]), step) * step,
+    )
+    y_range = (
+        np.floor_divide(np.min(ag.atoms.positions[:, 1]), step) * step,
+        np.floor_divide(np.max(ag.atoms.positions[:, 1]), step) * step,
+    )
+
+    # # Create bin edges
+    x_edges = np.arange(x_range[0], x_range[1], step)
+    y_edges = np.arange(y_range[0], y_range[1], step)
+
+    # # Bin centers for plotting
+    x_centers = 0.5 * (x_edges[:-1] + x_edges[1:])
+    y_centers = 0.5 * (y_edges[:-1] + y_edges[1:])
+
+    X, Y = np.meshgrid(x_centers, y_centers, indexing="ij")
+
+    P, Q = np.mgrid[
+        x_range[0] : x_range[1] : step,
+        y_range[0] : y_range[1] : step,
+    ]
+
+    leaflets, _ = leaflet_finder.determine_leaflets(ag, selection)
+
+    flat_z_upper = np.mean(leaflets["upper"].positions[:, 2])
+    flat_z_lower = np.mean(leaflets["lower"].positions[:, 2])
+
+    z_surface = {}
+    z_surface["upper"] = np.full((P.shape), flat_z_upper + radius)
+    z_surface["lower"] = np.full((P.shape), flat_z_lower - radius)
 
     return (P, Q, z_surface, leaflets, X, Y)
