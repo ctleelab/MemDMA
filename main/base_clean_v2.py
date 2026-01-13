@@ -106,12 +106,12 @@ if __name__ == "__main__":
     # X, Y, zupper, zlower, leaflet_residues = quadrilateral_mesh.mesh(
     #     args.traj_filename, "name GL2", args.mesh_size
     # )
-    # X, Y, z_surface, leaflets, X_c, Y_c = quadrilateral_mesh.interpolate_cubic_surface(
-    #     u, selection="name PO4 NC3", step=args.mesh_size
-    # )
-    X, Y, z_surface, leaflets, X_c, Y_c = quadrilateral_mesh.get_flat_surface(
+    X, Y, z_surface, leaflets, X_c, Y_c = quadrilateral_mesh.interpolate_cubic_surface(
         u, selection="name PO4 NC3", step=args.mesh_size
     )
+    # X, Y, z_surface, leaflets, X_c, Y_c = quadrilateral_mesh.get_flat_surface(
+    #     u, selection="name PO4 NC3", step=args.mesh_size
+    # )
     print("Finished: meshing")
 
     with plt.style.context(
@@ -174,7 +174,7 @@ if __name__ == "__main__":
         #     linewidth=0,
         # )
 
-        ax.view_init(elev=90, azim=-90, roll=0)
+        # ax.view_init(elev=90, azim=-90, roll=0)
 
         ax.set_xlabel("X (A)")
         ax.set_ylabel("Y (A)")
@@ -236,10 +236,18 @@ if __name__ == "__main__":
             )
 
             r = atom.residue
+
+            average_normal = np.mean(
+                mesh_normals[leaflet][neighborhood_indices], axis=0
+            )
+            average_normal /= np.linalg.norm(average_normal)
+            # print(average_normal)
+
             for grid_idx in neighborhood_indices:
                 tri = mesh_faces[grid_idx]
                 vertices = mesh_vertices[leaflet][tri]
-                normal = mesh_normals[leaflet][grid_idx]
+                # normal = mesh_normals[leaflet][grid_idx]
+                normal = average_normal
                 centroid = mesh_centroids[leaflet][grid_idx]
                 for atom in r.atoms:
                     key = f"{r.resname} {atom.name}"
