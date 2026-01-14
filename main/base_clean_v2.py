@@ -237,11 +237,18 @@ if __name__ == "__main__":
 
             r = atom.residue
 
+            normal_neighborhood_indices = tree[leaflet].query_ball_point(
+                mesh_centroids[leaflet][min_distance_indices[i]],
+                15,
+            )
             average_normal = np.mean(
-                mesh_normals[leaflet][neighborhood_indices], axis=0
+                mesh_normals[leaflet][normal_neighborhood_indices], axis=0
             )
             average_normal /= np.linalg.norm(average_normal)
             # print(average_normal)
+
+            center = mesh_centroids[leaflet][min_distance_indices[i]]
+            max_map_dist = 0
 
             for grid_idx in neighborhood_indices:
                 tri = mesh_faces[grid_idx]
@@ -249,6 +256,9 @@ if __name__ == "__main__":
                 # normal = mesh_normals[leaflet][grid_idx]
                 normal = average_normal
                 centroid = mesh_centroids[leaflet][grid_idx]
+
+                dist_to_center = np.linalg.norm(centroid - center)
+
                 for atom in r.atoms:
                     key = f"{r.resname} {atom.name}"
                     if key not in prop_dict:
@@ -274,6 +284,8 @@ if __name__ == "__main__":
 
                     # increment if atom overlaps with a vertex
                     if np.min(np.linalg.norm(vertex_to_atom_proj, axis=1)) <= radius:
+                        if dist_to_center > max_map_dist:
+                            max_map_dist = dist_to_center
                         increment_defect_count(leaflet, grid_idx, aliphatic)
                     else:
                         # print('checking edges', key)
@@ -300,7 +312,11 @@ if __name__ == "__main__":
 
                         if np.any((dist_to_edge <= radius) & edge_projection_valid):
                             # print("edge valid")
+                            if dist_to_center > max_map_dist:
+                                max_map_dist = dist_to_center
                             increment_defect_count(leaflet, grid_idx, aliphatic)
+            print(max_map_dist)    
+        
 
     mask = np.where(defect_counts["upper"] >= 1)
     deep_mask = np.where(defect_counts["upper"] == 0)
