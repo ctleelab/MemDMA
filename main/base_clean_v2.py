@@ -96,8 +96,8 @@ if __name__ == "__main__":
     prop_dict = util.parse_radius_aliphatic_dict(args.prop_file)
 
     u = mda.Universe(args.traj_filename, continous=True)
-    u.atoms.positions += [0, 0, 50]
-    u.atoms.wrap()
+    # u.atoms.positions += [0, 0, 50]
+    # u.atoms.wrap()
 
     with mda.Writer("tmp.gro") as fd:
         fd.write(u)
@@ -124,12 +124,12 @@ if __name__ == "__main__":
         y = po4.positions[:, 1]
         z = po4.positions[:, 2]
 
-        mask = np.where(z > np.mean(z))
+        # mask = np.where(z > np.mean(z))
 
         ax.scatter(
-            x[mask],
-            y[mask],
-            z[mask],
+            x,
+            y,
+            z,
             color="blue",
             s=4,
             alpha=1,
@@ -183,10 +183,11 @@ if __name__ == "__main__":
         ax.xaxis.set_major_locator(MultipleLocator(25))
 
         fig.savefig("3d-tmp.png")
-        # plt.show()
+        plt.show()
         plt.close(fig)
 
     print("Start:computing normal vectors of triangle")
+
     (mesh_faces, mesh_vertices, mesh_centroids, mesh_normals) = (
         util.vectorized_normal_vector_triangles(X, Y, z_surface)
     )
@@ -201,6 +202,37 @@ if __name__ == "__main__":
     tree["upper"] = cKDTree(mesh_centroids["upper"])
     tree["lower"] = cKDTree(mesh_centroids["lower"])
 
+    # allocate memory for new normal array (N,3)
+    smeared_mesh_normals = {}
+    smeared_mesh_normals["upper"] = np.empty_like(mesh_normals['upper'])
+    smeared_mesh_normals["lower"] = np.empty_like(mesh_normals['lower'])
+
+    #print(smeared_mesh_normals.shape())
+    
+    #gets the number of triangle indxs 
+    number_idx = {key: len(value) for key, value in mesh_normals.items()}
+    #print(number_idx)
+    #print("upper", number_idx["upper"])
+
+
+    for leaflet in ["upper", "lower"]:
+        for i in np.arange(0, number_idx["upper"]):
+            
+            # Aggregate triangles in the neighborhood using KD-tree lookup
+            neighborhood_indices = tree[leaflet].query_ball_point(
+                mesh_centroids[leaflet][i],
+                3,
+            )
+            
+            # Average normals and convert into unit length
+            average_normal = np.mean(
+                mesh_normals[leaflet][neighborhood_indices], axis=0
+            )
+            average_normal /= np.linalg.norm(average_normal)
+            
+            smeared_mesh_normals[leaflet][i] = average_normal
+
+
     ## To determine which grid is the closest to the GL2 bead, the euclidean distance between the Gl2 bead and the grids centroid was calculated
 
     defect_counts = {
@@ -214,8 +246,7 @@ if __name__ == "__main__":
         else:
             defect_counts[leaflet][grid_idx] += 0.001
 
-    # for leaflet in ["upper", "lower"]:
-    for leaflet in ["upper"]:
+    for leaflet in ["upper", "lower"]:
         print(f"Processing {leaflet} leaflet")
 
         headgroup_beads = leaflets[leaflet].select_atoms("name PO4")
@@ -237,15 +268,19 @@ if __name__ == "__main__":
 
             r = atom.residue
 
-            normal_neighborhood_indices = tree[leaflet].query_ball_point(
-                mesh_centroids[leaflet][min_distance_indices[i]],
-                15,
-            )
-            average_normal = np.mean(
-                mesh_normals[leaflet][normal_neighborhood_indices], axis=0
-            )
-            average_normal /= np.linalg.norm(average_normal)
+            # normal_neighborhood_indices = tree[leaflet].query_ball_point(
+            #     mesh_centroids[leaflet][min_distance_indices[i]],
+            #     3,
+            # )
+            # average_normal = np.mean(
+            #     mesh_normals[leaflet][normal_neighborhood_indices], axis=0
+            # )
+            # average_normal /= np.linalg.norm(average_normal)
             # print(average_normal)
+
+            # average_normal = np.mean(
+            #     mesh_normals[leaflet][neighborhood_indices], axis=0
+            # )
 
             center = mesh_centroids[leaflet][min_distance_indices[i]]
             max_map_dist = 0
@@ -254,7 +289,8 @@ if __name__ == "__main__":
                 tri = mesh_faces[grid_idx]
                 vertices = mesh_vertices[leaflet][tri]
                 # normal = mesh_normals[leaflet][grid_idx]
-                normal = average_normal
+                normal = smeared_mesh_normals[leaflet][grid_idx]
+                # normal = average_normal
                 centroid = mesh_centroids[leaflet][grid_idx]
 
                 dist_to_center = np.linalg.norm(centroid - center)
@@ -315,8 +351,7 @@ if __name__ == "__main__":
                             if dist_to_center > max_map_dist:
                                 max_map_dist = dist_to_center
                             increment_defect_count(leaflet, grid_idx, aliphatic)
-            print(max_map_dist)    
-        
+            #print(max_map_dist)
 
     mask = np.where(defect_counts["upper"] >= 1)
     deep_mask = np.where(defect_counts["upper"] == 0)
@@ -327,22 +362,24 @@ if __name__ == "__main__":
     ax.set_xlim(0, np.max(mesh_centroids["upper"][:, 0]))
     ax.set_ylim(0, np.max(mesh_centroids["upper"][:, 1]))
 
-    po4 = u.select_atoms("name PO4 NC3 GL1 GL2")
-    x = po4.positions[:, 0]
-    y = po4.positions[:, 1]
-    z = po4.positions[:, 2]
+    polar_upper_positions = (
+        leaflets["upper"].select_atoms("name PO4 NC3 GL1 GL2").positions
+    )
+    x = polar_upper_positions[:, 0]
+    y = polar_upper_positions[:, 1]
+    z = polar_upper_positions[:, 2]
     mask = np.where(z > np.mean(z))
-    ax.scatter(x[mask], y[mask], s=60, color="blue")
+    ax.scatter(x, y, s=60, color="blue")
 
     ax.set_aspect("equal", adjustable="box")
     fig.savefig("upper-defect-tmp_polaronly.png")
-    # sc = ax.scatter(
-    #     mesh_centroids["upper"][:, 0][mask],
-    #     mesh_centroids["upper"][:, 1][mask],
-    #     c=defect_counts["upper"][mask],
-    #     cmap="viridis",
-    #     s=1,
-    # )
+    sc = ax.scatter(
+        mesh_centroids["upper"][:, 0][mask],
+        mesh_centroids["upper"][:, 1][mask],
+        c=defect_counts["upper"][mask],
+        cmap="viridis",
+        s=1,
+    )
 
     # sc = ax.scatter(
     #     mesh_centroids["upper"][:, 0][mask],
