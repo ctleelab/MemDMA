@@ -6,7 +6,7 @@ platforms = ["osx-arm64"]
 version = "0.1.0"
 
 [tasks]
-dppc-flat = "main/base_clean_v2.py -i tests/DPPC_flat_lipid_only.gro -r main/vdw_radii_CGMartini3_openbeta2_updated.txt -o DPPC_flat_lipid_only -f DPPC_flat_lipid_only -d 10 -m 1"
+dppc-flat = "main/base_clean_v2.py -i tests/DPPC_flat_lipid_only.gro -r main/vdw_radii_CGMartini3_openbeta2_updated.txt -o DPPC_flat_lipid_only -f DPPC_flat_lipid_only -d 10 -m 1 --normal-cutoff 5"
 dopc-flat = "main/base_clean_v2.py -i tests/DOPC_flat_lipid_only.gro -r main/vdw_radii_CGMartini3_openbeta2_updated.txt -o DPPC_flat_lipid_only -f DOPC_flat_lipid_only -d 10 -m 1"
 dppc-strain2 = "main/base_clean_v2.py -i tests/DPPC_strain2_lipid_only.gro -r main/vdw_radii_CGMartini3_openbeta2_updated.txt -o DPPC_strain2_lipid_only -f DPPC_strain2_lipid_only -d 10 -m 1"
 dopc-strain2 = "main/base_clean_v2.py -i tests/DOPC_strain2_lipid_only.gro -r main/vdw_radii_CGMartini3_openbeta2_updated.txt -o DOPC_strain2_lipid_only -f DOPC_strain2_lipid_only -d 10 -m 1"

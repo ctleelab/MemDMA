@@ -81,6 +81,13 @@ if __name__ == "__main__":
         default=10,
         help="sets the size of the neighborhood cutoff for grids in angstrom.",
     )
+    parser.add_argument(
+        "--normal-cutoff",
+        action="store",
+        dest="normal_cutoff",
+        default=3,
+        help="sets the size of the normal smearing cutoff for grids in angstrom.",
+    )
 
     args = parser.parse_args()
 
@@ -183,7 +190,7 @@ if __name__ == "__main__":
         ax.xaxis.set_major_locator(MultipleLocator(25))
 
         fig.savefig("3d-tmp.png")
-        plt.show()
+        # plt.show()
         plt.close(fig)
 
     print("Start:computing normal vectors of triangle")
@@ -204,34 +211,32 @@ if __name__ == "__main__":
 
     # allocate memory for new normal array (N,3)
     smeared_mesh_normals = {}
-    smeared_mesh_normals["upper"] = np.empty_like(mesh_normals['upper'])
-    smeared_mesh_normals["lower"] = np.empty_like(mesh_normals['lower'])
+    smeared_mesh_normals["upper"] = np.empty_like(mesh_normals["upper"])
+    smeared_mesh_normals["lower"] = np.empty_like(mesh_normals["lower"])
 
-    #print(smeared_mesh_normals.shape())
-    
-    #gets the number of triangle indxs 
+    # print(smeared_mesh_normals.shape())
+
+    # gets the number of triangle indxs
     number_idx = {key: len(value) for key, value in mesh_normals.items()}
-    #print(number_idx)
-    #print("upper", number_idx["upper"])
-
+    # print(number_idx)
+    # print("upper", number_idx["upper"])
 
     for leaflet in ["upper", "lower"]:
         for i in np.arange(0, number_idx["upper"]):
-            
+
             # Aggregate triangles in the neighborhood using KD-tree lookup
             neighborhood_indices = tree[leaflet].query_ball_point(
                 mesh_centroids[leaflet][i],
-                3,
+                args.normal_cutoff,
             )
-            
+
             # Average normals and convert into unit length
             average_normal = np.mean(
                 mesh_normals[leaflet][neighborhood_indices], axis=0
             )
             average_normal /= np.linalg.norm(average_normal)
-            
-            smeared_mesh_normals[leaflet][i] = average_normal
 
+            smeared_mesh_normals[leaflet][i] = average_normal
 
     ## To determine which grid is the closest to the GL2 bead, the euclidean distance between the Gl2 bead and the grids centroid was calculated
 
@@ -351,7 +356,7 @@ if __name__ == "__main__":
                             if dist_to_center > max_map_dist:
                                 max_map_dist = dist_to_center
                             increment_defect_count(leaflet, grid_idx, aliphatic)
-            #print(max_map_dist)
+            # print(max_map_dist)
 
     mask = np.where(defect_counts["upper"] >= 1)
     deep_mask = np.where(defect_counts["upper"] == 0)
