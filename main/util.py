@@ -39,12 +39,11 @@ list_types_atoms_lipid = [
 ]
 SIZE = 0.5
 lipid = "name NC3 PO4 GL1 GL2 C1A D2A C3A C4A C1B D2B C3B C4B C2A C2B"
-membrane_sel = "resname DPPC DOPC"
+membrane_sel = "resname DPPC DOPC DOPA DOPS DPPA DPPS"
 
-
-trajectory_path = Path("/Users/ctlee/PackMem-leelab/tests")
-analysis_path = Path("/Users/ctlee/PackMem-leelab/tests")
-
+#setting paths
+script_dir = Path(__file__).resolve().parent
+analysis_file_path = Path(script_dir.parent /"analysis") 
 
 def parse_radius_aliphatic_dict(filename: str) -> dict:
     property_dict = {}

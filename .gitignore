@@ -17,3 +17,5 @@ PackMem_original/*.pdb
 PackMem_original/testing/*.txt# pixi environments
 .pixi/*
 !.pixi/config.toml
+*.xtc
+analysis/

@@ -90,9 +90,19 @@ def interpolate_cubic_surface(ag, selection, step: float = 1, radius=3.6199):
         np.floor_divide(np.max(ag.atoms.positions[:, 1]), step) * step,
     )
 
+    # +10 or -10 to eliminate create a 10A perimeter of mesh to eliminate false positive defects due to pbc
+    x_range_adj = (
+        np.floor_divide(np.min(ag.atoms.positions[:, 0] + 10), step) * step,
+        np.floor_divide(np.max(ag.atoms.positions[:, 0] - 10), step) * step,
+    )
+    y_range_adj = (
+        np.floor_divide(np.min(ag.atoms.positions[:, 1]) + 10, step) * step,
+        np.floor_divide(np.max(ag.atoms.positions[:, 1]) - 10, step) * step,
+    )
+
     # # Create bin edges
-    x_edges = np.arange(x_range[0], x_range[1], step)
-    y_edges = np.arange(y_range[0], y_range[1], step)
+    x_edges = np.arange(x_range_adj[0], x_range_adj[1], step)
+    y_edges = np.arange(y_range_adj[0], y_range_adj[1], step)
 
     # # Bin centers for plotting
     x_centers = 0.5 * (x_edges[:-1] + x_edges[1:])
@@ -101,8 +111,8 @@ def interpolate_cubic_surface(ag, selection, step: float = 1, radius=3.6199):
     X, Y = np.meshgrid(x_centers, y_centers, indexing="ij")
 
     P, Q = np.mgrid[
-        x_range[0] : x_range[1] : step,
-        y_range[0] : y_range[1] : step,
+        x_range_adj[0] : x_range_adj[1] : step,
+        y_range_adj[0] : y_range_adj[1] : step,
     ]
 
     leaflets, _ = leaflet_finder.determine_leaflets(ag, selection)
