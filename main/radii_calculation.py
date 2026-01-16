@@ -18,7 +18,7 @@ print("M3 Q5", rmin_from_sigma(6.45) / 2)
 print("M3 SN4a", rmin_from_sigma(2.6) / 2)
 
 # C1    C1  1 4.700000e-01    3.390000e+00
-# C2A, C3A, C4A, C1A
+# C2A, C3A, C4A, (C1Aand C1B for DO lipids)
 print("M3 C1", rmin_from_sigma(3.39) / 2)
 
 # C4h   C4h  1 4.700000e-01    3.520000e+00
@@ -26,8 +26,14 @@ print("M3 C1", rmin_from_sigma(3.39) / 2)
 print("M3 C4h", rmin_from_sigma(3.52) / 2)
 
 # SC1   SC1  1 4.100000e-01    2.350000e+00
-# C1B
+# C1B and C1A for DP lipids
 print("M3 SC1", rmin_from_sigma(2.35) / 2)
+
+
+#P6    P6  1 4.700000e-01    4.990000e+00
+#CNO
+print("M3 P6", rmin_from_sigma(4.99) / 2)
+
 
 
 
