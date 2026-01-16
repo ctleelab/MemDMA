@@ -4,12 +4,13 @@ channels = ["conda-forge"]
 name = "PackMem-leelab"
 platforms = ["osx-arm64", "linux-64"]
 version = "0.1.0"
+preview = ["pixi-build"] # Activate beta pixi-build feature
 
 [tasks]
-dppc-flat = "main/base_clean_v2.py -i tests/DPPC_flat_lipid_only.gro -r main/vdw_radii_CGMartini3_openbeta2_updated.txt -o DPPC_flat_lipid_only -f DPPC_flat_lipid_only -d 10 -m 1 --normal-cutoff 5"
-dopc-flat = "main/base_clean_v2.py -i tests/DOPC_flat_lipid_only.gro -r main/vdw_radii_CGMartini3_openbeta2_updated.txt -o DPPC_flat_lipid_only -f DOPC_flat_lipid_only -d 10 -m 1"
-dppc-strain2 = "main/base_clean_v2.py -i tests/DPPC_strain2_lipid_only.gro -r main/vdw_radii_CGMartini3_openbeta2_updated.txt -o DPPC_strain2_lipid_only -f DPPC_strain2_lipid_only -d 10 -m 1"
-dopc-strain2 = "main/base_clean_v2.py -i tests/DOPC_strain2_lipid_only.gro -r main/vdw_radii_CGMartini3_openbeta2_updated.txt -o DOPC_strain2_lipid_only -f DOPC_strain2_lipid_only -d 10 -m 1"
+dppc-flat = "main/packmem.py -i tests/DPPC_flat_lipid_only.gro -r main/vdw_radii_CGMartini3_openbeta2_updated.txt -o DPPC_flat_lipid_only -d 10 -m 1 --normal-cutoff 5"
+dopc-flat = "main/packmem.py -i tests/DOPC_flat_lipid_only.gro -r main/vdw_radii_CGMartini3_openbeta2_updated.txt -o DPPC_flat_lipid_only -d 10 -m 1"
+dppc-strain2 = "main/packmem.py -i tests/DPPC_strain2_lipid_only.gro -r main/vdw_radii_CGMartini3_openbeta2_updated.txt -o DPPC_strain2_lipid_only  -d 10 -m 1"
+dopc-strain2 = "main/packmem.py -i tests/DOPC_strain2_lipid_only.gro -r main/vdw_radii_CGMartini3_openbeta2_updated.txt -o DOPC_strain2_lipid_only  -d 10 -m 1"
 
 dopc-strain2-trajectory = "main/base_clean_v2.py -l DOPC-strain2 -i tests/DOPC-strain2-production-stripped-centered.gro -t tests/DOPC-strain2-production-stripped-centered.xtc -r main/vdw_radii_CGMartini3_openbeta2_updated.txt -o DOPC-strain2-production-stripped_centered -f DOPC-strain2-production-stripped_centered -d 10 -m 1 --normal-cutoff 5"
 dppc-strain2-trajectory = "main/base_clean_v2.py -l DPPC-strain2 -i tests/DPPC-strain2-production-stripped-centered.gro -t tests/DPPC-strain2-production-stripped-centered.xtc -r main/vdw_radii_CGMartini3_openbeta2_updated.txt -o DPPC-strain2-production-stripped_centered -f DPPC-strain2-production-stripped_centered -d 10 -m 1 --normal-cutoff 5"
@@ -23,6 +24,4 @@ python = ">=3.14.2,<3.15"
 mdanalysis = ">=2.10.0,<3"
 tqdm = ">=4.67.1,<5"
 scipy = ">=1.16.3,<2"
-
-[pypi-dependencies]
-ctleelab-plothelper = { git = "https://github.com/ctleelab/ctleelab-mpl-utilities.git", branch = "main" }
+ctleelab_plothelper = { git = "https://github.com/ctleelab/ctleelab-mpl-utilities", branch = "main" }
