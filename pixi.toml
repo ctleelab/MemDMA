@@ -7,10 +7,17 @@ version = "0.1.0"
 preview = ["pixi-build"] # Activate beta pixi-build feature
 
 [tasks]
-dppc-flat = "main/packmem.py -i tests/DPPC_flat_lipid_only.gro -r main/vdw_radii_CGMartini3_openbeta2_updated.txt -o DPPC_flat_lipid_only -f DPPC_flat_lipid_only -d 10 -m 1 --normal-cutoff 5"
-dopc-flat = "main/packmem.py -i tests/DOPC_flat_lipid_only.gro -r main/vdw_radii_CGMartini3_openbeta2_updated.txt -o DPPC_flat_lipid_only -f DOPC_flat_lipid_only -d 10 -m 1"
-dppc-strain2 = "main/packmem.py -i tests/DPPC_strain2_lipid_only.gro -r main/vdw_radii_CGMartini3_openbeta2_updated.txt -o DPPC_strain2_lipid_only -f DPPC_strain2_lipid_only -d 10 -m 1"
-dopc-strain2 = "main/packmem.py -i tests/DOPC_strain2_lipid_only.gro -r main/vdw_radii_CGMartini3_openbeta2_updated.txt -o DOPC_strain2_lipid_only -f DOPC_strain2_lipid_only -d 10 -m 1"
+dppc-flat = "main/packmem.py -i tests/DPPC_flat_lipid_only.gro -r main/vdw_radii_CGMartini3_openbeta2_updated.txt -o DPPC_flat_lipid_only -d 10 -m 1 --normal-cutoff 5"
+dopc-flat = "main/packmem.py -i tests/DOPC_flat_lipid_only.gro -r main/vdw_radii_CGMartini3_openbeta2_updated.txt -o DPPC_flat_lipid_only -d 10 -m 1"
+dppc-strain2 = "main/packmem.py -i tests/DPPC_strain2_lipid_only.gro -r main/vdw_radii_CGMartini3_openbeta2_updated.txt -o DPPC_strain2_lipid_only  -d 10 -m 1"
+dopc-strain2 = "main/packmem.py -i tests/DOPC_strain2_lipid_only.gro -r main/vdw_radii_CGMartini3_openbeta2_updated.txt -o DOPC_strain2_lipid_only  -d 10 -m 1"
+
+dopc-strain2-trajectory = "main/base_clean_v2.py -l DOPC-strain2 -i tests/DOPC-strain2-production-stripped-centered.gro -t tests/DOPC-strain2-production-stripped-centered.xtc -r main/vdw_radii_CGMartini3_openbeta2_updated.txt -o DOPC-strain2-production-stripped_centered -f DOPC-strain2-production-stripped_centered -d 10 -m 1 --normal-cutoff 5"
+dppc-strain2-trajectory = "main/base_clean_v2.py -l DPPC-strain2 -i tests/DPPC-strain2-production-stripped-centered.gro -t tests/DPPC-strain2-production-stripped-centered.xtc -r main/vdw_radii_CGMartini3_openbeta2_updated.txt -o DPPC-strain2-production-stripped_centered -f DPPC-strain2-production-stripped_centered -d 10 -m 1 --normal-cutoff 5"
+dopc-dops-strain2-trajectory = "main/base_clean_v2.py -l DOPC-DOPS-strain2 -i tests/DOPC-DOPS-strain2-production-stripped-centered.gro -t tests/DOPC-DOPS-strain2-production-stripped-centered.xtc -r main/vdw_radii_CGMartini3_openbeta2_updated.txt -o DOPC-DOPS-strain2-production-stripped_centered -f DOPC-DOPS-strain2-production-stripped_centered -d 10 -m 1 --normal-cutoff 5"
+dppc-dpps-strain2-trajectory = "main/base_clean_v2.py -l DPPC-DPPS-strain2 -i tests/DPPC-DPPS-strain2-production-stripped-centered.gro -t tests/DPPC-DPPS-strain2-production-stripped-centered.xtc -r main/vdw_radii_CGMartini3_openbeta2_updated.txt -o DPPC-DPPS-strain2-production-stripped_centered -f DPPC-DPPS-strain2-production-stripped_centered -d 10 -m 1 --normal-cutoff 5"
+dppc-dppa-strain2-trajectory = "main/base_clean_v2.py -l DPPC-DPPA-strain2 -i tests/DPPC-DPPA-strain2-production-stripped-centered.gro -t tests/DPPC-DPPA-strain2-production-stripped-centered.xtc -r main/vdw_radii_CGMartini3_openbeta2_updated.txt -o DPPC-DPPA-strain2-production-stripped_centered -f DPPC-DPPA-strain2-production-stripped_centered -d 10 -m 1 --normal-cutoff 5"
+dopc-dopa-strain2-trajectory = "main/base_clean_v2.py -l DOPC-DOPA-strain2 -i tests/DOPC-DOPA-strain2-production-stripped-centered.gro -t tests/DOPC-DOPA-strain2-production-stripped-centered.xtc -r main/vdw_radii_CGMartini3_openbeta2_updated.txt -o DOPC-DOPA-strain2-production-stripped_centered -f DOPC-DOPA-strain2-production-stripped_centered -d 10 -m 1 --normal-cutoff 5"
 
 [dependencies]
 python = ">=3.14.2,<3.15"

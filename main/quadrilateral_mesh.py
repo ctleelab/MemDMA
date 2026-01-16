@@ -80,39 +80,15 @@ def get_interpolated_z_surface(coordinates, X, Y, ag=None):
     return griddata(xy_wrapped, z_wrapped, (X, Y), method="cubic")
 
 
-def interpolate_cubic_surface(ag, selection, step: float = 1, radius=3.6199):
-    x_range = (
-        np.floor_divide(np.min(ag.atoms.positions[:, 0]), step) * step,
-        np.floor_divide(np.max(ag.atoms.positions[:, 0]), step) * step,
-    )
-    y_range = (
-        np.floor_divide(np.min(ag.atoms.positions[:, 1]), step) * step,
-        np.floor_divide(np.max(ag.atoms.positions[:, 1]), step) * step,
-    )
-
-    # # Create bin edges
-    x_edges = np.arange(x_range[0], x_range[1], step)
-    y_edges = np.arange(y_range[0], y_range[1], step)
-
-    # # Bin centers for plotting
-    x_centers = 0.5 * (x_edges[:-1] + x_edges[1:])
-    y_centers = 0.5 * (y_edges[:-1] + y_edges[1:])
-
-    X, Y = np.meshgrid(x_centers, y_centers, indexing="ij")
-
-    P, Q = np.mgrid[
-        x_range[0] : x_range[1] : step,
-        y_range[0] : y_range[1] : step,
-    ]
-
+def interpolate_cubic_surface(ag, selection, X, Y, radius=3.6199):
     leaflets, _ = leaflet_finder.determine_leaflets(ag, selection)
 
     z_surface = {}
     z_surface["upper"] = (
         get_interpolated_z_surface(
             leaflets["upper"].select_atoms(selection).positions,
-            P,
-            Q,
+            X,
+            Y,
             ag=leaflets["upper"],
         )
         + radius
@@ -121,48 +97,48 @@ def interpolate_cubic_surface(ag, selection, step: float = 1, radius=3.6199):
     z_surface["lower"] = (
         get_interpolated_z_surface(
             leaflets["lower"].select_atoms(selection).positions,
-            P,
-            Q,
+            X,
+            Y,
             ag=leaflets["lower"],
         )
         - radius
     )
 
-    return (P, Q, z_surface, leaflets, X, Y)
+    return (z_surface, leaflets)
 
 
-def get_flat_surface(ag, selection, step: float = 1, radius=3.6199):
-    x_range = (
-        np.floor_divide(np.min(ag.atoms.positions[:, 0]), step) * step,
-        np.floor_divide(np.max(ag.atoms.positions[:, 0]), step) * step,
-    )
-    y_range = (
-        np.floor_divide(np.min(ag.atoms.positions[:, 1]), step) * step,
-        np.floor_divide(np.max(ag.atoms.positions[:, 1]), step) * step,
-    )
+# def get_flat_surface(ag, selection, step: float = 1, radius=3.6199):
+#     x_range = (
+#         np.floor_divide(np.min(ag.atoms.positions[:, 0]), step) * step,
+#         np.floor_divide(np.max(ag.atoms.positions[:, 0]), step) * step,
+#     )
+#     y_range = (
+#         np.floor_divide(np.min(ag.atoms.positions[:, 1]), step) * step,
+#         np.floor_divide(np.max(ag.atoms.positions[:, 1]), step) * step,
+#     )
 
-    # # Create bin edges
-    x_edges = np.arange(x_range[0], x_range[1], step)
-    y_edges = np.arange(y_range[0], y_range[1], step)
+#     # # Create bin edges
+#     x_edges = np.arange(x_range[0], x_range[1], step)
+#     y_edges = np.arange(y_range[0], y_range[1], step)
 
-    # # Bin centers for plotting
-    x_centers = 0.5 * (x_edges[:-1] + x_edges[1:])
-    y_centers = 0.5 * (y_edges[:-1] + y_edges[1:])
+#     # # Bin centers for plotting
+#     x_centers = 0.5 * (x_edges[:-1] + x_edges[1:])
+#     y_centers = 0.5 * (y_edges[:-1] + y_edges[1:])
 
-    X, Y = np.meshgrid(x_centers, y_centers, indexing="ij")
+#     X, Y = np.meshgrid(x_centers, y_centers, indexing="ij")
 
-    P, Q = np.mgrid[
-        x_range[0] : x_range[1] : step,
-        y_range[0] : y_range[1] : step,
-    ]
+#     P, Q = np.mgrid[
+#         x_range[0] : x_range[1] : step,
+#         y_range[0] : y_range[1] : step,
+#     ]
 
-    leaflets, _ = leaflet_finder.determine_leaflets(ag, selection)
+#     leaflets, _ = leaflet_finder.determine_leaflets(ag, selection)
 
-    flat_z_upper = np.mean(leaflets["upper"].positions[:, 2])
-    flat_z_lower = np.mean(leaflets["lower"].positions[:, 2])
+#     flat_z_upper = np.mean(leaflets["upper"].positions[:, 2])
+#     flat_z_lower = np.mean(leaflets["lower"].positions[:, 2])
 
-    z_surface = {}
-    z_surface["upper"] = np.full((P.shape), flat_z_upper + radius)
-    z_surface["lower"] = np.full((P.shape), flat_z_lower - radius)
+#     z_surface = {}
+#     z_surface["upper"] = np.full((P.shape), flat_z_upper + radius)
+#     z_surface["lower"] = np.full((P.shape), flat_z_lower - radius)
 
-    return (P, Q, z_surface, leaflets, X, Y)
+#     return (P, Q, z_surface, leaflets, X, Y)
