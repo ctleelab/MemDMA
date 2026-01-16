@@ -26,6 +26,79 @@ import util
 import ctleelab_plothelper.plothelpers as ph
 
 
+def _process_residue_mapping(args):
+    (
+        r,
+        vertices,
+        normal,
+        centroid,
+        prop_dict,
+        deep_defect_cutoff,
+        grid_idx,
+        leaflet,
+    ) = args
+    increment = 0
+
+    def increment_defect_count(aliphatic):
+        nonlocal increment
+        if aliphatic == "n":
+            increment += 1
+        else:
+            increment += 0.001
+
+    for atom in r.atoms:
+        key = f"{r.resname} {atom.name}"
+        if key not in prop_dict:
+            sys.stderr.write(f"WARNING: Atom type {key} not found in property file.")
+            break
+        radius, aliphatic = prop_dict[key]
+
+        w = atom.position - centroid
+        w_n = np.dot(w, normal)  # component of w normal to the plane
+
+        if w_n + radius < -deep_defect_cutoff:
+            # print(w_n + radius)
+            # print(atom.position, centroid, normal)
+            continue  # atom is too far from the plane
+
+        # print(np.linalg.norm(normal), w_n, key)
+
+        atom_proj = atom.position - w_n * normal  # W projected onto plane
+
+        vertex_to_atom_proj = atom_proj - vertices
+
+        # increment if atom overlaps with a vertex
+        if np.min(np.linalg.norm(vertex_to_atom_proj, axis=1)) <= radius:
+            increment_defect_count(aliphatic)
+        else:
+            # print('checking edges', key)
+            # Check edges
+            edges = np.vstack(
+                (
+                    vertices[1] - vertices[0],
+                    vertices[2] - vertices[1],
+                    vertices[0] - vertices[2],
+                )
+            )
+            edge_lengths = np.linalg.norm(edges, axis=1)
+
+            edge_dots = np.einsum("ij,ij->i", vertex_to_atom_proj, edges)
+
+            edge_projection_valid = np.bitwise_and(
+                (edge_dots >= 0), (edge_dots <= edge_lengths)
+            )
+
+            dist_to_edge = (
+                np.linalg.norm(np.cross(vertex_to_atom_proj, edges), axis=1)
+                / edge_lengths
+            )
+
+            if np.any((dist_to_edge <= radius) & edge_projection_valid):
+                # print("edge valid")
+                increment_defect_count(aliphatic)
+    return (leaflet, grid_idx, increment)
+
+
 def main(
     u: mda.Universe,
     prop_dict: dict,
@@ -38,7 +111,7 @@ def main(
     prefix: str = "output",
     debug=False,
 ):
-
+    u.atoms.wrap()
     if debug:
         with mda.Writer("tmp.gro") as fd:
             fd.write(u)
@@ -233,15 +306,14 @@ def main(
             )
             min_distance_indices = np.argmin(distances, axis=1)
 
+            jobs = []
             for i, atom in enumerate(headgroup_beads):
                 neighborhood_indices = tree[leaflet].query_ball_point(
                     mesh_centroids[leaflet][min_distance_indices[i]],
                     neighborhood_cutoff,
                 )
-
                 r = atom.residue
-
-                center = mesh_centroids[leaflet][min_distance_indices[i]]
+                # center = mesh_centroids[leaflet][min_distance_indices[i]]
 
                 for grid_idx in neighborhood_indices:
                     tri = mesh_faces[grid_idx]
@@ -250,67 +322,27 @@ def main(
                     normal = smeared_mesh_normals[leaflet][grid_idx]
                     centroid = mesh_centroids[leaflet][grid_idx]
 
-                    for atom in r.atoms:
-                        key = f"{r.resname} {atom.name}"
-                        if key not in prop_dict:
-                            sys.stderr.write(
-                                f"WARNING: Atom type {key} not found in property file."
-                            )
-                            break
-                        radius, aliphatic = prop_dict[key]
+                    jobs.append(
+                        (
+                            r,
+                            vertices,
+                            normal,
+                            centroid,
+                            prop_dict,
+                            deep_defect_cutoff,
+                            grid_idx,
+                            leaflet,
+                        )
+                    )
 
-                        w = atom.position - centroid
-                        w_n = np.dot(w, normal)  # component of w normal to the plane
+            r = process_map(
+                _process_residue_mapping, jobs, max_workers=8, chunksize=1000
+            )
+            # print(r)
 
-                        if w_n + radius < -deep_defect_cutoff:
-                            # print(w_n + radius)
-                            # print(atom.position, centroid, normal)
-                            continue  # atom is too far from the plane
-
-                        # print(np.linalg.norm(normal), w_n, key)
-
-                        atom_proj = (
-                            atom.position - w_n * normal
-                        )  # W projected onto plane
-
-                        vertex_to_atom_proj = atom_proj - vertices
-
-                        # increment if atom overlaps with a vertex
-                        if (
-                            np.min(np.linalg.norm(vertex_to_atom_proj, axis=1))
-                            <= radius
-                        ):
-                            increment_defect_count(leaflet, grid_idx, aliphatic)
-                        else:
-                            # print('checking edges', key)
-                            # Check edges
-                            edges = np.vstack(
-                                (
-                                    vertices[1] - vertices[0],
-                                    vertices[2] - vertices[1],
-                                    vertices[0] - vertices[2],
-                                )
-                            )
-                            edge_lengths = np.linalg.norm(edges, axis=1)
-
-                            edge_dots = np.einsum(
-                                "ij,ij->i", vertex_to_atom_proj, edges
-                            )
-
-                            edge_projection_valid = np.bitwise_and(
-                                (edge_dots >= 0), (edge_dots <= edge_lengths)
-                            )
-
-                            dist_to_edge = (
-                                np.linalg.norm(
-                                    np.cross(vertex_to_atom_proj, edges), axis=1
-                                )
-                                / edge_lengths
-                            )
-
-                            if np.any((dist_to_edge <= radius) & edge_projection_valid):
-                                # print("edge valid")
-                                increment_defect_count(leaflet, grid_idx, aliphatic)
+            for leaflet, grid_idx, increment in r:
+                if increment > 0:
+                    defect_counts[leaflet][grid_idx] += increment
 
         defect_count_per_frame_upper[index_of_frame] = defect_counts["upper"]
         # defect_count_per_frame_lower[index_of_frame] = defect_counts["lower"]
@@ -338,6 +370,64 @@ def main(
         output_path / f"{prefix}-triangle-vertices-per-frame-upper.npy",
         triangle_vertices_per_frame_upper,
     )
+
+
+    u.atoms.wrap()
+    mask = np.where(defect_counts["upper"] >= 1)
+    deep_mask = np.where(defect_counts["upper"] == 0)
+    shallow_mask = np.where((defect_counts["upper"] < 1) & (defect_counts["upper"] > 0))
+
+    fig, ax = plt.subplots(figsize=(8, 6))
+
+    # ax.set_xlim(0, np.max(mesh_centroids["upper"][:, 0]))
+    # ax.set_ylim(0, np.max(mesh_centroids["upper"][:, 1]))
+
+    polar_upper_positions = (
+        leaflets["upper"].select_atoms("name PO4 NC3 GL1 GL2").positions
+    )
+    x = polar_upper_positions[:, 0]
+    y = polar_upper_positions[:, 1]
+    z = polar_upper_positions[:, 2]
+    # ax.scatter(x, y, s=60, color="blue")
+
+    ax.set_aspect("equal", adjustable="box")
+    
+    sc = ax.scatter(
+        mesh_centroids["upper"][:, 0][mask],
+        mesh_centroids["upper"][:, 1][mask],
+        c=defect_counts["upper"][mask],
+        cmap="viridis",
+        s=5,
+    )
+
+    ax.scatter(
+        mesh_centroids["upper"][:, 0][shallow_mask],
+        mesh_centroids["upper"][:, 1][shallow_mask],
+        color="orange",
+        s=5,
+        alpha=0.5,
+        label="shallow",
+    )
+
+    ax.scatter(
+        mesh_centroids["upper"][:, 0][deep_mask],
+        mesh_centroids["upper"][:, 1][deep_mask],
+        color="red",
+        s=5,
+        alpha=0.5,
+        label="deep",
+    )
+
+    ax.set_aspect("equal", adjustable="box")
+
+    ax.xaxis.set_major_locator(MultipleLocator(25))
+
+    ax.set_xlabel("X (A)")
+    ax.set_ylabel("Y (A)")
+    ax.set_title(f"Triangle Centroids with Atom Counts")
+
+    plt.tight_layout()
+    fig.savefig("upper-defect-tmp.png")
 
 
 ##this is the interface with the user, so that they can specify inputs
@@ -445,5 +535,5 @@ if __name__ == "__main__":
         output_path=Path(args.output_path),
         prefix=args.prefix,
         normal_cutoff=args.normal_cutoff,
-        debug=False,
+        debug=True,
     )
