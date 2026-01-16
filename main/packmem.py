@@ -166,7 +166,6 @@ def main(
             r = atom.residue
 
             center = mesh_centroids[leaflet][min_distance_indices[i]]
-            max_map_dist = 0
 
             for grid_idx in neighborhood_indices:
                 tri = mesh_faces[grid_idx]
@@ -233,7 +232,6 @@ def main(
                             if dist_to_center > max_map_dist:
                                 max_map_dist = dist_to_center
                             increment_defect_count(leaflet, grid_idx, aliphatic)
-            # print(max_map_dist)
 
     mask = np.where(defect_counts["upper"] >= 1)
     deep_mask = np.where(defect_counts["upper"] == 0)
