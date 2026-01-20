@@ -18,6 +18,7 @@ from tqdm.contrib.concurrent import process_map
 from scipy.spatial import cKDTree
 
 import matplotlib.pyplot as plt
+import matplotlib.colors as mcolors
 from matplotlib.ticker import MultipleLocator
 
 import quadrilateral_mesh
@@ -378,121 +379,51 @@ def main(
         vertices_per_frame_upper,
     )
 
-    sz = 4
+    for leaflet in ["upper", "lower"]:
+        fig, ax = ph.fixed_size_subplots(
+            1, 1, subwidth=4, subheight=1, rmargin_scale=1.5
+        )
 
-    mask = np.where(defect_counts["upper"] >= 1)
-    deep_mask = np.where(defect_counts["upper"] == 0)
-    shallow_mask = np.where((defect_counts["upper"] < 1) & (defect_counts["upper"] > 0))
+        reshaped_defects = defect_counts[leaflet].reshape(quad_shape)
+        masked_polar_defects = np.ma.masked_where(
+            reshaped_defects < 1, reshaped_defects
+        )
 
-    fig, ax = plt.subplots(figsize=(8, 6))
+        sc = ax.pcolor(X, Y, masked_polar_defects, cmap="viridis", shading="auto")
 
-    # ax.set_xlim(0, np.max(mesh_centroids["upper"][:, 0]))
-    # ax.set_ylim(0, np.max(mesh_centroids["upper"][:, 1]))
+        masked_shallow_defects = np.ma.masked_where(
+            (reshaped_defects >= 1) | (reshaped_defects == 0),
+            reshaped_defects,
+        )
+        cmap_single_orange = mcolors.ListedColormap(["orange"], name="constant_orange")
+        ax.pcolor(X, Y, masked_shallow_defects, cmap=cmap_single_orange, shading="auto")
 
-    polar_upper_positions = (
-        leaflets["upper"].select_atoms("name PO4 NC3 GL1 GL2").positions
-    )
-    x = polar_upper_positions[:, 0]
-    y = polar_upper_positions[:, 1]
-    z = polar_upper_positions[:, 2]
-    # ax.scatter(x, y, s=60, color="blue")
+        masked_deep_defects = np.ma.masked_where(
+            reshaped_defects != 0,
+            reshaped_defects,
+        )
+        cmap_single_red = mcolors.ListedColormap(["red"], name="constant_red")
+        ax.pcolor(X, Y, masked_deep_defects, cmap=cmap_single_red, shading="auto")
 
-    ax.set_aspect("equal", adjustable="box")
+        # polar_positions = (
+        #     leaflets[leaflet].select_atoms("name PO4 NC3 GL1 GL2").positions
+        # )
+        # x = polar_positions[:, 0]
+        # y = polar_positions[:, 1]
+        # z = polar_positions[:, 2]
+        # ax.scatter(x, y, s=4, color="pink")
 
-    sc = ax.pcolor(
-        X, Y, defect_counts["upper"].reshape(quad_shape), cmap="viridis", shading="auto"
-    )
+        ph.add_fixed_colorbar(sc, ax=ax, pad=0.05, aspect=30, label="Polar atom count")
 
-    ax.scatter(
-        mesh_centroids["upper"][:, 0][shallow_mask],
-        mesh_centroids["upper"][:, 1][shallow_mask],
-        color="orange",
-        s=sz,
-        marker="s",
-        label="shallow",
-        edgecolors="none",
-    )
+        ax.set_aspect("equal", adjustable="datalim")
+        ax.xaxis.set_major_locator(MultipleLocator(25))
+        ax.set_xlabel("X (A)")
+        ax.set_ylabel("Y (A)")
+        fig.savefig(f"{leaflet}-defect-tmp.png")
 
-    ax.scatter(
-        mesh_centroids["upper"][:, 0][deep_mask],
-        mesh_centroids["upper"][:, 1][deep_mask],
-        color="red",
-        s=sz,
-        marker="s",
-        label="deep",
-        edgecolors="none",
-    )
+        plt.close(fig)
 
-    fig.colorbar(sc, ax=ax, label="Atom Count")
-
-    ax.set_aspect("equal", adjustable="box")
-
-    ax.xaxis.set_major_locator(MultipleLocator(25))
-
-    ax.set_xlabel("X (A)")
-    ax.set_ylabel("Y (A)")
-    ax.set_title(f"Triangle Centroids with Atom Counts")
-
-    plt.tight_layout()
-    fig.savefig("upper-defect-tmp.png")
-
-    mask = np.where(defect_counts["lower"] >= 1)
-    deep_mask = np.where(defect_counts["lower"] == 0)
-    shallow_mask = np.where((defect_counts["lower"] < 1) & (defect_counts["lower"] > 0))
-
-    fig, ax = plt.subplots(figsize=(8, 6))
-
-    # ax.set_xlim(0, np.max(mesh_centroids["lower"][:, 0]))
-    # ax.set_ylim(0, np.max(mesh_centroids["lower"][:, 1]))
-
-    polar_upper_positions = (
-        leaflets["lower"].select_atoms("name PO4 NC3 GL1 GL2").positions
-    )
-    x = polar_upper_positions[:, 0]
-    y = polar_upper_positions[:, 1]
-    z = polar_upper_positions[:, 2]
-    # ax.scatter(x, y, s=60, color="blue")
-
-    ax.set_aspect("equal", adjustable="box")
-
-    sc = ax.pcolor(
-        X, Y, defect_counts["lower"].reshape(quad_shape), cmap="viridis", shading="auto"
-    )
-
-    ax.scatter(
-        mesh_centroids["lower"][:, 0][shallow_mask],
-        mesh_centroids["lower"][:, 1][shallow_mask],
-        color="orange",
-        s=sz,
-        marker="s",
-        label="shallow",
-        edgecolors="none",
-    )
-
-    ax.scatter(
-        mesh_centroids["lower"][:, 0][deep_mask],
-        mesh_centroids["lower"][:, 1][deep_mask],
-        color="red",
-        s=sz,
-        marker="s",
-        label="deep",
-        edgecolors="none",
-    )
-
-    fig.colorbar(sc, ax=ax, label="Atom Count")
-
-    ax.set_aspect("equal", adjustable="box")
-
-    ax.xaxis.set_major_locator(MultipleLocator(25))
-
-    ax.set_xlabel("X (A)")
-    ax.set_ylabel("Y (A)")
-    ax.set_title(f"Triangle Centroids with Atom Counts")
-
-    plt.tight_layout()
-    fig.savefig("lower-defect-tmp.png")
-
-    fig, ax = plt.subplots(1, 1, figsize=(5, 5))
+    fig, ax = ph.fixed_size_subplots(1, 1, subwidth=2, subheight=2)
 
     po4 = u.select_atoms("name PO4").positions[:, 2]
     nc3 = u.select_atoms("name NC3").positions[:, 2]
@@ -513,6 +444,7 @@ def main(
     ax.set_ylabel("Counts")
     ax.xaxis.set_major_locator(MultipleLocator(10))
     fig.savefig("density.png")
+    plt.close(fig)
 
 
 ##this is the interface with the user, so that they can specify inputs
