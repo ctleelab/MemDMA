@@ -56,12 +56,9 @@ def _process_residue_mapping(args):
         w = atom.position - centroid
         w_n = np.dot(w, normal)  # component of w normal to the plane
 
+        # w_n is a distance relative to the normal orientation
         if w_n + radius < -deep_defect_cutoff:
-            # print(w_n + radius)
-            # print(atom.position, centroid, normal)
             continue  # atom is too far from the plane
-
-        # print(np.linalg.norm(normal), w_n, key)
 
         atom_proj = atom.position - w_n * normal  # W projected onto plane
 
@@ -77,7 +74,8 @@ def _process_residue_mapping(args):
                 (
                     vertices[1] - vertices[0],
                     vertices[2] - vertices[1],
-                    vertices[0] - vertices[2],
+                    vertices[3] - vertices[2],
+                    vertices[0] - vertices[3],
                 )
             )
             edge_lengths = np.linalg.norm(edges, axis=1)
@@ -106,15 +104,14 @@ def main(
     deep_defect_cutoff: float = 1,
     mesh_size: float = 1,
     normal_cutoff: float = 3,
-    interval: int = 1000,
+    interval: int = 1,
     output_path: Path = Path("."),
     prefix: str = "output",
     debug=False,
 ):
-    u.atoms.wrap()
-    if debug:
-        with mda.Writer("tmp.gro") as fd:
-            fd.write(u)
+    # if debug:
+    #     with mda.Writer("tmp.gro") as fd:
+    #         fd.write(u)
 
     # +10 or -10 to eliminate create a 10A perimeter of mesh to eliminate false positive defects due to pbc
     x_range_adj = (
@@ -154,36 +151,27 @@ def main(
     num_frames = u.trajectory.n_frames // interval + 1
 
     nx, ny = X.shape
+    n_quad = (nx - 1) * (ny - 1)
+    quad_shape = (nx - 1, ny - 1)
     n_tri = 2 * (nx - 1) * (ny - 1)  # two triangles per quad per leaflet
 
-    defect_count_per_frame_upper = np.empty((num_frames, n_tri))
-    # defect_count_per_frame_lower = np.empty(
-    #     (num_frames, n_tri)
-    # )
+    defects_per_frame_upper = np.empty((num_frames, n_quad))
+    defects_per_frame_lower = np.empty((num_frames, n_quad))
 
     # create a numpy array of the triangle centroids
-    triangle_centroids_per_frame_upper = np.empty((num_frames, n_tri, 3))
-    # triangle_centroids_per_frame_lower = np.empty(
-    #     (num_frames, n_tri, 3)
-    # )
+    centroids_per_frame_upper = np.empty((num_frames, n_quad, 3))
+    centroids_per_frame_lower = np.empty((num_frames, n_quad, 3))
 
-    triangle_faces = np.empty((n_tri, 3))
-    triangle_vertices_per_frame_upper = np.empty((num_frames, len(X.ravel()), 3))
-    # create a numpy array of the triangle vertices
-    # triangle_vertices_per_frame_lower = np.empty(
-    #     (num_frames, n_tri, 3)
-    # )
+    vertices_per_frame_upper = np.empty((num_frames, len(X.ravel()), 3))
+    vertices_per_frame_lower = np.empty((num_frames, len(X.ravel()), 3))
 
     index_of_frame = 0
-
-    for ts in u.trajectory[::interval]:
-        print(index_of_frame * interval)
-
-        print("Start: meshing")
-        z_surface, leaflets = quadrilateral_mesh.interpolate_cubic_surface(
-            u, "name PO4", X, Y
+    for ts in tqdm(u.trajectory[::interval], position=0, desc="Processing frames"):
+        # print("Start: meshing")
+        Z, mesh_faces, mesh_vertices, mesh_normals, mesh_centroids, leaflets = (
+            quadrilateral_mesh.interpolate_cubic_surface(u, "name PO4", X, Y)
         )
-        print("Finished: meshing")
+        # print("Finished: meshing")
 
         if debug:
             with plt.style.context(
@@ -193,17 +181,12 @@ def main(
                     1, 1, figsize=(2, 2), subplot_kw={"projection": "3d"}
                 )
 
-                po4 = u.select_atoms("name PO4 NC3 GL1 GL2")
-                x = po4.positions[:, 0]
-                y = po4.positions[:, 1]
-                z = po4.positions[:, 2]
-
-                # mask = np.where(z > np.mean(z))
+                po4 = leaflets["upper"].select_atoms("name PO4 NC3 GL1 GL2")
 
                 ax.scatter(
-                    x,
-                    y,
-                    z,
+                    po4.positions[:, 0],
+                    po4.positions[:, 1],
+                    po4.positions[:, 2],
                     color="blue",
                     s=4,
                     alpha=1,
@@ -214,7 +197,7 @@ def main(
                 ax.scatter(
                     X[::skip, ::skip],
                     Y[::skip, ::skip],
-                    z_surface["upper"][::skip, ::skip],
+                    Z["upper"][::skip, ::skip],
                     color="red",
                     s=1,
                     marker=".",
@@ -235,20 +218,18 @@ def main(
                 # plt.show()
                 plt.close(fig)
 
-        print("Start:computing normal vectors of triangle")
-        (mesh_faces, mesh_vertices, mesh_centroids, mesh_normals) = (
-            util.vectorized_normal_vector_triangles(X, Y, z_surface)
-        )
+        # mesh_faces, mesh_vertices, mesh_centroids, mesh_normals = (
+        #     util.vectorized_normal_vector_triangles(X, Y, z_surface)
+        # )
 
-        triangle_centroids_per_frame_upper[index_of_frame] = mesh_centroids["upper"]
-        # triangle_centroids_per_frame_lower[index_of_frame] = mesh_centroids["lower"]
+        centroids_per_frame_upper[index_of_frame] = mesh_centroids["upper"]
+        centroids_per_frame_lower[index_of_frame] = mesh_centroids["lower"]
 
         # create a numpy array of the triangle faces
-        triangle_vertices_per_frame_upper[index_of_frame] = mesh_vertices["upper"]
-        # triangle_vertices_per_frame_lower[index_of_frame] = mesh_vertices["lower"]
-        print("Finished:computing normal vectors of triangle")
+        vertices_per_frame_upper[index_of_frame] = mesh_vertices["upper"]
+        vertices_per_frame_lower[index_of_frame] = mesh_vertices["lower"]
 
-        print("Start:GL2 grid neighborhood assignment")
+        # print("Start:GL2 grid neighborhood assignment")
         #######################################
         ###create a cKDtree of the centroids###
         #######################################
@@ -257,43 +238,62 @@ def main(
         tree["lower"] = cKDTree(mesh_centroids["lower"])
 
         # allocate memory for new normal array (N,3)
-        smeared_mesh_normals = {}
-        smeared_mesh_normals["upper"] = np.empty_like(mesh_normals["upper"])
-        smeared_mesh_normals["lower"] = np.empty_like(mesh_normals["lower"])
+        smeared_normals = {}
+        smeared_normals["upper"] = np.empty_like(mesh_normals["upper"])
+        smeared_normals["lower"] = np.empty_like(mesh_normals["lower"])
 
-        for leaflet in ["upper", "lower"]:
-            for i in np.arange(0, len(mesh_normals[leaflet])):
+        if debug:
+            for cutoff in np.arange(0, 10):
+                tmp = []
+                tmp_n = []
+                for i in np.arange(0, len(mesh_normals["upper"])):
+                    neighborhood_indices = tree["upper"].query_ball_point(
+                        mesh_centroids["upper"][i],
+                        cutoff,
+                    )
 
-                # Aggregate triangles in the neighborhood using KD-tree lookup
-                neighborhood_indices = tree[leaflet].query_ball_point(
-                    mesh_centroids[leaflet][i],
-                    normal_cutoff,
+                    # Average normals and convert into unit length
+                    average_normal = np.mean(
+                        mesh_normals["upper"][neighborhood_indices], axis=0
+                    )
+                    average_normal /= np.linalg.norm(average_normal)
+                    _smeared_normals = average_normal
+                    res = np.inner(_smeared_normals, np.array([0, 0, 1]))
+                    tmp.append(res)
+                    tmp_n.append(len(neighborhood_indices))
+
+                print(
+                    f"Normal Cutoff: {cutoff} Mean/min/max alignment: {np.mean(tmp)}, {np.min(tmp)}, {np.max(tmp)}, Avg neighbors: {np.mean(tmp_n)}"
                 )
 
-                # Average normals and convert into unit length
-                average_normal = np.mean(
-                    mesh_normals[leaflet][neighborhood_indices], axis=0
-                )
-                average_normal /= np.linalg.norm(average_normal)
+        if normal_cutoff > 0:
+            for leaflet in ["upper", "lower"]:
+                for i in np.arange(0, len(mesh_normals[leaflet])):
+                    # Aggregate faces in the neighborhood using KD-tree lookup
+                    neighborhood_indices = tree[leaflet].query_ball_point(
+                        mesh_centroids[leaflet][i],
+                        normal_cutoff,
+                    )
 
-                smeared_mesh_normals[leaflet][i] = average_normal
+                    # Average normals and convert into unit length
+                    average_normal = np.mean(
+                        mesh_normals[leaflet][neighborhood_indices], axis=0
+                    )
+                    average_normal /= np.linalg.norm(average_normal)
+
+                    smeared_normals[leaflet][i] = average_normal
+        else:
+            smeared_normals["upper"] = mesh_normals["upper"]
+            smeared_normals["lower"] = mesh_normals["lower"]
 
         ## To determine which grid is the closest to the GL2 bead, the euclidean distance between the Gl2 bead and the grids centroid was calculated
-
         defect_counts = {
             "upper": np.zeros(len(mesh_centroids["upper"])),
             "lower": np.zeros(len(mesh_centroids["lower"])),
         }
 
-        def increment_defect_count(leaflet, grid_idx, aliphatic):
-            if aliphatic == "n":
-                defect_counts[leaflet][grid_idx] += 1
-            else:
-                defect_counts[leaflet][grid_idx] += 0.001
-
-        # for leaflet in ["upper", "lower"]:
-        for leaflet in ["upper"]:
-            print(f"Processing {leaflet} leaflet")
+        for leaflet in ["upper", "lower"]:
+            # print(f"Processing {leaflet} leaflet")
 
             headgroup_beads = leaflets[leaflet].select_atoms("name PO4")
             i, j = np.mgrid[
@@ -313,19 +313,20 @@ def main(
                     neighborhood_cutoff,
                 )
                 r = atom.residue
-                # center = mesh_centroids[leaflet][min_distance_indices[i]]
+                # center = centroids[leaflet][min_distance_indices[i]]
 
                 for grid_idx in neighborhood_indices:
-                    tri = mesh_faces[grid_idx]
-                    vertices = mesh_vertices[leaflet][tri]
-                    # normal = mesh_normals[leaflet][grid_idx]
-                    normal = smeared_mesh_normals[leaflet][grid_idx]
+                    quad = mesh_faces[grid_idx]
+                    verts = mesh_vertices[leaflet][quad]
+                    # normal = normals[leaflet][grid_idx]
+                    normal = smeared_normals[leaflet][grid_idx]
+                    # normal = np.array([0, 0, 1])
                     centroid = mesh_centroids[leaflet][grid_idx]
 
                     jobs.append(
                         (
                             r,
-                            vertices,
+                            verts,
                             normal,
                             centroid,
                             prop_dict,
@@ -336,7 +337,13 @@ def main(
                     )
 
             r = process_map(
-                _process_residue_mapping, jobs, max_workers=8, chunksize=1000
+                _process_residue_mapping,
+                jobs,
+                max_workers=8,
+                chunksize=1000,
+                position=1,
+                leave=False,
+                desc="Mapping residues to grids",
             )
             # print(r)
 
@@ -344,7 +351,7 @@ def main(
                 if increment > 0:
                     defect_counts[leaflet][grid_idx] += increment
 
-        defect_count_per_frame_upper[index_of_frame] = defect_counts["upper"]
+        defects_per_frame_upper[index_of_frame] = defect_counts["upper"]
         # defect_count_per_frame_lower[index_of_frame] = defect_counts["lower"]
 
         index_of_frame += 1
@@ -353,26 +360,26 @@ def main(
 
     # save defect count and grid centroid coordinates as a .npy
     np.save(
-        output_path / f"{prefix}-defect-count-per-frame-upper.npy",
-        defect_count_per_frame_upper,
+        output_path / f"{prefix}-defects-upper.npy",
+        defects_per_frame_upper,
     )
     np.save(
-        output_path / f"{prefix}-triangle-centroids-per-frame-upper.npy",
-        triangle_centroids_per_frame_upper,
+        output_path / f"{prefix}-centroids.npy",
+        centroids_per_frame_upper,
     )
 
     np.save(
-        output_path / f"{prefix}-triangle-faces.npy",
+        output_path / f"{prefix}-faces.npy",
         np.squeeze(mesh_faces),
     )
 
     np.save(
-        output_path / f"{prefix}-triangle-vertices-per-frame-upper.npy",
-        triangle_vertices_per_frame_upper,
+        output_path / f"{prefix}-vertices-upper.npy",
+        vertices_per_frame_upper,
     )
 
+    sz = 4
 
-    u.atoms.wrap()
     mask = np.where(defect_counts["upper"] >= 1)
     deep_mask = np.where(defect_counts["upper"] == 0)
     shallow_mask = np.where((defect_counts["upper"] < 1) & (defect_counts["upper"] > 0))
@@ -391,32 +398,32 @@ def main(
     # ax.scatter(x, y, s=60, color="blue")
 
     ax.set_aspect("equal", adjustable="box")
-    
-    sc = ax.scatter(
-        mesh_centroids["upper"][:, 0][mask],
-        mesh_centroids["upper"][:, 1][mask],
-        c=defect_counts["upper"][mask],
-        cmap="viridis",
-        s=5,
+
+    sc = ax.pcolor(
+        X, Y, defect_counts["upper"].reshape(quad_shape), cmap="viridis", shading="auto"
     )
 
     ax.scatter(
         mesh_centroids["upper"][:, 0][shallow_mask],
         mesh_centroids["upper"][:, 1][shallow_mask],
         color="orange",
-        s=5,
-        alpha=0.5,
+        s=sz,
+        marker="s",
         label="shallow",
+        edgecolors="none",
     )
 
     ax.scatter(
         mesh_centroids["upper"][:, 0][deep_mask],
         mesh_centroids["upper"][:, 1][deep_mask],
         color="red",
-        s=5,
-        alpha=0.5,
+        s=sz,
+        marker="s",
         label="deep",
+        edgecolors="none",
     )
+
+    fig.colorbar(sc, ax=ax, label="Atom Count")
 
     ax.set_aspect("equal", adjustable="box")
 
@@ -428,6 +435,84 @@ def main(
 
     plt.tight_layout()
     fig.savefig("upper-defect-tmp.png")
+
+    mask = np.where(defect_counts["lower"] >= 1)
+    deep_mask = np.where(defect_counts["lower"] == 0)
+    shallow_mask = np.where((defect_counts["lower"] < 1) & (defect_counts["lower"] > 0))
+
+    fig, ax = plt.subplots(figsize=(8, 6))
+
+    # ax.set_xlim(0, np.max(mesh_centroids["lower"][:, 0]))
+    # ax.set_ylim(0, np.max(mesh_centroids["lower"][:, 1]))
+
+    polar_upper_positions = (
+        leaflets["lower"].select_atoms("name PO4 NC3 GL1 GL2").positions
+    )
+    x = polar_upper_positions[:, 0]
+    y = polar_upper_positions[:, 1]
+    z = polar_upper_positions[:, 2]
+    # ax.scatter(x, y, s=60, color="blue")
+
+    ax.set_aspect("equal", adjustable="box")
+
+    sc = ax.pcolor(
+        X, Y, defect_counts["lower"].reshape(quad_shape), cmap="viridis", shading="auto"
+    )
+
+    ax.scatter(
+        mesh_centroids["lower"][:, 0][shallow_mask],
+        mesh_centroids["lower"][:, 1][shallow_mask],
+        color="orange",
+        s=sz,
+        marker="s",
+        label="shallow",
+        edgecolors="none",
+    )
+
+    ax.scatter(
+        mesh_centroids["lower"][:, 0][deep_mask],
+        mesh_centroids["lower"][:, 1][deep_mask],
+        color="red",
+        s=sz,
+        marker="s",
+        label="deep",
+        edgecolors="none",
+    )
+
+    fig.colorbar(sc, ax=ax, label="Atom Count")
+
+    ax.set_aspect("equal", adjustable="box")
+
+    ax.xaxis.set_major_locator(MultipleLocator(25))
+
+    ax.set_xlabel("X (A)")
+    ax.set_ylabel("Y (A)")
+    ax.set_title(f"Triangle Centroids with Atom Counts")
+
+    plt.tight_layout()
+    fig.savefig("lower-defect-tmp.png")
+
+    fig, ax = plt.subplots(1, 1, figsize=(5, 5))
+
+    po4 = u.select_atoms("name PO4").positions[:, 2]
+    nc3 = u.select_atoms("name NC3").positions[:, 2]
+    gl = u.select_atoms("name GL1 GL2").positions[:, 2]
+    other = u.select_atoms("not (name PO4 NC3 GL1 GL2)").positions[:, 2]
+
+    ax.hist(
+        [po4, nc3, gl, other],
+        bins=50,
+        stacked=True,
+        label=["PO4", "NC3", "GL1/GL2", "Other"],
+        color=["yellow", "blue", "green", "grey"],
+        density=True,
+        alpha=0.2,
+    )
+
+    ax.set_xlabel("Z Position (A)")
+    ax.set_ylabel("Counts")
+    ax.xaxis.set_major_locator(MultipleLocator(10))
+    fig.savefig("density.png")
 
 
 ##this is the interface with the user, so that they can specify inputs
@@ -446,15 +531,15 @@ if __name__ == "__main__":
         "-r",
         action="store",
         dest="prop_file",
-        help="File for radius (default vdw_radiiFinal2014.txt)",
-        default="vdw_radiiFinal2014.txt",
+        help="File for radius parameters",
+        default="vdw_radii_CGMartini3_openbeta2_updated.txt",
     )
     parser.add_argument(
         "-o",
         action="store",
         dest="output_path",
         default="output",
-        help="Path for outputs",
+        help="Output paths",
     )
     parser.add_argument(
         "-p",
@@ -465,24 +550,24 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "-d",
+        "--deep-defect-cutoff",
         action="store",
         dest="deep_defect_cutoff",
-        default=1,
+        default=13,
         type=float,
         help="Distance cutoff for deep defects in Angstrom",
     )
-    # parser.add_argument(
-    #     "-n",
-    #     action="store",
-    #     dest="indexFile",
-    #     help="File for index (Gromacs ndx style). Only Lower/Upper group accepted",
-    # )
+
     parser.add_argument(
-        "-v", dest="verbosity", action="store_true", help="Increase the verbosity"
+        "-v",
+        "--verbose",
+        dest="verbosity",
+        action="count",
+        help="Increase the verbosity",
     )
-    # parser.add_argument("-f", action="store", dest="frame_num", help="frame number")
     parser.add_argument(
         "-m",
+        "--mesh-size",
         action="store",
         dest="mesh_size",
         default=1,
@@ -490,17 +575,19 @@ if __name__ == "__main__":
         help="size of the mesh in Angstrom",
     )
     parser.add_argument(
-        "-nc",
+        "--neighborhood-cutoff",
         action="store",
         dest="neighborhood_cutoff",
         default=10,
+        type=float,
         help="sets the size of the neighborhood cutoff for grids in angstrom.",
     )
     parser.add_argument(
         "--normal-cutoff",
         action="store",
         dest="normal_cutoff",
-        default=3,
+        default=0,
+        type=float,
         help="sets the size of the normal smearing cutoff for grids in angstrom.",
     )
 
@@ -518,9 +605,9 @@ if __name__ == "__main__":
     prop_dict = util.parse_radius_aliphatic_dict(args.prop_file)
 
     if args.traj_filename:
-        u = mda.Universe(args.gro_filename, args.traj_filename, continous=True)
+        u = mda.Universe(args.gro_filename, args.traj_filename)
     else:
-        u = mda.Universe(args.gro_filename, continous=True)
+        u = mda.Universe(args.gro_filename)
 
     debug = False
     if args.verbosity:
@@ -535,5 +622,5 @@ if __name__ == "__main__":
         output_path=Path(args.output_path),
         prefix=args.prefix,
         normal_cutoff=args.normal_cutoff,
-        debug=True,
+        debug=debug,
     )

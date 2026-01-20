@@ -83,8 +83,8 @@ def get_interpolated_z_surface(coordinates, X, Y, ag=None):
 def interpolate_cubic_surface(ag, selection, X, Y, radius=3.6199):
     leaflets, _ = leaflet_finder.determine_leaflets(ag, selection)
 
-    z_surface = {}
-    z_surface["upper"] = (
+    Z = {}
+    Z["upper"] = (
         get_interpolated_z_surface(
             leaflets["upper"].select_atoms(selection).positions,
             X,
@@ -94,7 +94,7 @@ def interpolate_cubic_surface(ag, selection, X, Y, radius=3.6199):
         + radius
     )
 
-    z_surface["lower"] = (
+    Z["lower"] = (
         get_interpolated_z_surface(
             leaflets["lower"].select_atoms(selection).positions,
             X,
@@ -104,41 +104,59 @@ def interpolate_cubic_surface(ag, selection, X, Y, radius=3.6199):
         - radius
     )
 
-    return (z_surface, leaflets)
+    nx, ny = X.shape
+    n_quad = (nx - 1) * (ny - 1)
 
+    # Vertices
+    vertices = {
+        "upper": np.vstack((X.ravel(), Y.ravel(), Z["upper"].ravel())).T,
+        "lower": np.vstack((X.ravel(), Y.ravel(), Z["lower"].ravel())).T,
+    }
 
-# def get_flat_surface(ag, selection, step: float = 1, radius=3.6199):
-#     x_range = (
-#         np.floor_divide(np.min(ag.atoms.positions[:, 0]), step) * step,
-#         np.floor_divide(np.max(ag.atoms.positions[:, 0]), step) * step,
-#     )
-#     y_range = (
-#         np.floor_divide(np.min(ag.atoms.positions[:, 1]), step) * step,
-#         np.floor_divide(np.max(ag.atoms.positions[:, 1]), step) * step,
-#     )
+    def ij2index(i, j, ny):
+        return j + i * ny
 
-#     # # Create bin edges
-#     x_edges = np.arange(x_range[0], x_range[1], step)
-#     y_edges = np.arange(y_range[0], y_range[1], step)
+    faces = np.empty((n_quad, 4), dtype=int)
+    quad_index = 0
+    for i in range(nx - 1):
+        for j in range(ny - 1):
+            p0 = ij2index(i, j, ny)
+            p1 = ij2index(i + 1, j, ny)
+            p2 = ij2index(i + 1, j + 1, ny)
+            p3 = ij2index(i, j + 1, ny)
 
-#     # # Bin centers for plotting
-#     x_centers = 0.5 * (x_edges[:-1] + x_edges[1:])
-#     y_centers = 0.5 * (y_edges[:-1] + y_edges[1:])
+            faces[quad_index] = [p0, p1, p2, p3]
+            quad_index += 1
 
-#     X, Y = np.meshgrid(x_centers, y_centers, indexing="ij")
+    normals = {}
+    normals["upper"] = (
+        np.linalg.cross(
+            vertices["upper"][faces[:, 1]] - vertices["upper"][faces[:, 0]],
+            vertices["upper"][faces[:, 2]] - vertices["upper"][faces[:, 0]],
+        )
+        + np.linalg.cross(
+            vertices["upper"][faces[:, 2]] - vertices["upper"][faces[:, 0]],
+            vertices["upper"][faces[:, 3]] - vertices["upper"][faces[:, 0]],
+        )
+    ) / 2
 
-#     P, Q = np.mgrid[
-#         x_range[0] : x_range[1] : step,
-#         y_range[0] : y_range[1] : step,
-#     ]
+    normals["lower"] = (
+        np.linalg.cross(
+            vertices["lower"][faces[:, 2]] - vertices["lower"][faces[:, 0]],
+            vertices["lower"][faces[:, 1]] - vertices["lower"][faces[:, 0]],
+        )
+        + np.linalg.cross(
+            vertices["lower"][faces[:, 3]] - vertices["lower"][faces[:, 0]],
+            vertices["lower"][faces[:, 2]] - vertices["lower"][faces[:, 0]],
+        )
+    ) / 2
 
-#     leaflets, _ = leaflet_finder.determine_leaflets(ag, selection)
+    normals["upper"] /= np.linalg.norm(normals["upper"], axis=1)[:, np.newaxis]
+    normals["lower"] /= np.linalg.norm(normals["lower"], axis=1)[:, np.newaxis]
 
-#     flat_z_upper = np.mean(leaflets["upper"].positions[:, 2])
-#     flat_z_lower = np.mean(leaflets["lower"].positions[:, 2])
+    centroids = {
+        "upper": np.mean(vertices["upper"][faces], axis=1),
+        "lower": np.mean(vertices["lower"][faces], axis=1),
+    }
 
-#     z_surface = {}
-#     z_surface["upper"] = np.full((P.shape), flat_z_upper + radius)
-#     z_surface["lower"] = np.full((P.shape), flat_z_lower - radius)
-
-#     return (P, Q, z_surface, leaflets, X, Y)
+    return Z, faces, vertices, normals, centroids, leaflets
