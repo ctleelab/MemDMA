@@ -148,7 +148,6 @@ def main(
         x_range_adj[0] : x_range_adj[1] : mesh_size,
         y_range_adj[0] : y_range_adj[1] : mesh_size,
     ]
-
     num_frames = u.trajectory.n_frames // interval + 1
 
     nx, ny = X.shape
@@ -353,11 +352,60 @@ def main(
                     defect_counts[leaflet][grid_idx] += increment
 
         defects_per_frame_upper[index_of_frame] = defect_counts["upper"]
+
+        print(defect_counts["upper"].shape)
+
+        for leaflet in ["upper", "lower"]:
+
+            fig, ax = ph.fixed_size_subplots(
+                1, 1, subwidth=4, subheight=1, rmargin_scale=1.5
+            )
+
+            reshaped_defects = defect_counts[leaflet].reshape(quad_shape)
+            # masked_polar_defects = np.ma.masked_where(
+            #     reshaped_defects < 1, reshaped_defects
+            # )
+
+            # sc = ax.pcolor(X, Y, masked_polar_defects, cmap="viridis", shading="auto")
+
+            masked_shallow_defects = np.ma.masked_where(
+                (reshaped_defects >= 1) | (reshaped_defects == 0),
+                reshaped_defects,
+            )
+            cmap_single_orange = mcolors.ListedColormap(
+                ["orange"], name="constant_orange"
+            )
+            ax.pcolor(
+                X, Y, masked_shallow_defects, cmap=cmap_single_orange, shading="auto"
+            )
+
+            masked_deep_defects = np.ma.masked_where(
+                reshaped_defects != 0,
+                reshaped_defects,
+            )
+            cmap_single_red = mcolors.ListedColormap(["red"], name="constant_red")
+            ax.pcolor(X, Y, masked_deep_defects, cmap=cmap_single_red, shading="auto")
+
+            # polar_positions = (
+            #     leaflets[leaflet].select_atoms("name PO4 NC3 GL1 GL2").positions
+            # )
+            # x = polar_positions[:, 0]
+            # y = polar_positions[:, 1]
+            # z = polar_positions[:, 2]
+            # ax.scatter(x, y, s=4, color="pink")
+            output_path.mkdir(parents=True, exist_ok=True)
+
+            ax.set_aspect("equal", adjustable="datalim")
+            ax.xaxis.set_major_locator(MultipleLocator(25))
+            ax.set_xlabel("X (A)")
+            ax.set_ylabel("Y (A)")
+            fig.savefig(output_path / f"{index_of_frame}-{leaflet}-defect-tmp.png")
+
+            plt.close(fig)
+
         # defect_count_per_frame_lower[index_of_frame] = defect_counts["lower"]
 
         index_of_frame += 1
-
-    output_path.mkdir(parents=True, exist_ok=True)
 
     # save defect count and grid centroid coordinates as a .npy
     np.save(
@@ -378,18 +426,30 @@ def main(
         output_path / f"{prefix}-vertices-upper.npy",
         vertices_per_frame_upper,
     )
+    np.save(
+        output_path / f"{prefix}-shape.npy",
+        quad_shape,
+    )
 
+    np.save(
+        output_path / f"{prefix}-Xshape.npy",
+        X,
+    )
+    np.save(
+        output_path / f"{prefix}-Yshape.npy",
+        Y,
+    )
     for leaflet in ["upper", "lower"]:
         fig, ax = ph.fixed_size_subplots(
             1, 1, subwidth=4, subheight=1, rmargin_scale=1.5
         )
 
         reshaped_defects = defect_counts[leaflet].reshape(quad_shape)
-        masked_polar_defects = np.ma.masked_where(
-            reshaped_defects < 1, reshaped_defects
-        )
+        # masked_polar_defects = np.ma.masked_where(
+        #     reshaped_defects < 1, reshaped_defects
+        # )
 
-        sc = ax.pcolor(X, Y, masked_polar_defects, cmap="viridis", shading="auto")
+        # sc = ax.pcolor(X, Y, masked_polar_defects, cmap="viridis", shading="auto")
 
         masked_shallow_defects = np.ma.masked_where(
             (reshaped_defects >= 1) | (reshaped_defects == 0),
@@ -423,7 +483,7 @@ def main(
 
         plt.close(fig)
 
-    fig, ax = ph.fixed_size_subplots(1, 1, subwidth=2, subheight=2)
+    fig, ax = ph.fixed_size_subplots(1, 1, subwidth=4, subheight=4)
 
     po4 = u.select_atoms("name PO4").positions[:, 2]
     nc3 = u.select_atoms("name NC3").positions[:, 2]
@@ -442,9 +502,25 @@ def main(
 
     ax.set_xlabel("Z Position (A)")
     ax.set_ylabel("Counts")
-    ax.xaxis.set_major_locator(MultipleLocator(10))
-    fig.savefig("density.png")
+    ax.xaxis.set_major_locator(MultipleLocator(5))
+    fig.savefig(output_path / "density.png")
     plt.close(fig)
+
+    # # Determine the average distance between PO4 and GL1 for each lipid
+    # distances = []
+    # for lipid in u.select_atoms("resname DPPC").residues:
+    #     po4 = lipid.atoms.select_atoms("name PO4")
+    #     gl1 = lipid.atoms.select_atoms("name GL1")
+    #     if len(po4) > 0 and len(gl1) > 0:
+    #         distance = np.linalg.norm(po4.center_of_geometry() - gl1.center_of_geometry())
+    #         distances.append(distance)
+
+    # if distances:
+    #     average_distance = np.mean(distances)
+    #     print(f"Average distance between PO4 and GL1: {average_distance:.2f} Å")
+    # else:
+    #     print("No PO4 or GL1 atoms found for the specified lipid.")
+    # print(average_distances)
 
 
 ##this is the interface with the user, so that they can specify inputs
@@ -485,7 +561,7 @@ if __name__ == "__main__":
         "--deep-defect-cutoff",
         action="store",
         dest="deep_defect_cutoff",
-        default=13,
+        default=10,
         type=float,
         help="Distance cutoff for deep defects in Angstrom",
     )
