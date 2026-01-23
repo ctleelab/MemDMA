@@ -13,9 +13,13 @@ simulation_data/
 results/
 *.png
 old-data/
+old-analysis/
 PackMem_original/*.pdb
 PackMem_original/testing/*.txt# pixi environments
 .pixi/*
 !.pixi/config.toml
 *.xtc
 analysis/
+10ns-intervals/
+asyn-simulations/
+VMD/

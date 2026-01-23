@@ -12,12 +12,28 @@ dopc-flat = "main/packmem.py -i tests/DOPC_flat_lipid_only.gro -r main/vdw_radii
 dppc-strain2 = "main/packmem.py -i tests/DPPC_strain2_lipid_only.gro -r main/vdw_radii_CGMartini3_openbeta2_updated.txt -o DPPC_strain2_lipid_only"
 dopc-strain2 = "main/packmem.py -i tests/DOPC_strain2_lipid_only.gro -r main/vdw_radii_CGMartini3_openbeta2_updated.txt -o DOPC_strain2_lipid_only"
 
-dopc-strain2-trajectory = "main/packmem.py -i tests/DOPC-strain2-production-stripped-centered.gro -t tests/DOPC-strain2-sliced.xtc -r main/vdw_radii_CGMartini3_openbeta2_updated.txt -o DOPC-strain2-production-stripped_centered"
-dppc-strain2-trajectory = "main/packmem.py -i tests/DPPC-strain2-production-stripped-centered.gro -t tests/DPPC-strain2-sliced.xtc -r main/vdw_radii_CGMartini3_openbeta2_updated.txt -o DPPC-strain2-production-stripped_centered "
-dopc-dops-strain2-trajectory = "main/packmem.py -i tests/DOPC-DOPS-strain2-production-stripped-centered.gro -t tests/DOPC-DOPS-strain2-sliced.xtc -r main/vdw_radii_CGMartini3_openbeta2_updated.txt -o DOPC-DOPS-strain2-production-stripped_centered"
-dppc-dpps-strain2-trajectory = "main/packmem.py -i tests/DPPC-DPPS-strain2-production-stripped-centered.gro -t tests/DPPC-DPPS-strain2-sliced.xtc -r main/vdw_radii_CGMartini3_openbeta2_updated.txt -o DPPC-DPPS-strain2-production-stripped_centered"
-dppc-dppa-strain2-trajectory = "main/packmem.py -i tests/DPPC-DPPA-strain2-production-stripped-centered.gro -t tests/DPPC-DPPA-strain2-sliced.xtc -r main/vdw_radii_CGMartini3_openbeta2_updated.txt -o DPPC-DPPA-strain2-production-stripped_centered"
-dopc-dopa-strain2-trajectory = "main/packmem.py -i tests/DOPC-DOPA-strain2-production-stripped-centered.gro -t tests/DOPC-DOPA-strain2-sliced.xtc -r main/vdw_radii_CGMartini3_openbeta2_updated.txt -o DOPC-DOPA-strain2-production-stripped_centered"
+dopc-strain2-trajectory = "main/packmem.py -i tests/DOPC-strain2-production-stripped-centered.gro -t tests/DOPC-strain2-production-stripped-centered.xtc -r main/vdw_radii_CGMartini3_openbeta2_updated.txt -o DOPC-strain2-production-stripped_centered"
+dppc-strain2-trajectory = "main/packmem.py -i tests/DPPC-strain2-production-stripped-centered.gro -t tests/DPPC-strain2-production-stripped-centered.xtc -r main/vdw_radii_CGMartini3_openbeta2_updated.txt -o DPPC-strain2-production-stripped_centered "
+dopc-dops-strain2-trajectory = "main/packmem.py -i tests/DOPC-DOPS-strain2-production-stripped-centered.gro -t tests/DOPC-DOPS-strain2-production-stripped-centered.xtc -r main/vdw_radii_CGMartini3_openbeta2_updated.txt -o DOPC-DOPS-strain2-production-stripped_centered"
+dppc-dpps-strain2-trajectory = "main/packmem.py -i tests/DPPC-DPPS-strain2-production-stripped-centered.gro -t tests/DPPC-DPPS-strain2-production-stripped-centered.xtc -r main/vdw_radii_CGMartini3_openbeta2_updated.txt -o DPPC-DPPS-strain2-production-stripped_centered"
+dppc-dppa-strain2-trajectory = "main/packmem.py -i tests/DPPC-DPPA-strain2-production-stripped-centered.gro -t tests/DPPC-DPPA-strain2-production-stripped-centered.xtc -r main/vdw_radii_CGMartini3_openbeta2_updated.txt -o DPPC-DPPA-strain2-production-stripped_centered"
+dopc-dopa-strain2-trajectory = "main/packmem.py -i tests/DOPC-DOPA-strain2-production-stripped-centered.gro -t tests/DOPC-DOPA-strain2-production-stripped-centered.xtc -r main/vdw_radii_CGMartini3_openbeta2_updated.txt -o DOPC-DOPA-strain2-production-stripped_centered"
+
+
+dopc-flat-trajectory = "main/packmem.py -i tests/DOPC-flat-production-stripped-centered.gro -t tests/DOPC-flat-production-stripped-centered.xtc -r main/vdw_radii_CGMartini3_openbeta2_updated.txt -o DOPC-flat-production-stripped_centered"
+dppc-flat-trajectory = "main/packmem.py -i tests/DPPC-flat-production-stripped-centered.gro -t tests/DPPC-flat-production-stripped-centered.xtc -r main/vdw_radii_CGMartini3_openbeta2_updated.txt -o DPPC-flat-production-stripped_centered "
+dopc-dops-flat-trajectory = "main/packmem.py -i tests/DOPC-DOPS-flat-production-stripped-centered.gro -t tests/DOPC-DOPS-flat-production-stripped-centered.xtc -r main/vdw_radii_CGMartini3_openbeta2_updated.txt -o DOPC-DOPS-flat-production-stripped_centered"
+dppc-dpps-flat-trajectory = "main/packmem.py -i tests/DPPC-DPPS-flat-production-stripped-centered.gro -t tests/DPPC-DPPS-flat-production-stripped-centered.xtc -r main/vdw_radii_CGMartini3_openbeta2_updated.txt -o DPPC-DPPS-flat-production-stripped_centered"
+dppc-dppa-flat-trajectory = "main/packmem.py -i tests/DPPC-DPPA-flat-production-stripped-centered.gro -t tests/DPPC-DPPA-flat-production-stripped-centered.xtc -r main/vdw_radii_CGMartini3_openbeta2_updated.txt -o DPPC-DPPA-flat-production-stripped_centered"
+dopc-dopa-flat-trajectory = "main/packmem.py -i tests/DOPC-DOPA-flat-production-stripped-centered.gro -t tests/DOPC-DOPA-flat-production-stripped-centered.xtc -r main/vdw_radii_CGMartini3_openbeta2_updated.txt -o DOPC-DOPA-flat-production-stripped_centered"
+
+dopc-strain15-trajectory = "main/packmem.py -i tests/DOPC-strain15-production-stripped-centered.gro -t tests/DOPC-strain15-production-stripped-centered.xtc -r main/vdw_radii_CGMartini3_openbeta2_updated.txt -o DOPC-strain15-production-stripped_centered"
+dppc-strain15-trajectory = "main/packmem.py -i tests/DPPC-strain15-production-stripped-centered.gro -t tests/DPPC-strain15-production-stripped-centered.xtc -r main/vdw_radii_CGMartini3_openbeta2_updated.txt -o DPPC-strain15-production-stripped_centered "
+dopc-dops-strain15-trajectory = "main/packmem.py -i tests/DOPC-DOPS-strain15-production-stripped-centered.gro -t tests/DOPC-DOPS-strain15-production-stripped-centered.xtc -r main/vdw_radii_CGMartini3_openbeta2_updated.txt -o DOPC-DOPS-strain15-production-stripped_centered"
+dppc-dpps-strain15-trajectory = "main/packmem.py -i tests/DPPC-DPPS-strain15-production-stripped-centered.gro -t tests/DPPC-DPPS-strain15-production-stripped-centered.xtc -r main/vdw_radii_CGMartini3_openbeta2_updated.txt -o DPPC-DPPS-strain15-production-stripped_centered"
+dppc-dppa-strain15-trajectory = "main/packmem.py -i tests/DPPC-DPPA-strain15-production-stripped-centered.gro -t tests/DPPC-DPPA-strain15-production-stripped-centered.xtc -r main/vdw_radii_CGMartini3_openbeta2_updated.txt -o DPPC-DPPA-strain15-production-stripped_centered"
+dopc-dopa-strain15-trajectory = "main/packmem.py -i tests/DOPC-DOPA-strain15-production-stripped-centered.gro -t tests/DOPC-DOPA-strain15-production-stripped-centered.xtc -r main/vdw_radii_CGMartini3_openbeta2_updated.txt -o DOPC-DOPA-strain15-production-stripped_centered"
+
 
 [dependencies]
 python = ">=3.14.2,<3.15"
@@ -25,3 +41,4 @@ mdanalysis = ">=2.10.0,<3"
 tqdm = ">=4.67.1,<5"
 scipy = ">=1.16.3,<2"
 ctleelab_plothelper = { git = "https://github.com/ctleelab/ctleelab-mpl-utilities", branch = "main" }
+black = ">=26.1.0,<27"
