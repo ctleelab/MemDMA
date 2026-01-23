@@ -220,3 +220,34 @@ def vectorized_normal_vector_quads(X, Y, z_surface, normalize=True):
     }
 
     return faces, vertices, centroids, normals
+
+
+
+def mean_curvature(Z, h):
+    """
+    Calculates mean curvature from Z cloud points.
+
+
+    Parameters
+    ----------
+    Z: np.ndarray.
+        Multidimensional array of shape (n,n).
+    h: float.
+        Regular grid separation
+
+    Returns
+    -------
+    H : np.ndarray.
+        The result of mean curvature of Z. Returns multidimensional
+        array object with values of mean curvature of shape `(n, n)`.
+
+    """
+
+    Zx, Zy = np.gradient(Z, h)
+    Zxx, Zxy = np.gradient(Zx, h)
+    _, Zyy = np.gradient(Zy, h)
+
+    H = (1 + Zx**2) * Zyy + (1 + Zy**2) * Zxx - 2 * Zx * Zy * Zxy
+    H = -H / (2 * (1 + Zx**2 + Zy**2) ** (1.5))
+
+    return H

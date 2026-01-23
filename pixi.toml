@@ -35,6 +35,9 @@ dppc-dppa-strain15-trajectory = "main/packmem.py -i tests/DPPC-DPPA-strain15-pro
 dopc-dopa-strain15-trajectory = "main/packmem.py -i tests/DOPC-DOPA-strain15-production-stripped-centered.gro -t tests/DOPC-DOPA-strain15-production-stripped-centered.xtc -r main/vdw_radii_CGMartini3_openbeta2_updated.txt -o DOPC-DOPA-strain15-production-stripped_centered"
 
 
+circle-fit-dppc = "main/circle-fit.py tests/DPPC_strain2_lipid_only.gro"
+circle-fit-dopc = "main/circle-fit.py tests/DOPC_strain2_lipid_only.gro"
+
 [dependencies]
 python = ">=3.14.2,<3.15"
 mdanalysis = ">=2.10.0,<3"
@@ -42,3 +45,6 @@ tqdm = ">=4.67.1,<5"
 scipy = ">=1.16.3,<2"
 ctleelab_plothelper = { git = "https://github.com/ctleelab/ctleelab-mpl-utilities", branch = "main" }
 black = ">=26.1.0,<27"
+
+[pypi-dependencies]
+circle-fit = ">=0.2.1, <0.3"
