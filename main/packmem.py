@@ -4,6 +4,7 @@
 import argparse
 import sys
 import numpy as np
+from scipy import ndimage as scipy_ndimage
 from pathlib import Path
 
 import MDAnalysis as mda
@@ -447,7 +448,7 @@ def main(
         reshaped_defects = defect_counts[leaflet].reshape(quad_shape)
         # masked_polar_defects = np.ma.masked_where(
         #     reshaped_defects < 1, reshaped_defects
-        # )
+        # # )
 
         # sc = ax.pcolor(X, Y, masked_polar_defects, cmap="viridis", shading="auto")
 
@@ -473,7 +474,7 @@ def main(
         # z = polar_positions[:, 2]
         # ax.scatter(x, y, s=4, color="pink")
 
-        ph.add_fixed_colorbar(sc, ax=ax, pad=0.05, aspect=30, label="Polar atom count")
+        # ph.add_fixed_colorbar(sc, ax=ax, pad=0.05, aspect=30, label="Polar atom count")
 
         ax.set_aspect("equal", adjustable="datalim")
         ax.xaxis.set_major_locator(MultipleLocator(25))
@@ -483,7 +484,52 @@ def main(
 
         plt.close(fig)
 
-    fig, ax = ph.fixed_size_subplots(1, 1, subwidth=4, subheight=4)
+        # GENERATE BINARY DEFECT MAP
+        binary_defect_map = np.where(reshaped_defects < 1, 1, 0)
+        # plot binary defect map
+        fig, ax = ph.fixed_size_subplots(
+            1, 1, subwidth=4, subheight=1, rmargin_scale=1.5
+        )
+        sc = ax.pcolor(X, Y, binary_defect_map, cmap="viridis", shading="auto")
+        ax.set_aspect("equal", adjustable="datalim")
+        ax.xaxis.set_major_locator(MultipleLocator(25))
+        ax.set_xlabel("X (A)")
+        ax.set_ylabel("Y (A)")
+        fig.savefig(f"{leaflet}-binary-defect-tmp.png")
+        plt.close(fig)
+
+        # LABEL CONNECTED COMPONENTS IN BINARY DEFECT MAP
+        label, nfeat = scipy_ndimage.label(binary_defect_map)
+
+        # plot labeled defects
+        fig, ax = ph.fixed_size_subplots(
+            1, 1, subwidth=4, subheight=1, rmargin_scale=1.5
+        )
+        sc = ax.pcolor(X, Y, label, cmap="viridis", shading="auto")
+        ax.set_aspect("equal", adjustable="datalim")
+        ax.xaxis.set_major_locator(MultipleLocator(25))
+        ax.set_xlabel("X (A)")
+        ax.set_ylabel("Y (A)")
+        fig.savefig(f"{leaflet}-labeled-defect-tmp.png")
+        plt.close(fig)
+
+        defect_sizes = []
+        for i in range(1, nfeat + 1):
+            mask = np.where(label == i)
+            defect_sizes.append(np.count_nonzero(mask))
+        
+        fig, ax = ph.fixed_size_subplots(1,1, subwidth=3, subheight=3)
+
+        ax.hist(defect_sizes, bins=50)
+
+        ax.set_xlabel("Defect size (A^2)")
+        ax.set_ylabel("Count")
+        fig.savefig(f"{leaflet}-defect-size-dist.png")
+        plt.close(fig)
+
+
+
+    fig, ax = ph.fixed_size_subplots(1, 1, subwidth=2, subheight=2)
 
     po4 = u.select_atoms("name PO4").positions[:, 2]
     nc3 = u.select_atoms("name NC3").positions[:, 2]
