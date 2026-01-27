@@ -23,3 +23,5 @@ analysis/
 10ns-intervals/
 asyn-simulations/
 VMD/
+*.lock
+*.npz
