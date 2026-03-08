@@ -106,7 +106,7 @@ def main(
     deep_defect_cutoff: float = 1,
     mesh_size: float = 1,
     normal_cutoff: float = 3,
-    interval: int = 1,
+    interval: int = 5,
     output_path: Path = Path("."),
     prefix: str = "output",
     debug=False,
@@ -137,7 +137,7 @@ def main(
         * mesh_size,
     )
 
-    # # Create bin edges
+    # Create bin edges
     x_edges = np.arange(x_range_adj[0], x_range_adj[1], mesh_size)
     y_edges = np.arange(y_range_adj[0], y_range_adj[1], mesh_size)
 
@@ -152,12 +152,16 @@ def main(
     num_frames = u.trajectory.n_frames // interval + 1
 
     nx, ny = X.shape
-    n_quad = (nx - 1) * (ny - 1)
-    quad_shape = (nx - 1, ny - 1)
-    n_tri = 2 * (nx - 1) * (ny - 1)  # two triangles per quad per leaflet
+    quad_x = nx - 1
+    quad_y = ny - 1
+    n_quad = (quad_x) * (quad_y)
+    quad_shape = (quad_x, quad_y)
+    n_tri = 2 * (quad_x) * (quad_y)  # two triangles per quad per leaflet
 
     defects_per_frame_upper = np.empty((num_frames, n_quad))
     defects_per_frame_lower = np.empty((num_frames, n_quad))
+    # defects_per_frame_upper = np.empty((num_frames, quad_x, quad_y ))
+    # defects_per_frame_lower = np.empty((num_frames, quad_x, quad_y))
 
     # create a numpy array of the triangle centroids
     centroids_per_frame_upper = np.empty((num_frames, n_quad, 3))
@@ -168,6 +172,8 @@ def main(
 
     index_of_frame = 0
     for ts in tqdm(u.trajectory[::interval], position=0, desc="Processing frames"):
+
+        print("dimensions", u.trajectory.ts.dimensions)
         # print("Start: meshing")
         Z, mesh_faces, mesh_vertices, mesh_normals, mesh_centroids, leaflets = (
             quadrilateral_mesh.interpolate_cubic_surface(u, "name PO4", X, Y)
@@ -352,7 +358,10 @@ def main(
                 if increment > 0:
                     defect_counts[leaflet][grid_idx] += increment
 
-        defects_per_frame_upper[index_of_frame] = defect_counts["upper"]
+        # reshaped_upper = defect_counts["upper"].reshape(quad_shape)
+        reshaped_upper = defect_counts["upper"]
+
+        defects_per_frame_upper[index_of_frame] = reshaped_upper
 
         print(defect_counts["upper"].shape)
 
@@ -409,6 +418,10 @@ def main(
         index_of_frame += 1
 
     # save defect count and grid centroid coordinates as a .npy
+
+    # save the numpy arrays as the shape of the membrane
+
+    # reshape this data
     np.save(
         output_path / f"{prefix}-defects-upper.npy",
         defects_per_frame_upper,
@@ -517,8 +530,8 @@ def main(
         for i in range(1, nfeat + 1):
             mask = np.where(label == i)
             defect_sizes.append(np.count_nonzero(mask))
-        
-        fig, ax = ph.fixed_size_subplots(1,1, subwidth=3, subheight=3)
+
+        fig, ax = ph.fixed_size_subplots(1, 1, subwidth=3, subheight=3)
 
         ax.hist(defect_sizes, bins=50)
 
@@ -526,8 +539,6 @@ def main(
         ax.set_ylabel("Count")
         fig.savefig(f"{leaflet}-defect-size-dist.png")
         plt.close(fig)
-
-
 
     fig, ax = ph.fixed_size_subplots(1, 1, subwidth=2, subheight=2)
 
