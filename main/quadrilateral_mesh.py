@@ -79,8 +79,8 @@ def get_interpolated_z_surface(coordinates, X, Y, ag=None):
 
     return griddata(xy_wrapped, z_wrapped, (X, Y), method="cubic")
 
-
-def interpolate_cubic_surface(ag, selection, X, Y, radius=3.6199):
+#prior r = 3.6199, to account for the PO4 radius bead 
+def interpolate_cubic_surface(ag, selection, X, Y, radius=0):
     leaflets, _ = leaflet_finder.determine_leaflets(ag, selection)
 
     Z = {}
@@ -103,10 +103,29 @@ def interpolate_cubic_surface(ag, selection, X, Y, radius=3.6199):
         )
         - radius
     )
+    leaflets, _ = leaflet_finder.determine_leaflets(ag, selection)
 
+    # Z = {}
+    # Z["upper"] = (
+    #     get_interpolated_z_surface(
+    #         leaflets["upper"].select_atoms(selection).positions,
+    #         X,
+    #         Y,
+    #         ag=leaflets["upper"],
+    #     )
+    # )
+
+    # Z["lower"] = (
+    #     get_interpolated_z_surface(
+    #         leaflets["lower"].select_atoms(selection).positions,
+    #         X,
+    #         Y,
+    #         ag=leaflets["lower"],
+    #     )
+    # )
     nx, ny = X.shape
     n_quad = (nx - 1) * (ny - 1)
-
+    
     # Vertices
     vertices = {
         "upper": np.vstack((X.ravel(), Y.ravel(), Z["upper"].ravel())).T,
