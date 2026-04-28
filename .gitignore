@@ -26,7 +26,7 @@ asyn-simulations/
 VMD/
 *.lock
 *.npz
-PackMem_original/
+PackMem_original/testing
 applied-shape/
 curvature-data-upper/
 circle-fit/
@@ -36,3 +36,4 @@ extended-data-newcutoff/
 output/
 input/
 tests/
+misc_scripts/
