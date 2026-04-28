@@ -251,3 +251,11 @@ def mean_curvature(Z, h):
     H = -H / (2 * (1 + Zx**2 + Zy**2) ** (1.5))
 
     return H
+
+def arc_length_curvature(Z, h):
+    Zx  = np.gradient(Z, h)
+    Zxx =  np.gradient(Zx, h)
+    k = abs(Zxx) / (1+(Zx)**2)**(3/2)
+    return k
+
+    
