@@ -16,6 +16,7 @@ old-data/
 old-analysis/
 PackMem_original/*.pdb
 PackMem_original/testing/*.txt# pixi environments
+PackMem_original/testing-1800ext
 .pixi/*
 !.pixi/config.toml
 *.xtc
@@ -25,3 +26,12 @@ asyn-simulations/
 VMD/
 *.lock
 *.npz
+PackMem_original/testing/
+applied-shape/
+curvature-data-upper/
+circle-fit/
+compression-data/
+extended-data/
+extended-data-newcutoff/
+output/
+input/
