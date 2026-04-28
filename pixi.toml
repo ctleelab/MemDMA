@@ -7,11 +7,9 @@ version = "0.1.0"
 preview = ["pixi-build"]                          # Activate beta pixi-build feature
 
 [tasks]
-dppc-flat = "main/packmem.py -i tests/DPPC_flat_lipid_only.gro -r main/vdw_radii_CGMartini3_openbeta2_updated.txt -o DPPC_flat_lipid_only"
-dopc-flat = "main/packmem.py -i tests/DOPC_flat_lipid_only.gro -r main/vdw_radii_CGMartini3_openbeta2_updated.txt -o DPPC_flat_lipid_only"
-dppc-strain2 = "main/packmem.py -i tests/DPPC_strain.2_lipid_only.gro -r main/vdw_radii_CGMartini3_openbeta2_updated.txt -o DPPC_strain.2_lipid_only"
-dopc-strain2 = "main/packmem.py -i tests/DOPC_strain.2_lipid_only.gro -r main/vdw_radii_CGMartini3_openbeta2_updated.txt -o DOPC_strain.2_lipid_only"
 
+flat-test = "main/packmem.py -i tests/DPPC_flat_lipid_only.gro -r main/vdw_radii_CGMartini3_openbeta2_updated.txt -o DPPC_flat_lipid_only"
+strain2-test = "main/packmem.py -i tests/DPPC_strain.2_lipid_only.gro -r main/vdw_radii_CGMartini3_openbeta2_updated.txt -o DPPC_strain.2_lipid_only"
 
 dopc-strain2-trajectory-ext1800-cutoff = "main/packmem.py -i input/extended-data-v2/DOPC-strain.2-production7.9-stripped-centered.gro -t input/extended-data-v2/DOPC-strain.2-production7.9-stripped-centered.xtc -r main/vdw_radii_CGMartini3_openbeta2_updated.txt -d 6.3801 -o DOPC-strain.2-production-stripped-centered-ext1800-cutoff"
 dppc-strain2-trajectory-ext1800-cutoff = "main/packmem.py -i input/extended-data-v2/DPPC-strain.2-production7.9-stripped-centered.gro -t input/extended-data-v2/DPPC-strain.2-production7.9-stripped-centered.xtc -r main/vdw_radii_CGMartini3_openbeta2_updated.txt -d 6.3801 -o DPPC-strain.2-production-stripped-centered-ext1800-cutoff"
@@ -27,14 +25,12 @@ dppc-dpps-flat-trajectory-ext1800-cutoff = "main/packmem.py -i input/extended-da
 dppc-dppa-flat-trajectory-ext1800-cutoff = "main/packmem.py -i input/extended-data-v2/DPPC-DPPA-flat-production7.9-stripped.gro -t input/extended-data-v2/DPPC-DPPA-flat-production7.9-stripped.xtc -r main/vdw_radii_CGMartini3_openbeta2_updated.txt -d 6.3801 -o DPPC-DPPA-flat-production-stripped-ext1800-cutoff"
 dopc-dopa-flat-trajectory-ext1800-cutoff = "main/packmem.py -i input/extended-data-v2/DOPC-DOPA-flat-production7.9-stripped.gro -t input/extended-data-v2/DOPC-DOPA-flat-production7.9-stripped.xtc -r main/vdw_radii_CGMartini3_openbeta2_updated.txt -d 6.3801 -o DOPC-DOPA-flat-production-stripped-ext1800-cutoff"
 
-
 dopc-strain2-trajectory-curvature-ext = "main/curvature.py input/extended-data-v2/DOPC-strain.2-production7.9-stripped-centered.gro input/extended-data-v2/DOPC-strain.2-production7.9-stripped-centered.xtc 5 dopc-strain.2-ext1800"
 dppc-strain2-trajectory-curvature-ext = "main/curvature.py  input/extended-data-v2/DPPC-strain.2-production7.9-stripped-centered.gro input/extended-data-v2/DPPC-strain.2-production7.9-stripped-centered.xtc 5 dppc-strain.2-ext1800"
 dopc-dops-strain2-trajectory-curvature-ext = "main/curvature.py input/extended-data-v2/DOPC-DOPS-strain.2-production7.9-stripped-centered.gro input/extended-data-v2/DOPC-DOPS-strain.2-production7.9-stripped-centered.xtc 5 dopc-dops-strain.2-ext1800"
 dppc-dpps-strain2-trajectory-curvature-ext = "main/curvature.py input/extended-data-v2/DPPC-DPPS-strain.2-production7.9-stripped-centered.gro input/extended-data-v2/DPPC-DPPS-strain.2-production7.9-stripped-centered.xtc 5 dppc-dpps-strain.2-ext1800"
 dppc-dppa-strain2-trajectory-curvature-ext = "main/curvature.py input/extended-data-v2/DPPC-DPPA-strain.2-production7.9-stripped-centered.gro input/extended-data-v2/DPPC-DPPA-strain.2-production7.9-stripped-centered.xtc 5 dppc-dppa-strain.2-ext1800"
 dopc-dopa-strain2-trajectory-curvature-ext = "main/curvature.py input/extended-data-v2/DOPC-DOPA-strain.2-production7.9-stripped-centered.gro input/extended-data-v2/DOPC-DOPA-strain.2-production7.9-stripped-centered.xtc 5 dopc-dopa-strain.2-ext1800"
-
 
 dopc-compression = "main/curvature.py compression-data/system1-DOPC/large-compression.gro compression-data/system1-DOPC/large-compression.xtc 5 DOPC-compression"
 dppc-compression = "main/curvature.py compression-data/system2-DPPC/large-compression.gro compression-data/system2-DPPC/large-compression.xtc 5 DPPC-compression"
