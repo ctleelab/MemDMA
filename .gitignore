@@ -19,7 +19,6 @@ PackMem_original/testing/*.txt# pixi environments
 PackMem_original/testing-1800ext
 .pixi/*
 !.pixi/config.toml
-*.xtc
 analysis/
 10ns-intervals/
 asyn-simulations/
@@ -35,4 +34,4 @@ extended-data/
 extended-data-newcutoff/
 output/
 input/
-tests/
+tests/output
