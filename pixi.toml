@@ -8,11 +8,18 @@ preview = ["pixi-build"]                          # Activate beta pixi-build fea
 
 [tasks]
 
+#test case 
 flat-test = "main/packmem.py -i tests/DOPC_flat.gro -t tests/DOPC_flat.xtc -r main/vdw_radii_CGMartini3_openbeta2_updated.txt -d 6.3801 -o tests/output/test_flat"
 strain2-test = "main/packmem.py -i tests/DOPC_buckled.gro -t tests/DOPC_buckled.xtc -r main/vdw_radii_CGMartini3_openbeta2_updated.txt -d 6.3801 -o tests/output/test_buckled"
 curvature-test = "main/curvature.py tests/DOPC_buckled.gro tests/DOPC_buckled.xtc 5 test_curvature 40 tests/output/test_curvature"
 radii-calculation-test = "main/radii_calculation.py DOPC PO4 6.45 n "
+
+#code for running your files
+strip-lipid-filename = "main/strip_lipid.py input/your_file_name.gro input/your_file_name.xtc your_file_name input"
+center-membrane-filename =  "main/center_membrane.py input/DOPC_buckled_stripped.gro input/DOPC_buckled_stripped.xtc DOPC_buckled_stripped input"
 radii-calculation = "main/radii_calculation.py lipid_name atom_type sigma_value polarity "
+curvature-analysis-filename = "main/curvature.py input/your_file_name.gro input/your_file_name.xtc 5 your_file_name 40 output/curvature_analysis/your_file_name"
+defect-analysis-filename = "main/packmem.py -i input/your_file_name.gro -t input/your_file_name.xtc -r main/vdw_radii_CGMartini3_openbeta2_updated.txt -d 6.3801 -o output/defect_analysis/your_file_name"
 
 
 dopc-strain2-trajectory-ext1800-cutoff = "main/packmem.py -i input/extended-data-v2/DOPC-strain.2-production7.9-stripped-centered.gro -t input/extended-data-v2/DOPC-strain.2-production7.9-stripped-centered.xtc -r main/vdw_radii_CGMartini3_openbeta2_updated.txt -d 6.3801 -o DOPC-strain.2-production-stripped-centered-ext1800-cutoff"

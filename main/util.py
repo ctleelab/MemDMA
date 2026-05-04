@@ -5,6 +5,8 @@ import numpy as np
 script_dir = Path(__file__).resolve().parent
 analysis_file_path = Path(script_dir.parent / "analysis")
 
+lipids = "resname DPPC DOPC DOPS DPPS DOPA DPPA"
+
 
 def parse_radius_aliphatic_dict(filename: str) -> dict:
     property_dict = {}
