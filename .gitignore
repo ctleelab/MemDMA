@@ -35,3 +35,4 @@ extended-data-newcutoff/
 output/
 input/
 tests/output
+main/run_radii_calculation.py

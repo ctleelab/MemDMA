@@ -11,6 +11,9 @@ preview = ["pixi-build"]                          # Activate beta pixi-build fea
 flat-test = "main/packmem.py -i tests/DOPC_flat.gro -t tests/DOPC_flat.xtc -r main/vdw_radii_CGMartini3_openbeta2_updated.txt -d 6.3801 -o tests/output/test_flat"
 strain2-test = "main/packmem.py -i tests/DOPC_buckled.gro -t tests/DOPC_buckled.xtc -r main/vdw_radii_CGMartini3_openbeta2_updated.txt -d 6.3801 -o tests/output/test_buckled"
 curvature-test = "main/curvature.py tests/DOPC_buckled.gro tests/DOPC_buckled.xtc 5 test_curvature 40 tests/output/test_curvature"
+radii-calculation-test = "main/radii_calculation.py DOPC PO4 6.45 n "
+radii-calculation = "main/radii_calculation.py lipid_name atom_type sigma_value polarity "
+
 
 dopc-strain2-trajectory-ext1800-cutoff = "main/packmem.py -i input/extended-data-v2/DOPC-strain.2-production7.9-stripped-centered.gro -t input/extended-data-v2/DOPC-strain.2-production7.9-stripped-centered.xtc -r main/vdw_radii_CGMartini3_openbeta2_updated.txt -d 6.3801 -o DOPC-strain.2-production-stripped-centered-ext1800-cutoff"
 dppc-strain2-trajectory-ext1800-cutoff = "main/packmem.py -i input/extended-data-v2/DPPC-strain.2-production7.9-stripped-centered.gro -t input/extended-data-v2/DPPC-strain.2-production7.9-stripped-centered.xtc -r main/vdw_radii_CGMartini3_openbeta2_updated.txt -d 6.3801 -o DPPC-strain.2-production-stripped-centered-ext1800-cutoff"
