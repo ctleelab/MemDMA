@@ -1,6 +1,6 @@
-# About this repo
+# Membrane Defect Map (MemDM)
+- Geometry-preserving membrane defect mapping for flat and curved membranes
 - Currently only suitable for Martini systems
-- Can analyze buckled and flat membranes
 
 #  Repository structure
 ```bash
@@ -40,16 +40,17 @@ Enter to pixi environment
 pixi shell
  ```
 
-Exit pixi environment
-```bash
-exit
- ```
-
 Test cases
 ```bash
 pixi r flat-test
 pixi r strain2-test
  ```
+
+Exit pixi environment
+```bash
+exit
+ ```
+
 
 ## Setup for your lipids of interest
 Currently, this can only analyze membranes composed of the following lipids:
@@ -71,8 +72,8 @@ If your lipids are not in the list they must be added. To do so, complete the fo
 
 
 ## Formating .gro and .xtc files prior to analysis
-If the your system contains lipids no the the list above you will have to add them. 
-In the util.py file add your lipids to the string "lipids" after DPPA
+If the your system contains lipids that are not in the list above you will have to add them. 
+In the util.py file add your lipids to the string "lipids".
 1) Strip the membrane of ions and waters.
    - In the command,  "strip-lipid-filename" in the pixi.toml file change each instance of your_filename with the name of your file of interest.
    - Then run the following:
@@ -91,18 +92,6 @@ The stripped_centered or strippedx files should be used for all further analysis
 
 # Running your own analysis
 
-## Curvature analysis 
-This determines the curvature of the buckled membrane throughout the simulations by fitting a circle to the peak of the membrane.
-  
-In the pixi.toml replace the "your_file_name" for the file name of your .gro and .xtc
-```bash 
-curvature-analysis-filename = "main/curvature.py input/your_file_name.gro tests/your_file_name.xtc 5 your_file_name 40 output/curvature_analysis/your_file_name"
-```
-Then execute the following in the terminal 
-```bash 
-pixi r curvature-analysis-filename
-```
-
 ## Defect analysis
 This determines the defects present in the membrane throughout the simulation.
 
@@ -115,3 +104,24 @@ Then execute the following in the terminal
 ```bash 
 pixi r defect-analysis-filename
 ```
+
+Output
+1) 
+
+
+## Curvature analysis 
+This determines the curvature of the buckled membrane throughout the simulations by fitting a circle to the peak of the membrane.
+  
+In the pixi.toml replace the "your_file_name" for the file name of your .gro and .xtc
+```bash 
+curvature-analysis-filename = "main/curvature.py input/your_file_name.gro tests/your_file_name.xtc 5 your_file_name 40 output/curvature_analysis/your_file_name"
+```
+Then execute the following in the terminal 
+```bash 
+pixi r curvature-analysis-filename
+```
+
+Output 
+1) A .png file of the circle of best fit for each frame of the trajectory.
+2) "file_name_curvature-circle-perfect-fit-upper" a numpy array that describes the radius, curvature of the perfect fit circle for each frame.
+3) 

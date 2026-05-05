@@ -13,6 +13,7 @@ from matplotlib.ticker import MultipleLocator
 from scipy.ndimage import gaussian_filter
 import ctleelab_plothelper.plothelpers as ph
 
+
 # pixi inputs
 gro_file = sys.argv[1]
 xtc_file = sys.argv[2]
@@ -187,13 +188,13 @@ for ts in u.trajectory[::interval]:
     index_of_frame += 1
 
 # return the numpy array for curvature, 
-np.save(
-    f"{analysis_folder}/{system}-mean-upper-curvature.npy", curvature_per_frame_upper
-)
+# np.save(
+#     f"{analysis_folder}/{system}-mean-upper-curvature.npy", curvature_per_frame_upper
+# )
 
-np.save(f"{analysis_folder}/{system}-PO4-position.npy", PO4_positions_per_frame_upper)
+# np.save(f"{analysis_folder}/{system}-PO4-position.npy", PO4_positions_per_frame_upper)
 
-np.save(f"{analysis_folder}/{system}-Z-position-upper.npy", Z_position_per_frame_upper)
+# np.save(f"{analysis_folder}/{system}-Z-position-upper.npy", Z_position_per_frame_upper)
 
 np.save(
     f"{analysis_folder}/{system}-circle-perfect-fit-upper.npy",
@@ -255,36 +256,45 @@ X_centered_only = X_centered[:, 0]
 # plt.close(fig)
 
 
-# compress height into the x-dimension
-mean_Z_over_frames_xdim = np.mean(mean_Z_over_frames, axis=1)
-fig, ax = ph.fixed_size_subplots(1, 1, subwidth=4, subheight=1, rmargin_scale=1.5)
-sc = ax.scatter(
-    X_centered_only,
-    mean_Z_over_frames_xdim,
-)
-ax.set_xlabel("X (A)")
-ax.set_ylabel("Mean height (A)")
-ax.set_xlim(min(X_centered_only), max(X_centered_only))
-fig.savefig(f"{analysis_folder}/{system}-mean-upper-Z-height-along-xdim.png")
-plt.close(fig)
+# # Plot of the compressed height into the x-dimension
+# mean_Z_over_frames_xdim = np.mean(mean_Z_over_frames, axis=1)
+# fig, ax = ph.fixed_size_subplots(1, 1, subwidth=4, subheight=1, rmargin_scale=1.5)
+# sc = ax.scatter(
+#     X_centered_only,
+#     mean_Z_over_frames_xdim,
+# )
+# ax.set_xlabel("X (A)")
+# ax.set_ylabel("Mean height (A)")
+# ax.set_xlim(min(X_centered_only), max(X_centered_only))
+# fig.savefig(f"{analysis_folder}/{system}-mean-upper-Z-height-along-xdim.png")
+# plt.close(fig)
 
-# calculate the curvature from the avg height function
-mean_curvature_from_height = util.arc_length_curvature(
-    mean_Z_over_frames_xdim / 10000, mesh_size / 10000
-)
-fig, ax = ph.fixed_size_subplots(1, 1, subwidth=4, subheight=1, rmargin_scale=1.5)
-sc = ax.scatter(X_centered_only, mean_curvature_from_height)
-ax.xaxis.set_major_locator(MultipleLocator(10))
-ax.set_xlabel("X (A)")
-ax.set_ylabel("Mean curvature 1/um")
-fig.savefig(f"{analysis_folder}/{system}-mean-upper-curvature-from-avgheight.png")
-plt.close(fig)
+# # calculate the curvature from the avg height function
+# mean_curvature_from_height = util.arc_length_curvature(
+#     mean_Z_over_frames_xdim / 10000, mesh_size / 10000
+# )
+# fig, ax = ph.fixed_size_subplots(1, 1, subwidth=4, subheight=1, rmargin_scale=1.5)
+# sc = ax.scatter(X_centered_only, mean_curvature_from_height)
+# ax.xaxis.set_major_locator(MultipleLocator(10))
+# ax.set_xlabel("X (A)")
+# ax.set_ylabel("Mean curvature 1/um")
+# fig.savefig(f"{analysis_folder}/{system}-mean-upper-curvature-from-avgheight.png")
+# plt.close(fig)
 
 
-print("restriction:", restriction)
-print("gro_file:", gro_file)
-print("mean radius nm:", np.nanmean(radii_curvature_per_frame_upper[:, 0]))
-print("std radius:", np.nanstd(radii_curvature_per_frame_upper[:, 0]))
-print("mean curvature um:", np.nanmean(radii_curvature_per_frame_upper[:, 1]))
-print("std of curvature:", np.nanstd((radii_curvature_per_frame_upper[:, 1])))
-print("number frames:", len(radii_curvature_per_frame_upper[:, 1]))
+# summarize the curvature values in a dictionary
+data = {
+    "restriction": restriction,
+    "gro_file": gro_file,
+    "mean_radius_nm": np.nanmean(radii_curvature_per_frame_upper[:, 0]),
+    "std_radius": np.nanstd(radii_curvature_per_frame_upper[:, 0]),
+    "mean_curvature_um": np.nanmean(radii_curvature_per_frame_upper[:, 1]),
+    "std_curvature": np.nanstd(radii_curvature_per_frame_upper[:, 1]),
+    "n_frames": len(radii_curvature_per_frame_upper[:, 1]),
+}
+
+# convert to DataFrame (1 row)
+df = pd.DataFrame([data])
+
+# save to CSV
+df.to_csv(f"{analysis_folder}/{system}_membrane_stats.csv", index=False)
