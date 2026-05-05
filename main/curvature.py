@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-import sys
 import numpy as np
 from pathlib import Path
 import pandas as pd
@@ -12,16 +11,30 @@ import matplotlib.pyplot as plt
 from matplotlib.ticker import MultipleLocator
 from scipy.ndimage import gaussian_filter
 import ctleelab_plothelper.plothelpers as ph
+import argparse
 
 
 # pixi inputs
-gro_file = sys.argv[1]
-xtc_file = sys.argv[2]
-interval = int(sys.argv[3])
-system = sys.argv[4]
-restriction = int(sys.argv[5])
-analysis_folder = sys.argv[6]
+parser = argparse.ArgumentParser(
+    description="Membrane curvature and defect analysis"
+)
 
+parser.add_argument("-gro", required=True, help="Input .gro file")
+parser.add_argument("-xtc", required=True, help="Input .xtc file")
+parser.add_argument("-i", type=int, default=5, help="Frame interval of how often to analyze the trajectory")
+parser.add_argument("-s", required=True, help="System name")
+parser.add_argument("-r", type=int, default=40, help="Restriction value for where the buckle is defined (in Angstroms)")
+parser.add_argument("-out", required=True, help="Output folder")
+
+args = parser.parse_args()
+
+# access variables
+gro_file = args.gro
+xtc_file = args.xtc
+interval = args.i
+system = args.s
+restriction = args.r
+analysis_folder = args.out
 
 os.makedirs(analysis_folder, exist_ok=True)
 

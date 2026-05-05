@@ -106,7 +106,8 @@ pixi r defect-analysis-filename
 ```
 
 Output
-1) 
+1) A
+2) 2
 
 
 ## Curvature analysis 
@@ -114,7 +115,7 @@ This determines the curvature of the buckled membrane throughout the simulations
   
 In the pixi.toml replace the "your_file_name" for the file name of your .gro and .xtc
 ```bash 
-curvature-analysis-filename = "main/curvature.py input/your_file_name.gro tests/your_file_name.xtc 5 your_file_name 40 output/curvature_analysis/your_file_name"
+curvature-analysis-filename = "curvature-analysis-filename = "main/curvature.py -gro input/your_file_name.gro -xtc input/your_file_name.xtc -s your_file_name -out output/curvature_analysis/your_file_name"
 ```
 Then execute the following in the terminal 
 ```bash 
@@ -123,5 +124,5 @@ pixi r curvature-analysis-filename
 
 Output 
 1) A .png file of the circle of best fit for each frame of the trajectory.
-2) "file_name_curvature-circle-perfect-fit-upper" a numpy array that describes the radius, curvature of the perfect fit circle for each frame.
-3) 
+2) A .npy file that describes the radius, curvature of the perfect fit circle for each frame.
+3) A .csv file that contains a summary of the curvature values.
