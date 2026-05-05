@@ -9,32 +9,33 @@ preview = ["pixi-build"]                          # Activate beta pixi-build fea
 [tasks]
 
 #test case 
-flat-test = "main/packmem.py -i tests/DOPC_flat.gro -t tests/DOPC_flat.xtc -r main/vdw_radii_CGMartini3_openbeta2_updated.txt -d 6.3801 -o tests/output/test_flat"
-strain2-test = "main/packmem.py -i tests/DOPC_buckled.gro -t tests/DOPC_buckled.xtc -r main/vdw_radii_CGMartini3_openbeta2_updated.txt -d 6.3801 -o tests/output/test_buckled"
+flat-test = "main/packmem.py -i tests/DOPC_flat.gro -t tests/DOPC_flat.xtc -mb PO4 -o tests/output/test_flat"
+strain2-test = "main/packmem.py -i tests/DOPC_buckled.gro -t tests/DOPC_buckled.xtc -mb PO4  -o tests/output/test_buckled"
 curvature-test = "main/curvature.py -gro tests/DOPC_buckled.gro -xtc tests/DOPC_buckled.xtc  -s test_curvature  -out tests/output/test_curvature"
 radii-calculation-test = "main/radii_calculation.py DOPC PO4 6.45 n "
 
 #code for running your files
 strip-lipid-filename = "main/strip_lipid.py input/your_file_name.gro input/your_file_name.xtc your_file_name input"
-center-membrane-filename =  "main/center_membrane.py input/DOPC_buckled_stripped.gro input/DOPC_buckled_stripped.xtc DOPC_buckled_stripped input"
+center-membrane-filename =  "main/center_membrane.py input/your_file_name.gro input/your_file_name.xtc your_file_name input"
 radii-calculation = "main/radii_calculation.py lipid_name atom_type sigma_value polarity "
 curvature-analysis-filename = "main/curvature.py -gro input/your_file_name.gro -xtc input/your_file_name.xtc -s your_file_name -out output/curvature_analysis/your_file_name"
-defect-analysis-filename = "main/packmem.py -i input/your_file_name.gro -t input/your_file_name.xtc -r main/vdw_radii_CGMartini3_openbeta2_updated.txt -d 6.3801 -o output/defect_analysis/your_file_name"
+defect-mapping-filename = "main/packmem.py -i input/your_file_name.gro -t input/your_file_name.xtc -o output/defect_mapping/your_file_name"
 
 
-dopc-strain2-trajectory-ext1800-cutoff = "main/packmem.py -i input/extended-data-v2/DOPC-strain.2-production7.9-stripped-centered.gro -t input/extended-data-v2/DOPC-strain.2-production7.9-stripped-centered.xtc -r main/vdw_radii_CGMartini3_openbeta2_updated.txt -d 6.3801 -o DOPC-strain.2-production-stripped-centered-ext1800-cutoff"
-dppc-strain2-trajectory-ext1800-cutoff = "main/packmem.py -i input/extended-data-v2/DPPC-strain.2-production7.9-stripped-centered.gro -t input/extended-data-v2/DPPC-strain.2-production7.9-stripped-centered.xtc -r main/vdw_radii_CGMartini3_openbeta2_updated.txt -d 6.3801 -o DPPC-strain.2-production-stripped-centered-ext1800-cutoff"
-dopc-dops-strain2-trajectory-ext1800-cutoff = "main/packmem.py -i input/extended-data-v2/DOPC-DOPS-strain.2-production7.9-stripped-centered.gro -t input/extended-data-v2/DOPC-DOPS-strain.2-production7.9-stripped-centered.xtc -r main/vdw_radii_CGMartini3_openbeta2_updated.txt -d 6.3801 -o DOPC-DOPS-strain.2-production-stripped-centered-ext1800-cutoff"
-dppc-dpps-strain2-trajectory-ext1800-cutoff = "main/packmem.py -i input/extended-data-v2/DPPC-DPPS-strain.2-production7.9-stripped-centered.gro -t input/extended-data-v2/DPPC-DPPS-strain.2-production7.9-stripped-centered.xtc -r main/vdw_radii_CGMartini3_openbeta2_updated.txt -d 6.3801 -o DPPC-DPPS-strain.2-production-stripped-centered-ext1800-cutoff"
-dppc-dppa-strain2-trajectory-ext1800-cutoff = "main/packmem.py -i input/extended-data-v2/DPPC-DPPA-strain.2-production7.9-stripped-centered.gro -t input/extended-data-v2/DPPC-DPPA-strain.2-production7.9-stripped-centered.xtc -r main/vdw_radii_CGMartini3_openbeta2_updated.txt -d 6.3801 -o DPPC-DPPA-strain.2-production-stripped-centered-ext1800-cutoff"
-dopc-dopa-strain2-trajectory-ext1800-cutoff = "main/packmem.py -i input/extended-data-v2/DOPC-DOPA-strain.2-production7.9-stripped-centered.gro -t input/extended-data-v2/DOPC-DOPA-strain.2-production7.9-stripped-centered.xtc -r main/vdw_radii_CGMartini3_openbeta2_updated.txt -d 6.3801 -o DOPC-DOPA-strain.2-production-stripped-centered-ext1800-cutoff"
 
-dopc-flat-trajectory-ext1800-cutoff = "main/packmem.py -i input/extended-data-v2/DOPC-flat-production7.9-stripped.gro -t input/extended-data-v2/DOPC-flat-production7.9-stripped.xtc -r main/vdw_radii_CGMartini3_openbeta2_updated.txt -d 6.3801 -o DOPC-flat-production-stripped-ext1800-cutoff"
-dppc-flat-trajectory-ext1800-cutoff = "main/packmem.py -i input/extended-data-v2/DPPC-flat-production7.9-stripped.gro -t input/extended-data-v2/DPPC-flat-production7.9-stripped.xtc -r main/vdw_radii_CGMartini3_openbeta2_updated.txt -d 6.3801 -o DPPC-flat-production-stripped-ext1800-cutoff"
-dopc-dops-flat-trajectory-ext1800-cutoff = "main/packmem.py -i input/extended-data-v2/DOPC-DOPS-flat-production7.9-stripped.gro -t input/extended-data-v2/DOPC-DOPS-flat-production7.9-stripped.xtc -r main/vdw_radii_CGMartini3_openbeta2_updated.txt -d 6.3801 -o DOPC-DOPS-flat-production-stripped-ext1800-cutoff"
-dppc-dpps-flat-trajectory-ext1800-cutoff = "main/packmem.py -i input/extended-data-v2/DPPC-DPPS-flat-production7.9-stripped.gro -t input/extended-data-v2/DPPC-DPPS-flat-production7.9-stripped.xtc -r main/vdw_radii_CGMartini3_openbeta2_updated.txt -d 6.3801 -o DPPC-DPPS-flat-production-stripped-ext1800-cutoff"
-dppc-dppa-flat-trajectory-ext1800-cutoff = "main/packmem.py -i input/extended-data-v2/DPPC-DPPA-flat-production7.9-stripped.gro -t input/extended-data-v2/DPPC-DPPA-flat-production7.9-stripped.xtc -r main/vdw_radii_CGMartini3_openbeta2_updated.txt -d 6.3801 -o DPPC-DPPA-flat-production-stripped-ext1800-cutoff"
-dopc-dopa-flat-trajectory-ext1800-cutoff = "main/packmem.py -i input/extended-data-v2/DOPC-DOPA-flat-production7.9-stripped.gro -t input/extended-data-v2/DOPC-DOPA-flat-production7.9-stripped.xtc -r main/vdw_radii_CGMartini3_openbeta2_updated.txt -d 6.3801 -o DOPC-DOPA-flat-production-stripped-ext1800-cutoff"
+dopc-strain2-trajectory-ext1800-cutoff = "main/packmem.py -i input/extended-data-v2/DOPC-strain.2-production7.9-stripped-centered.gro -t input/extended-data-v2/DOPC-strain.2-production7.9-stripped-centered.xtc -o DOPC-strain.2-production-stripped-centered-ext1800-cutoff"
+dppc-strain2-trajectory-ext1800-cutoff = "main/packmem.py -i input/extended-data-v2/DPPC-strain.2-production7.9-stripped-centered.gro -t input/extended-data-v2/DPPC-strain.2-production7.9-stripped-centered.xtc -o DPPC-strain.2-production-stripped-centered-ext1800-cutoff"
+dopc-dops-strain2-trajectory-ext1800-cutoff = "main/packmem.py -i input/extended-data-v2/DOPC-DOPS-strain.2-production7.9-stripped-centered.gro -t input/extended-data-v2/DOPC-DOPS-strain.2-production7.9-stripped-centered.xtc -o DOPC-DOPS-strain.2-production-stripped-centered-ext1800-cutoff"
+dppc-dpps-strain2-trajectory-ext1800-cutoff = "main/packmem.py -i input/extended-data-v2/DPPC-DPPS-strain.2-production7.9-stripped-centered.gro -t input/extended-data-v2/DPPC-DPPS-strain.2-production7.9-stripped-centered.xtc -o DPPC-DPPS-strain.2-production-stripped-centered-ext1800-cutoff"
+dppc-dppa-strain2-trajectory-ext1800-cutoff = "main/packmem.py -i input/extended-data-v2/DPPC-DPPA-strain.2-production7.9-stripped-centered.gro -t input/extended-data-v2/DPPC-DPPA-strain.2-production7.9-stripped-centered.xtc -o DPPC-DPPA-strain.2-production-stripped-centered-ext1800-cutoff"
+dopc-dopa-strain2-trajectory-ext1800-cutoff = "main/packmem.py -i input/extended-data-v2/DOPC-DOPA-strain.2-production7.9-stripped-centered.gro -t input/extended-data-v2/DOPC-DOPA-strain.2-production7.9-stripped-centered.xtc -o DOPC-DOPA-strain.2-production-stripped-centered-ext1800-cutoff"
+
+dopc-flat-trajectory-ext1800-cutoff = "main/packmem.py -i input/extended-data-v2/DOPC-flat-production7.9-stripped.gro -t input/extended-data-v2/DOPC-flat-production7.9-stripped.xtc -o DOPC-flat-production-stripped-ext1800-cutoff"
+dppc-flat-trajectory-ext1800-cutoff = "main/packmem.py -i input/extended-data-v2/DPPC-flat-production7.9-stripped.gro -t input/extended-data-v2/DPPC-flat-production7.9-stripped.xtc   -o DPPC-flat-production-stripped-ext1800-cutoff"
+dopc-dops-flat-trajectory-ext1800-cutoff = "main/packmem.py -i input/extended-data-v2/DOPC-DOPS-flat-production7.9-stripped.gro -t input/extended-data-v2/DOPC-DOPS-flat-production7.9-stripped.xtc -o DOPC-DOPS-flat-production-stripped-ext1800-cutoff"
+dppc-dpps-flat-trajectory-ext1800-cutoff = "main/packmem.py -i input/extended-data-v2/DPPC-DPPS-flat-production7.9-stripped.gro -t input/extended-data-v2/DPPC-DPPS-flat-production7.9-stripped.xtc -o DPPC-DPPS-flat-production-stripped-ext1800-cutoff"
+dppc-dppa-flat-trajectory-ext1800-cutoff = "main/packmem.py -i input/extended-data-v2/DPPC-DPPA-flat-production7.9-stripped.gro -t input/extended-data-v2/DPPC-DPPA-flat-production7.9-stripped.xtc -o DPPC-DPPA-flat-production-stripped-ext1800-cutoff"
+dopc-dopa-flat-trajectory-ext1800-cutoff = "main/packmem.py -i input/extended-data-v2/DOPC-DOPA-flat-production7.9-stripped.gro -t input/extended-data-v2/DOPC-DOPA-flat-production7.9-stripped.xtc -o DOPC-DOPA-flat-production-stripped-ext1800-cutoff"
 
 dopc-strain2-trajectory-curvature-ext = "main/curvature.py input/extended-data-v2/DOPC-strain.2-production7.9-stripped-centered.gro input/extended-data-v2/DOPC-strain.2-production7.9-stripped-centered.xtc 5 dopc-strain.2-ext1800 40 circl-fit/prodext1800/dopc-strain.2-ext1800 "
 dppc-strain2-trajectory-curvature-ext = "main/curvature.py  input/extended-data-v2/DPPC-strain.2-production7.9-stripped-centered.gro input/extended-data-v2/DPPC-strain.2-production7.9-stripped-centered.xtc 5 dppc-strain.2-ext1800 40 circl-fit/prodext1800/dppc-strain.2-ext1800"

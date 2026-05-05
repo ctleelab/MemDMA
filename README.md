@@ -1,23 +1,27 @@
-# Membrane Defect Map (MemDM)
+# Membrane Defect Mapping and Analysis (MemDMA)
 - Geometry-preserving membrane defect mapping for flat and curved membranes
 - Currently only suitable for Martini systems
 
 #  Repository structure
 ```bash
-│── main/                           
+│── main/                           #where the MemDMA code lives                    
+│
+│── misc/   
 │
 │── input/                          #where your add your trajectory files (.gro and .xtc) that will be analyzed               
 │
-│── test/                           # Folder where all test cases and their outputs live 
+│── tests/                          # Folder where all test cases and their outputs live 
 │   ├──output/                      # output of all test analysis
-│   ├── .gro                        # .gro file for test cases buckled and flat membranes 
-│   ├── .xtc                        # .xtc file for test cases buckled and flat membranes 
+│   ├── .gro                        # .gro file for test cases of buckled and flat membranes 
+│   ├── .xtc                        # .xtc file for test cases of buckled and flat membranes 
 │
-│── output/                        # General outputs from executions
-│   ├──curvature_analysis/         # Curvature analysis outputs
-│   ├──defect_analysis/            # Defect analysis outputs
+│── output/                         # General outputs from executions
+│   ├──curvature_analysis/          # Curvature analysis outputs
+│   ├──defect_mapping/              # Defect analysis outputs
+│   ├──defect_analysis/  
+│
+│── toppar/                         #Martini3 topology files
 │ 
-│
 │── README.md                       # Project documentation
 │── .gitignore                      # Files ignored by Git
  ```
@@ -92,23 +96,26 @@ The stripped_centered or strippedx files should be used for all further analysis
 
 # Running your own analysis
 
-## Defect analysis
+## Defect Mapping
 This determines the defects present in the membrane throughout the simulation.
 
 In the pixi.toml replace the "your_file_name" for the file name of your .gro and .xtc
 
 ```bash 
-defect-analysis-filename = "main/packmem.py -i input/your_file_name.gro -t input/your_file_name.xtc -r main/vdw_radii_CGMartini3_openbeta2_updated.txt -d 6.3801 -o output/defect_analysis/your_file_name"
+defect-mapping-filename = "main/packmem.py -i input/your_file_name.gro -t input/your_file_name.xtc -o output/defect_mapping/your_file_name"
 ```
 Then execute the following in the terminal 
 ```bash 
-pixi r defect-analysis-filename
+pixi r defect-mapping-filename
 ```
 
 Output
-1) A
-2) 2
+1) A .png file of the defect map for the last frame of the trajectory.
+2) A .npy array of defects, centroids, vertices for the upper and lower leaflet
+3) A .npy array of shape, Xshape, and Yshape
 
+## Defect Analysis
+Takes the data from the defect mapping and creates visualizations.
 
 ## Curvature analysis 
 This determines the curvature of the buckled membrane throughout the simulations by fitting a circle to the peak of the membrane.
@@ -126,3 +133,6 @@ Output
 1) A .png file of the circle of best fit for each frame of the trajectory.
 2) A .npy file that describes the radius, curvature of the perfect fit circle for each frame.
 3) A .csv file that contains a summary of the curvature values.
+
+
+

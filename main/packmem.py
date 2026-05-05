@@ -4,11 +4,9 @@
 import argparse
 import sys
 import numpy as np
-from scipy import ndimage as scipy_ndimage
 from pathlib import Path
 
 import MDAnalysis as mda
-from MDAnalysis.transformations.translate import center_in_box, translate
 
 # library for showing progress bar for runs
 from tqdm.auto import tqdm
@@ -49,26 +47,28 @@ def _process_residue_mapping(args):
             increment += 0.001
 
     for atom in r.atoms:
+
+        # handle error that ensures that the atom type is in
         key = f"{r.resname} {atom.name}"
-        if key not in prop_dict:
-            sys.stderr.write(f"WARNING: Atom type {key} not found in property file.")
-            break
         radius, aliphatic = prop_dict[key]
 
-        w = atom.position - centroid
+        # Determine if atom overlaps with a vertex
+        w = atom.position - centroid  # vector from atom to centroid
         w_n = np.dot(w, normal)  # component of w normal to the plane
 
         # w_n is a distance relative to the normal orientation
         if w_n + radius < -deep_defect_cutoff:
             continue  # atom is too far from the plane
 
-        atom_proj = atom.position - w_n * normal  # W projected onto plane
+        atom_proj = atom.position - w_n * normal  # w projected onto plane
 
         vertex_to_atom_proj = atom_proj - vertices
 
         # increment if atom overlaps with a vertex
         if np.min(np.linalg.norm(vertex_to_atom_proj, axis=1)) <= radius:
             increment_defect_count(aliphatic)
+
+        # else check if atom overlaps with the edge of a quad
         else:
             # print('checking edges', key)
             # Check edges
@@ -96,6 +96,7 @@ def _process_residue_mapping(args):
             if np.any((dist_to_edge <= radius) & edge_projection_valid):
                 # print("edge valid")
                 increment_defect_count(aliphatic)
+
     return (leaflet, grid_idx, increment)
 
 
@@ -156,12 +157,9 @@ def main(
     quad_y = ny - 1
     n_quad = (quad_x) * (quad_y)
     quad_shape = (quad_x, quad_y)
-    n_tri = 2 * (quad_x) * (quad_y)  # two triangles per quad per leaflet
 
     defects_per_frame_upper = np.empty((num_frames, n_quad))
     defects_per_frame_lower = np.empty((num_frames, n_quad))
-    # defects_per_frame_upper = np.empty((num_frames, quad_x, quad_y ))
-    # defects_per_frame_lower = np.empty((num_frames, quad_x, quad_y))
 
     # create a numpy array of the triangle centroids
     centroids_per_frame_upper = np.empty((num_frames, n_quad, 3))
@@ -176,7 +174,9 @@ def main(
         print("dimensions", u.trajectory.ts.dimensions)
         # print("Start: meshing")
         Z, mesh_faces, mesh_vertices, mesh_normals, mesh_centroids, leaflets = (
-            quadrilateral_mesh.interpolate_cubic_surface(u, "name PO4", X, Y)
+            quadrilateral_mesh.interpolate_cubic_surface(
+                u, f"name {args.mesh_bead}", X, Y
+            )
         )
         # print("Finished: meshing")
 
@@ -236,7 +236,6 @@ def main(
         vertices_per_frame_upper[index_of_frame] = mesh_vertices["upper"]
         vertices_per_frame_lower[index_of_frame] = mesh_vertices["lower"]
 
-        # print("Start:GL2 grid neighborhood assignment")
         #######################################
         ###create a cKDtree of the centroids###
         #######################################
@@ -300,9 +299,18 @@ def main(
         }
 
         for leaflet in ["upper", "lower"]:
-            # print(f"Processing {leaflet} leaflet")
+            print(f"Processing {leaflet} leaflet")
 
-            headgroup_beads = leaflets[leaflet].select_atoms("name PO4")
+            headgroup_beads = leaflets[leaflet].select_atoms(f"name {args.mesh_bead}")
+            n_lipids = int(len(leaflets[leaflet].residues))
+
+            # handling error that ensures that the #headgroup beads matches the #lipids.
+            if len(headgroup_beads) != n_lipids:
+                sys.stderr.write(
+                    f"WARNING: The number of headgroup beads does not match the number of lipids. This likely means that the selection for the headgroup beads is incorrect. Please check your selection and try again."
+                )
+                sys.exit()
+
             i, j = np.mgrid[
                 0 : len(headgroup_beads),
                 0 : len(mesh_centroids[leaflet]),
@@ -365,70 +373,36 @@ def main(
 
         print(defect_counts["upper"].shape)
 
-        for leaflet in ["upper", "lower"]:
-
-            fig, ax = ph.fixed_size_subplots(
-                1, 1, subwidth=4, subheight=1, rmargin_scale=1.5
-            )
-
-            reshaped_defects = defect_counts[leaflet].reshape(quad_shape)
-            # masked_polar_defects = np.ma.masked_where(
-            #     reshaped_defects < 1, reshaped_defects
-            # )
-
-            # sc = ax.pcolor(X, Y, masked_polar_defects, cmap="viridis", shading="auto")
-
-            masked_shallow_defects = np.ma.masked_where(
-                (reshaped_defects >= 1) | (reshaped_defects == 0),
-                reshaped_defects,
-            )
-            cmap_single_orange = mcolors.ListedColormap(
-                ["orange"], name="constant_orange"
-            )
-            ax.pcolor(
-                X, Y, masked_shallow_defects, cmap=cmap_single_orange, shading="auto"
-            )
-
-            masked_deep_defects = np.ma.masked_where(
-                reshaped_defects != 0,
-                reshaped_defects,
-            )
-            cmap_single_red = mcolors.ListedColormap(["red"], name="constant_red")
-            ax.pcolor(X, Y, masked_deep_defects, cmap=cmap_single_red, shading="auto")
-
-            # polar_positions = (
-            #     leaflets[leaflet].select_atoms("name PO4 NC3 GL1 GL2").positions
-            # )
-            # x = polar_positions[:, 0]
-            # y = polar_positions[:, 1]
-            # z = polar_positions[:, 2]
-            # ax.scatter(x, y, s=4, color="pink")
-            output_path.mkdir(parents=True, exist_ok=True)
-
-            ax.set_aspect("equal", adjustable="datalim")
-            ax.xaxis.set_major_locator(MultipleLocator(25))
-            ax.set_xlabel("X (A)")
-            ax.set_ylabel("Y (A)")
-            fig.savefig(output_path / f"{index_of_frame}-{leaflet}-defect-tmp.png")
-
-            plt.close(fig)
-
-        # defect_count_per_frame_lower[index_of_frame] = defect_counts["lower"]
+        output_path.mkdir(parents=True, exist_ok=True)
 
         index_of_frame += 1
 
-    # save defect count and grid centroid coordinates as a .npy
-
     # save the numpy arrays as the shape of the membrane
-
-    # reshape this data
     np.save(
         output_path / f"{prefix}-defects-upper.npy",
         defects_per_frame_upper,
     )
     np.save(
-        output_path / f"{prefix}-centroids.npy",
+        output_path / f"{prefix}-centroids-upper.npy",
         centroids_per_frame_upper,
+    )
+    np.save(
+        output_path / f"{prefix}-vertices-upper.npy",
+        vertices_per_frame_upper,
+    )
+
+    np.save(
+        output_path / f"{prefix}-defects-lower.npy",
+        defects_per_frame_lower,
+    )
+    np.save(
+        output_path / f"{prefix}-centroids-lower.npy",
+        centroids_per_frame_lower,
+    )
+
+    np.save(
+        output_path / f"{prefix}-vertices-lower.npy",
+        vertices_per_frame_lower,
     )
 
     np.save(
@@ -436,10 +410,6 @@ def main(
         np.squeeze(mesh_faces),
     )
 
-    np.save(
-        output_path / f"{prefix}-vertices-upper.npy",
-        vertices_per_frame_upper,
-    )
     np.save(
         output_path / f"{prefix}-shape.npy",
         quad_shape,
@@ -453,6 +423,8 @@ def main(
         output_path / f"{prefix}-Yshape.npy",
         Y,
     )
+
+    # create a defect map for the last frame in the trajectory
     for leaflet in ["upper", "lower"]:
         fig, ax = ph.fixed_size_subplots(
             1, 1, subwidth=4, subheight=1, rmargin_scale=1.5
@@ -462,8 +434,6 @@ def main(
         # masked_polar_defects = np.ma.masked_where(
         #     reshaped_defects < 1, reshaped_defects
         # # )
-
-        # sc = ax.pcolor(X, Y, masked_polar_defects, cmap="viridis", shading="auto")
 
         masked_shallow_defects = np.ma.masked_where(
             (reshaped_defects >= 1) | (reshaped_defects == 0),
@@ -479,89 +449,51 @@ def main(
         cmap_single_red = mcolors.ListedColormap(["red"], name="constant_red")
         ax.pcolor(X, Y, masked_deep_defects, cmap=cmap_single_red, shading="auto")
 
-        # polar_positions = (
-        #     leaflets[leaflet].select_atoms("name PO4 NC3 GL1 GL2").positions
+        ax.set_aspect("equal", adjustable="datalim")
+        ax.xaxis.set_major_locator(MultipleLocator(25))
+        ax.set_xlabel("X (A)")
+        ax.set_ylabel("Y (A)")
+        fig.savefig(output_path / f"{leaflet}-last-frame-defect-tmp.png")
+
+        plt.close(fig)
+
+        # # GENERATE BINARY DEFECT MAP
+        # binary_defect_map = np.where(reshaped_defects < 1, 1, 0)
+        # # plot binary defect map
+        # fig, ax = ph.fixed_size_subplots(
+        #     1, 1, subwidth=4, subheight=1, rmargin_scale=1.5
         # )
-        # x = polar_positions[:, 0]
-        # y = polar_positions[:, 1]
-        # z = polar_positions[:, 2]
-        # ax.scatter(x, y, s=4, color="pink")
+        # sc = ax.pcolor(X, Y, binary_defect_map, cmap="viridis", shading="auto")
+        # ax.set_aspect("equal", adjustable="datalim")
+        # ax.xaxis.set_major_locator(MultipleLocator(25))
+        # ax.set_xlabel("X (A)")
+        # ax.set_ylabel("Y (A)")
+        # fig.savefig(output_path / f"{leaflet}-binary-defect-tmp.png")
+        # plt.close(fig)
 
-        # ph.add_fixed_colorbar(sc, ax=ax, pad=0.05, aspect=30, label="Polar atom count")
+    # plot the density of the different bead types along the z-axis
+    # fig, ax = ph.fixed_size_subplots(1, 1, subwidth=2, subheight=2)
 
-        ax.set_aspect("equal", adjustable="datalim")
-        ax.xaxis.set_major_locator(MultipleLocator(25))
-        ax.set_xlabel("X (A)")
-        ax.set_ylabel("Y (A)")
-        fig.savefig(f"{leaflet}-defect-tmp.png")
+    # po4 = u.select_atoms("name PO4").positions[:, 2]
+    # nc3 = u.select_atoms("name NC3").positions[:, 2]
+    # gl = u.select_atoms("name GL1 GL2").positions[:, 2]
+    # other = u.select_atoms("not (name PO4 NC3 GL1 GL2)").positions[:, 2]
 
-        plt.close(fig)
+    # ax.hist(
+    #     [po4, nc3, gl, other],
+    #     bins=50,
+    #     stacked=True,
+    #     label=["PO4", "NC3", "GL1/GL2", "Other"],
+    #     color=["yellow", "blue", "green", "grey"],
+    #     density=True,
+    #     alpha=0.2,
+    # )
 
-        # GENERATE BINARY DEFECT MAP
-        binary_defect_map = np.where(reshaped_defects < 1, 1, 0)
-        # plot binary defect map
-        fig, ax = ph.fixed_size_subplots(
-            1, 1, subwidth=4, subheight=1, rmargin_scale=1.5
-        )
-        sc = ax.pcolor(X, Y, binary_defect_map, cmap="viridis", shading="auto")
-        ax.set_aspect("equal", adjustable="datalim")
-        ax.xaxis.set_major_locator(MultipleLocator(25))
-        ax.set_xlabel("X (A)")
-        ax.set_ylabel("Y (A)")
-        fig.savefig(f"{leaflet}-binary-defect-tmp.png")
-        plt.close(fig)
-
-        # LABEL CONNECTED COMPONENTS IN BINARY DEFECT MAP
-        label, nfeat = scipy_ndimage.label(binary_defect_map)
-
-        # plot labeled defects
-        fig, ax = ph.fixed_size_subplots(
-            1, 1, subwidth=4, subheight=1, rmargin_scale=1.5
-        )
-        sc = ax.pcolor(X, Y, label, cmap="viridis", shading="auto")
-        ax.set_aspect("equal", adjustable="datalim")
-        ax.xaxis.set_major_locator(MultipleLocator(25))
-        ax.set_xlabel("X (A)")
-        ax.set_ylabel("Y (A)")
-        fig.savefig(f"{leaflet}-labeled-defect-tmp.png")
-        plt.close(fig)
-
-        defect_sizes = []
-        for i in range(1, nfeat + 1):
-            mask = np.where(label == i)
-            defect_sizes.append(np.count_nonzero(mask))
-
-        fig, ax = ph.fixed_size_subplots(1, 1, subwidth=3, subheight=3)
-
-        ax.hist(defect_sizes, bins=50)
-
-        ax.set_xlabel("Defect size (A^2)")
-        ax.set_ylabel("Count")
-        fig.savefig(f"{leaflet}-defect-size-dist.png")
-        plt.close(fig)
-
-    fig, ax = ph.fixed_size_subplots(1, 1, subwidth=2, subheight=2)
-
-    po4 = u.select_atoms("name PO4").positions[:, 2]
-    nc3 = u.select_atoms("name NC3").positions[:, 2]
-    gl = u.select_atoms("name GL1 GL2").positions[:, 2]
-    other = u.select_atoms("not (name PO4 NC3 GL1 GL2)").positions[:, 2]
-
-    ax.hist(
-        [po4, nc3, gl, other],
-        bins=50,
-        stacked=True,
-        label=["PO4", "NC3", "GL1/GL2", "Other"],
-        color=["yellow", "blue", "green", "grey"],
-        density=True,
-        alpha=0.2,
-    )
-
-    ax.set_xlabel("Z Position (A)")
-    ax.set_ylabel("Counts")
-    ax.xaxis.set_major_locator(MultipleLocator(5))
-    fig.savefig(output_path / "density.png")
-    plt.close(fig)
+    # ax.set_xlabel("Z Position (A)")
+    # ax.set_ylabel("Counts")
+    # ax.xaxis.set_major_locator(MultipleLocator(5))
+    # fig.savefig(output_path / "density.png")
+    # plt.close(fig)
 
     # # Determine the average distance between PO4 and GL1 for each lipid
     # distances = []
@@ -597,7 +529,7 @@ if __name__ == "__main__":
         action="store",
         dest="prop_file",
         help="File for radius parameters",
-        default="vdw_radii_CGMartini3_openbeta2_updated.txt",
+        default="main/vdw_radii_CGMartini3.txt",
     )
     parser.add_argument(
         "-o",
@@ -618,7 +550,7 @@ if __name__ == "__main__":
         "--deep-defect-cutoff",
         action="store",
         dest="deep_defect_cutoff",
-        default=10,
+        default=6.3801,
         type=float,
         help="Distance cutoff for deep defects in Angstrom",
     )
@@ -630,6 +562,16 @@ if __name__ == "__main__":
         action="count",
         help="Increase the verbosity",
     )
+
+    parser.add_argument(
+        "-mb",
+        "--meshbead",
+        dest="mesh_bead",
+        action="store",
+        default="PO4",
+        help="Beads that will determine the mesh. Default is PO4",
+    )
+
     parser.add_argument(
         "-m",
         "--mesh-size",
@@ -667,12 +609,29 @@ if __name__ == "__main__":
         print("ERROR : The distance for the -d option must be > 0")
         sys.exit()
 
-    prop_dict = util.parse_radius_aliphatic_dict(args.prop_file)
-
     if args.traj_filename:
         u = mda.Universe(args.gro_filename, args.traj_filename)
     else:
         u = mda.Universe(args.gro_filename)
+
+    atom_types_in_system = set(f"{a.resname} {a.name}" for a in u.atoms)
+
+    prop_dict = util.parse_radius_aliphatic_dict(args.prop_file)
+
+    # handling to make sure the atom type is in the vdw_radii_CGMartini3
+    for atom_type in atom_types_in_system:
+        if atom_type not in prop_dict:
+            sys.stderr.write(
+                f"WARNING: Atom type {atom_type} not found in vdw_radii_CGMartini3.txt. You must add the atom type before continuing"
+            )
+            sys.exit()
+
+    # handling to make sure the mesh bead is in the universe
+    if not u.select_atoms(f"name {args.mesh_bead}"):
+        sys.stderr.write(
+            f"WARNING: No atoms found for selection 'name {args.mesh_bead}'. Please check your selection and try again."
+        )
+        sys.exit()
 
     debug = False
     if args.verbosity:
