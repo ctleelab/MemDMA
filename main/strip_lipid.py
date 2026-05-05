@@ -17,7 +17,15 @@ def strip_trajectory(gro,xtc,file_name, output_path) -> None:
     # Load your system
     u = mda.Universe(gro,xtc)
 
-    # Select only lipid residues (replace with your lipid names)
+    #Determines the lipids in the system
+    lipids_sim = u.select_atoms("not resname W ION")
+
+    # Check if lipids in util.lipids lists
+    for lipid in lipids_sim.residues.resnames:
+        if lipid not in util.lipids:
+            print (f"WARNING: Lipid type {lipid} not found in the util.py lipids list. You must add the lipid before continuing.")
+            sys.exit()
+
     lipids = u.select_atoms(util.lipids)  
 
     # Write to a new .gro file
