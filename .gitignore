@@ -34,3 +34,4 @@ output/
 input/
 tests/output
 main/run_radii_calculation.py
+misc_scripts/

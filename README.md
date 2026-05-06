@@ -4,10 +4,9 @@
 
 #  Repository structure
 ```bash
-│── main/                           #where the MemDMA code lives                    
-│
-│── misc/   
-│
+│── main/                           # where main MemDMA code lives                    
+│   ├──trajectory_prep/             # preparing the simulation files for mapping and analysis
+│  
 │── input/                          #where your add your trajectory files (.gro and .xtc) that will be analyzed               
 │
 │── tests/                          # Folder where all test cases and their outputs live 
@@ -20,7 +19,7 @@
 │   ├──defect_mapping/              # Defect analysis outputs
 │   ├──defect_analysis/  
 │
-│── toppar/                         #Martini3 topology files
+│── toppar/                         # Martini3 topology files
 │ 
 │── README.md                       # Project documentation
 │── .gitignore                      # Files ignored by Git
@@ -88,7 +87,7 @@ In the util.py file add your lipids to the string "lipids".
    - In the command,  "center-membrane-filename" in the pixi.toml file change each instance of your_filename with the name of your file of interest.
    - Then run the following:
    ``` bash 
-   pixi r strip-lipid-filename
+   pixi r center-membrane-filename
    ```
 The stripped_centered or strippedx files should be used for all further analysis.
 
@@ -102,7 +101,7 @@ This determines the defects present in the membrane throughout the simulation.
 In the pixi.toml replace the "your_file_name" for the file name of your .gro and .xtc
 
 ```bash 
-defect-mapping-filename = "main/packmem.py -i input/your_file_name.gro -t input/your_file_name.xtc -o output/defect_mapping/your_file_name"
+defect-mapping-filename = "python main/packmem.py -i input/your_file_name.gro -t input/your_file_name.xtc -o output/defect_mapping/your_file_name"
 ```
 Then execute the following in the terminal 
 ```bash 
@@ -115,14 +114,27 @@ Output
 3) A .npy array of shape, Xshape, and Yshape
 
 ## Defect Analysis
-Takes the data from the defect mapping and creates visualizations.
+Takes the data from the defect mapping and creates visualizations for the lower and upper leaflet independently. 
+1) A plot of height vs defect probability for all defect types (i.e shallow, deep, all)
+2) A plot of defect size probability.
+3) A plot of defect coverage across the simulation.
+4) .csv file for the average defect coverage and average defect size. 
+
+```bash
+defect-analysis-filename = "python main/aggregate_map_defects_plt.py -input output/defect_mapping/your_file_name -output output/defect_analysis/your_file_name -l your_file_name"
+```
+
+Then execute the following in the terminal 
+```bash 
+pixi r defect-analysis-filename
+```
 
 ## Curvature analysis 
 This determines the curvature of the buckled membrane throughout the simulations by fitting a circle to the peak of the membrane.
   
 In the pixi.toml replace the "your_file_name" for the file name of your .gro and .xtc
 ```bash 
-curvature-analysis-filename = "curvature-analysis-filename = "main/curvature.py -gro input/your_file_name.gro -xtc input/your_file_name.xtc -s your_file_name -out output/curvature_analysis/your_file_name"
+curvature-analysis-filename = "python curvature-analysis-filename = "main/curvature.py -gro input/your_file_name.gro -xtc input/your_file_name.xtc -s your_file_name -out output/curvature_analysis/your_file_name"
 ```
 Then execute the following in the terminal 
 ```bash 

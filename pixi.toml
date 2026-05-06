@@ -9,18 +9,20 @@ preview = ["pixi-build"]                          # Activate beta pixi-build fea
 [tasks]
 
 #test case 
-flat-test = "main/packmem.py -i tests/DOPC_flat.gro -t tests/DOPC_flat.xtc -mb PO4 -o tests/output/test_flat"
-strain2-test = "main/packmem.py -i tests/DOPC_buckled.gro -t tests/DOPC_buckled.xtc -mb PO4  -o tests/output/test_buckled"
-curvature-test = "main/curvature.py -gro tests/DOPC_buckled.gro -xtc tests/DOPC_buckled.xtc  -s test_curvature  -out tests/output/test_curvature"
-radii-calculation-test = "main/radii_calculation.py DOPC PO4 6.45 n "
+flat-test = "python main/packmem.py -i tests/DOPC_flat.gro -t tests/DOPC_flat.xtc -mb PO4 -o tests/output/defect_mapping/flat_test"
+strain2-test = "python main/packmem.py -i tests/DOPC_buckled.gro -t tests/DOPC_buckled.xtc -mb PO4  -o tests/output/test_buckled"
+curvature-test = "python main/curvature.py -gro tests/DOPC_buckled.gro -xtc tests/DOPC_buckled.xtc  -s test_curvature  -out tests/output/test_curvature"
+radii-calculation-test = "python main/radii_calculation.py DOPC PO4 6.45 n "
+flat-test-defect-analysis = "python main/aggregate_map_defects_plt.py -i tests/output/defect_mapping/flat_test  -o tests/output/defect_analysis/flat_test -s flat_test"
+
 
 #code for running your files
-strip-lipid-filename = "main/strip_lipid.py input/your_file_name.gro input/your_file_name.xtc your_file_name input"
-center-membrane-filename =  "main/center_membrane.py input/your_file_name.gro input/your_file_name.xtc your_file_name input"
+strip-lipid-filename = "main/trajectory_prep/strip_lipid.py input/your_file_name.gro input/your_file_name.xtc your_file_name input"
+center-membrane-filename =  "main/trajectory_prep/center_membrane.py input/your_file_name.gro input/your_file_name.xtc your_file_name input"
 radii-calculation = "main/radii_calculation.py lipid_name atom_type sigma_value polarity "
 curvature-analysis-filename = "main/curvature.py -gro input/your_file_name.gro -xtc input/your_file_name.xtc -s your_file_name -out output/curvature_analysis/your_file_name"
 defect-mapping-filename = "main/packmem.py -i input/your_file_name.gro -t input/your_file_name.xtc -o output/defect_mapping/your_file_name"
-
+defect-analysis-filename = "main/aggregate_map_defects_plt.py -input output/defect_mapping/your_file_name -output output/defect_analysis/your_file_name -l your_file_name"
 
 
 dopc-strain2-trajectory-ext1800-cutoff = "main/packmem.py -i input/extended-data-v2/DOPC-strain.2-production7.9-stripped-centered.gro -t input/extended-data-v2/DOPC-strain.2-production7.9-stripped-centered.xtc -o DOPC-strain.2-production-stripped-centered-ext1800-cutoff"
