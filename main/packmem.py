@@ -368,8 +368,10 @@ def main(
 
         # reshaped_upper = defect_counts["upper"].reshape(quad_shape)
         reshaped_upper = defect_counts["upper"]
+        reshaped_lower= defect_counts["lower"]
 
         defects_per_frame_upper[index_of_frame] = reshaped_upper
+        defects_per_frame_lower[index_of_frame] = reshaped_lower
 
         print(defect_counts["upper"].shape)
 
@@ -386,10 +388,10 @@ def main(
         output_path / f"{prefix}-centroids-upper.npy",
         centroids_per_frame_upper,
     )
-    np.save(
-        output_path / f"{prefix}-vertices-upper.npy",
-        vertices_per_frame_upper,
-    )
+    # np.save(
+    #     output_path / f"{prefix}-vertices-upper.npy",
+    #     vertices_per_frame_upper,
+    # )
 
     np.save(
         output_path / f"{prefix}-defects-lower.npy",
@@ -400,15 +402,15 @@ def main(
         centroids_per_frame_lower,
     )
 
-    np.save(
-        output_path / f"{prefix}-vertices-lower.npy",
-        vertices_per_frame_lower,
-    )
+    # np.save(
+    #     output_path / f"{prefix}-vertices-lower.npy",
+    #     vertices_per_frame_lower,
+    # )
 
-    np.save(
-        output_path / f"{prefix}-faces.npy",
-        np.squeeze(mesh_faces),
-    )
+    # np.save(
+    #     output_path / f"{prefix}-faces.npy",
+    #     np.squeeze(mesh_faces),
+    # )
 
     np.save(
         output_path / f"{prefix}-shape.npy",
