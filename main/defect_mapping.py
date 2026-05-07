@@ -1,0 +1,662 @@
+#!/usr/bin/env python3
+
+# general libraries
+import argparse
+import sys
+import numpy as np
+from pathlib import Path
+
+import MDAnalysis as mda
+
+# library for showing progress bar for runs
+from tqdm.auto import tqdm
+
+# library that does parallel processing
+from tqdm.contrib.concurrent import process_map
+
+from scipy.spatial import cKDTree
+
+import matplotlib.pyplot as plt
+import matplotlib.colors as mcolors
+from matplotlib.ticker import MultipleLocator
+
+import quadrilateral_mesh
+import util
+
+import ctleelab_plothelper.plothelpers as ph
+
+
+def _process_residue_mapping(args):
+    (
+        r,
+        vertices,
+        normal,
+        centroid,
+        prop_dict,
+        deep_defect_cutoff,
+        grid_idx,
+        leaflet,
+    ) = args
+    increment = 0
+
+    def increment_defect_count(aliphatic):
+        nonlocal increment
+        if aliphatic == "n":
+            increment += 1
+        else:
+            increment += 0.001
+
+    for atom in r.atoms:
+
+        # handle error that ensures that the atom type is in
+        key = f"{r.resname} {atom.name}"
+        radius, aliphatic = prop_dict[key]
+
+        # Determine if atom overlaps with a vertex
+        w = atom.position - centroid  # vector from atom to centroid
+        w_n = np.dot(w, normal)  # component of w normal to the plane
+
+        # w_n is a distance relative to the normal orientation
+        if w_n + radius < -deep_defect_cutoff:
+            continue  # atom is too far from the plane
+
+        atom_proj = atom.position - w_n * normal  # w projected onto plane
+
+        vertex_to_atom_proj = atom_proj - vertices
+
+        # increment if atom overlaps with a vertex
+        if np.min(np.linalg.norm(vertex_to_atom_proj, axis=1)) <= radius:
+            increment_defect_count(aliphatic)
+
+        # else check if atom overlaps with the edge of a quad
+        else:
+            # print('checking edges', key)
+            # Check edges
+            edges = np.vstack(
+                (
+                    vertices[1] - vertices[0],
+                    vertices[2] - vertices[1],
+                    vertices[3] - vertices[2],
+                    vertices[0] - vertices[3],
+                )
+            )
+            edge_lengths = np.linalg.norm(edges, axis=1)
+
+            edge_dots = np.einsum("ij,ij->i", vertex_to_atom_proj, edges)
+
+            edge_projection_valid = np.bitwise_and(
+                (edge_dots >= 0), (edge_dots <= edge_lengths)
+            )
+
+            dist_to_edge = (
+                np.linalg.norm(np.cross(vertex_to_atom_proj, edges), axis=1)
+                / edge_lengths
+            )
+
+            if np.any((dist_to_edge <= radius) & edge_projection_valid):
+                # print("edge valid")
+                increment_defect_count(aliphatic)
+
+    return (leaflet, grid_idx, increment)
+
+
+def main(
+    u: mda.Universe,
+    prop_dict: dict,
+    neighborhood_cutoff: float = 10,
+    deep_defect_cutoff: float = 1,
+    mesh_size: float = 1,
+    normal_cutoff: float = 3,
+    frame_interval: int = 5,
+    output_path: Path = Path("."),
+    prefix: str = "output",
+    debug=False,
+):
+    # if debug:
+    #     with mda.Writer("tmp.gro") as fd:
+    #         fd.write(u)
+
+    # +10 or -10 to eliminate create a 10A perimeter of mesh to eliminate false positive defects due to pbc
+    x_range_adj = (
+        np.floor_divide(
+            np.min(u.atoms.positions[:, 0] + neighborhood_cutoff), mesh_size
+        )
+        * mesh_size,
+        np.floor_divide(
+            np.max(u.atoms.positions[:, 0] - neighborhood_cutoff), mesh_size
+        )
+        * mesh_size,
+    )
+    y_range_adj = (
+        np.floor_divide(
+            np.min(u.atoms.positions[:, 1]) + neighborhood_cutoff, mesh_size
+        )
+        * mesh_size,
+        np.floor_divide(
+            np.max(u.atoms.positions[:, 1]) - neighborhood_cutoff, mesh_size
+        )
+        * mesh_size,
+    )
+
+    # Create bin edges
+    x_edges = np.arange(x_range_adj[0], x_range_adj[1], mesh_size)
+    y_edges = np.arange(y_range_adj[0], y_range_adj[1], mesh_size)
+
+    x_centers = 0.5 * (x_edges[:-1] + x_edges[1:])
+    y_centers = 0.5 * (y_edges[:-1] + y_edges[1:])
+    X_c, Y_c = np.meshgrid(x_centers, y_centers, indexing="ij")
+
+    X, Y = np.mgrid[
+        x_range_adj[0] : x_range_adj[1] : mesh_size,
+        y_range_adj[0] : y_range_adj[1] : mesh_size,
+    ]
+    num_frames = u.trajectory.n_frames // frame_interval + 1
+
+    nx, ny = X.shape
+    quad_x = nx - 1
+    quad_y = ny - 1
+    n_quad = (quad_x) * (quad_y)
+    quad_shape = (quad_x, quad_y)
+
+    defects_per_frame_upper = np.empty((num_frames, n_quad))
+    defects_per_frame_lower = np.empty((num_frames, n_quad))
+
+    # create a numpy array of the triangle centroids
+    centroids_per_frame_upper = np.empty((num_frames, n_quad, 3))
+    centroids_per_frame_lower = np.empty((num_frames, n_quad, 3))
+
+    vertices_per_frame_upper = np.empty((num_frames, len(X.ravel()), 3))
+    vertices_per_frame_lower = np.empty((num_frames, len(X.ravel()), 3))
+
+    index_of_frame = 0
+    for ts in tqdm(u.trajectory[::frame_interval], position=0, desc="Processing frames"):
+
+        print("dimensions", u.trajectory.ts.dimensions)
+        # print("Start: meshing")
+        Z, mesh_faces, mesh_vertices, mesh_normals, mesh_centroids, leaflets = (
+            quadrilateral_mesh.interpolate_cubic_surface(
+                u, f"name {args.mesh_bead}", X, Y
+            )
+        )
+        # print("Finished: meshing")
+
+        if debug:
+            with plt.style.context(
+                ["ctleelab_plothelper.base", "ctleelab_plothelper.transparent"]
+            ):
+                fig, ax = plt.subplots(
+                    1, 1, figsize=(2, 2), subplot_kw={"projection": "3d"}
+                )
+
+                po4 = leaflets["upper"].select_atoms("name PO4 NC3 GL1 GL2")
+
+                ax.scatter(
+                    po4.positions[:, 0],
+                    po4.positions[:, 1],
+                    po4.positions[:, 2],
+                    color="blue",
+                    s=4,
+                    alpha=1,
+                    linewidth=0,
+                )
+
+                skip = 2
+                ax.scatter(
+                    X[::skip, ::skip],
+                    Y[::skip, ::skip],
+                    Z["upper"][::skip, ::skip],
+                    color="red",
+                    s=1,
+                    marker=".",
+                    alpha=1,
+                    linewidth=0,
+                )
+
+                # ax.view_init(elev=90, azim=-90, roll=0)
+
+                ax.set_aspect("equal")
+                ax.set_xlabel("X (A)")
+                ax.set_ylabel("Y (A)")
+                ax.set_zlabel("Z (A)")
+
+                ax.xaxis.set_major_locator(MultipleLocator(25))
+
+                fig.savefig("3d-tmp.png")
+                # plt.show()
+                plt.close(fig)
+
+        # mesh_faces, mesh_vertices, mesh_centroids, mesh_normals = (
+        #     util.vectorized_normal_vector_triangles(X, Y, z_surface)
+        # )
+
+        centroids_per_frame_upper[index_of_frame] = mesh_centroids["upper"]
+        centroids_per_frame_lower[index_of_frame] = mesh_centroids["lower"]
+
+        # create a numpy array of the triangle faces
+        vertices_per_frame_upper[index_of_frame] = mesh_vertices["upper"]
+        vertices_per_frame_lower[index_of_frame] = mesh_vertices["lower"]
+
+        #######################################
+        ###create a cKDtree of the centroids###
+        #######################################
+        tree = {}
+        tree["upper"] = cKDTree(mesh_centroids["upper"])
+        tree["lower"] = cKDTree(mesh_centroids["lower"])
+
+        # allocate memory for new normal array (N,3)
+        smeared_normals = {}
+        smeared_normals["upper"] = np.empty_like(mesh_normals["upper"])
+        smeared_normals["lower"] = np.empty_like(mesh_normals["lower"])
+
+        if debug:
+            for cutoff in np.arange(0, 10):
+                tmp = []
+                tmp_n = []
+                for i in np.arange(0, len(mesh_normals["upper"])):
+                    neighborhood_indices = tree["upper"].query_ball_point(
+                        mesh_centroids["upper"][i],
+                        cutoff,
+                    )
+
+                    # Average normals and convert into unit length
+                    average_normal = np.mean(
+                        mesh_normals["upper"][neighborhood_indices], axis=0
+                    )
+                    average_normal /= np.linalg.norm(average_normal)
+                    _smeared_normals = average_normal
+                    res = np.inner(_smeared_normals, np.array([0, 0, 1]))
+                    tmp.append(res)
+                    tmp_n.append(len(neighborhood_indices))
+
+                print(
+                    f"Normal Cutoff: {cutoff} Mean/min/max alignment: {np.mean(tmp)}, {np.min(tmp)}, {np.max(tmp)}, Avg neighbors: {np.mean(tmp_n)}"
+                )
+
+        if normal_cutoff > 0:
+            for leaflet in ["upper", "lower"]:
+                for i in np.arange(0, len(mesh_normals[leaflet])):
+                    # Aggregate faces in the neighborhood using KD-tree lookup
+                    neighborhood_indices = tree[leaflet].query_ball_point(
+                        mesh_centroids[leaflet][i],
+                        normal_cutoff,
+                    )
+
+                    # Average normals and convert into unit length
+                    average_normal = np.mean(
+                        mesh_normals[leaflet][neighborhood_indices], axis=0
+                    )
+                    average_normal /= np.linalg.norm(average_normal)
+
+                    smeared_normals[leaflet][i] = average_normal
+        else:
+            smeared_normals["upper"] = mesh_normals["upper"]
+            smeared_normals["lower"] = mesh_normals["lower"]
+
+        ## To determine which grid is the closest to the GL2 bead, the euclidean distance between the Gl2 bead and the grids centroid was calculated
+        defect_counts = {
+            "upper": np.zeros(len(mesh_centroids["upper"])),
+            "lower": np.zeros(len(mesh_centroids["lower"])),
+        }
+
+        for leaflet in ["upper", "lower"]:
+            print(f"Processing {leaflet} leaflet")
+
+            headgroup_beads = leaflets[leaflet].select_atoms(f"name {args.mesh_bead}")
+            n_lipids = int(len(leaflets[leaflet].residues))
+
+            # handling error that ensures that the #headgroup beads matches the #lipids.
+            if len(headgroup_beads) != n_lipids:
+                sys.stderr.write(
+                    f"WARNING: The number of headgroup beads does not match the number of lipids. This likely means that the selection for the headgroup beads is incorrect. Please check your selection and try again."
+                )
+                sys.exit()
+
+            i, j = np.mgrid[
+                0 : len(headgroup_beads),
+                0 : len(mesh_centroids[leaflet]),
+            ]
+
+            distances = np.linalg.norm(
+                mesh_centroids[leaflet][j] - headgroup_beads.positions[i], axis=2
+            )
+            min_distance_indices = np.argmin(distances, axis=1)
+
+            jobs = []
+            for i, atom in enumerate(headgroup_beads):
+                neighborhood_indices = tree[leaflet].query_ball_point(
+                    mesh_centroids[leaflet][min_distance_indices[i]],
+                    neighborhood_cutoff,
+                )
+                r = atom.residue
+                # center = centroids[leaflet][min_distance_indices[i]]
+
+                for grid_idx in neighborhood_indices:
+                    quad = mesh_faces[grid_idx]
+                    verts = mesh_vertices[leaflet][quad]
+                    # normal = normals[leaflet][grid_idx]
+                    normal = smeared_normals[leaflet][grid_idx]
+                    # normal = np.array([0, 0, 1])
+                    centroid = mesh_centroids[leaflet][grid_idx]
+
+                    jobs.append(
+                        (
+                            r,
+                            verts,
+                            normal,
+                            centroid,
+                            prop_dict,
+                            deep_defect_cutoff,
+                            grid_idx,
+                            leaflet,
+                        )
+                    )
+
+            r = process_map(
+                _process_residue_mapping,
+                jobs,
+                max_workers=8,
+                chunksize=1000,
+                position=1,
+                leave=False,
+                desc="Mapping residues to grids",
+            )
+            # print(r)
+
+            for leaflet, grid_idx, increment in r:
+                if increment > 0:
+                    defect_counts[leaflet][grid_idx] += increment
+
+        # reshaped_upper = defect_counts["upper"].reshape(quad_shape)
+        reshaped_upper = defect_counts["upper"]
+        reshaped_lower= defect_counts["lower"]
+
+        defects_per_frame_upper[index_of_frame] = reshaped_upper
+        defects_per_frame_lower[index_of_frame] = reshaped_lower
+
+        print(defect_counts["upper"].shape)
+
+        output_path.mkdir(parents=True, exist_ok=True)
+
+        index_of_frame += 1
+
+    # save the numpy arrays as the shape of the membrane
+    np.save(
+        output_path / f"{prefix}-defects-upper.npy",
+        defects_per_frame_upper,
+    )
+    np.save(
+        output_path / f"{prefix}-centroids-upper.npy",
+        centroids_per_frame_upper,
+    )
+    # np.save(
+    #     output_path / f"{prefix}-vertices-upper.npy",
+    #     vertices_per_frame_upper,
+    # )
+
+    np.save(
+        output_path / f"{prefix}-defects-lower.npy",
+        defects_per_frame_lower,
+    )
+    np.save(
+        output_path / f"{prefix}-centroids-lower.npy",
+        centroids_per_frame_lower,
+    )
+
+    # np.save(
+    #     output_path / f"{prefix}-vertices-lower.npy",
+    #     vertices_per_frame_lower,
+    # )
+
+    # np.save(
+    #     output_path / f"{prefix}-faces.npy",
+    #     np.squeeze(mesh_faces),
+    # )
+
+    np.save(
+        output_path / f"{prefix}-shape.npy",
+        quad_shape,
+    )
+
+    np.save(
+        output_path / f"{prefix}-Xshape.npy",
+        X,
+    )
+    np.save(
+        output_path / f"{prefix}-Yshape.npy",
+        Y,
+    )
+
+    # create a defect map for the last frame in the trajectory
+    for leaflet in ["upper", "lower"]:
+        fig, ax = ph.fixed_size_subplots(
+            1, 1, subwidth=4, subheight=1, rmargin_scale=1.5
+        )
+
+        reshaped_defects = defect_counts[leaflet].reshape(quad_shape)
+        # masked_polar_defects = np.ma.masked_where(
+        #     reshaped_defects < 1, reshaped_defects
+        # # )
+
+        masked_shallow_defects = np.ma.masked_where(
+            (reshaped_defects >= 1) | (reshaped_defects == 0),
+            reshaped_defects,
+        )
+        cmap_single_orange = mcolors.ListedColormap(["orange"], name="constant_orange")
+        ax.pcolor(X, Y, masked_shallow_defects, cmap=cmap_single_orange, shading="auto")
+
+        masked_deep_defects = np.ma.masked_where(
+            reshaped_defects != 0,
+            reshaped_defects,
+        )
+        cmap_single_red = mcolors.ListedColormap(["red"], name="constant_red")
+        ax.pcolor(X, Y, masked_deep_defects, cmap=cmap_single_red, shading="auto")
+
+        ax.set_aspect("equal", adjustable="datalim")
+        ax.xaxis.set_major_locator(MultipleLocator(25))
+        ax.set_xlabel("X (A)")
+        ax.set_ylabel("Y (A)")
+        fig.savefig(output_path / f"{leaflet}-last-frame-defect-tmp.png")
+
+        plt.close(fig)
+
+        # # GENERATE BINARY DEFECT MAP
+        # binary_defect_map = np.where(reshaped_defects < 1, 1, 0)
+        # # plot binary defect map
+        # fig, ax = ph.fixed_size_subplots(
+        #     1, 1, subwidth=4, subheight=1, rmargin_scale=1.5
+        # )
+        # sc = ax.pcolor(X, Y, binary_defect_map, cmap="viridis", shading="auto")
+        # ax.set_aspect("equal", adjustable="datalim")
+        # ax.xaxis.set_major_locator(MultipleLocator(25))
+        # ax.set_xlabel("X (A)")
+        # ax.set_ylabel("Y (A)")
+        # fig.savefig(output_path / f"{leaflet}-binary-defect-tmp.png")
+        # plt.close(fig)
+
+    # plot the density of the different bead types along the z-axis
+    # fig, ax = ph.fixed_size_subplots(1, 1, subwidth=2, subheight=2)
+
+    # po4 = u.select_atoms("name PO4").positions[:, 2]
+    # nc3 = u.select_atoms("name NC3").positions[:, 2]
+    # gl = u.select_atoms("name GL1 GL2").positions[:, 2]
+    # other = u.select_atoms("not (name PO4 NC3 GL1 GL2)").positions[:, 2]
+
+    # ax.hist(
+    #     [po4, nc3, gl, other],
+    #     bins=50,
+    #     stacked=True,
+    #     label=["PO4", "NC3", "GL1/GL2", "Other"],
+    #     color=["yellow", "blue", "green", "grey"],
+    #     density=True,
+    #     alpha=0.2,
+    # )
+
+    # ax.set_xlabel("Z Position (A)")
+    # ax.set_ylabel("Counts")
+    # ax.xaxis.set_major_locator(MultipleLocator(5))
+    # fig.savefig(output_path / "density.png")
+    # plt.close(fig)
+
+    # # Determine the average distance between PO4 and GL1 for each lipid
+    # distances = []
+    # for lipid in u.select_atoms("resname DPPC").residues:
+    #     po4 = lipid.atoms.select_atoms("name PO4")
+    #     gl1 = lipid.atoms.select_atoms("name GL1")
+    #     if len(po4) > 0 and len(gl1) > 0:
+    #         distance = np.linalg.norm(po4.center_of_geometry() - gl1.center_of_geometry())
+    #         distances.append(distance)
+
+    # if distances:
+    #     average_distance = np.mean(distances)
+    #     print(f"Average distance between PO4 and GL1: {average_distance:.2f} Å")
+    # else:
+    #     print("No PO4 or GL1 atoms found for the specified lipid.")
+    # print(average_distances)
+
+
+##this is the interface with the user, so that they can specify inputs
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Arguments for the app")
+
+    parser.add_argument("-i", action="store", dest="gro_filename", help="gro file")
+    parser.add_argument(
+        "-t",
+        action="store",
+        dest="traj_filename",
+        help="Trajectory file (.xtc)",
+    )
+
+    parser.add_argument(
+        "-r",
+        action="store",
+        dest="prop_file",
+        help="File for radius parameters",
+        default="main/vdw_radii_CGMartini3.txt",
+    )
+    parser.add_argument(
+        "-o",
+        action="store",
+        dest="output_path",
+        default="output",
+        help="Output paths",
+    )
+    parser.add_argument(
+        "-p",
+        action="store",
+        dest="prefix",
+        default="output",
+        help="Prefix for output files",
+    )
+    parser.add_argument(
+        "-d",
+        "--deep-defect-cutoff",
+        action="store",
+        dest="deep_defect_cutoff",
+        default=6.3801,
+        type=float,
+        help="Distance cutoff for deep defects in Angstrom",
+    )
+
+    parser.add_argument(
+        "-v",
+        "--verbose",
+        dest="verbosity",
+        action="count",
+        help="Increase the verbosity",
+    )
+
+    parser.add_argument(
+        "-mb",
+        "--meshbead",
+        dest="mesh_bead",
+        action="store",
+        default="PO4",
+        help="Beads that will determine the mesh. Default is PO4",
+    )
+
+    parser.add_argument(
+        "-m",
+        "--mesh-size",
+        action="store",
+        dest="mesh_size",
+        default=1,
+        type=float,
+        help="size of the mesh in Angstrom",
+    )
+    parser.add_argument(
+        "--neighborhood-cutoff",
+        action="store",
+        dest="neighborhood_cutoff",
+        default=10,
+        type=float,
+        help="sets the size of the neighborhood cutoff for grids in angstrom.",
+    )
+    parser.add_argument(
+        "--normal-cutoff",
+        action="store",
+        dest="normal_cutoff",
+        default=0,
+        type=float,
+        help="sets the size of the normal smearing cutoff for grids in angstrom.",
+    )
+
+    parser.add_argument(
+        "--interval",
+        action="store",
+        dest="frame_interval",
+        default=1,
+        type=float,
+        help="How many frames to skip when processing the trajectory for defect analysis. Default is 1.",
+    )
+
+    args = parser.parse_args()
+
+    if len(sys.argv) == 1:
+        parser.print_help(sys.stderr)
+        sys.exit(1)
+
+    ##error handling if the chosen distance is negative. This distance is key when determining where each bead falls within the mesh grid.
+    if args.deep_defect_cutoff < 0.0:
+        print("ERROR : The distance for the -d option must be > 0")
+        sys.exit()
+
+    if args.traj_filename:
+        u = mda.Universe(args.gro_filename, args.traj_filename)
+    else:
+        u = mda.Universe(args.gro_filename)
+
+    atom_types_in_system = set(f"{a.resname} {a.name}" for a in u.atoms)
+
+    prop_dict = util.parse_radius_aliphatic_dict(args.prop_file)
+
+    # handling to make sure the atom type is in the vdw_radii_CGMartini3
+    for atom_type in atom_types_in_system:
+        if atom_type not in prop_dict:
+            sys.stderr.write(
+                f"WARNING: Atom type {atom_type} not found in vdw_radii_CGMartini3.txt. You must add the atom type before continuing"
+            )
+            sys.exit()
+
+    # handling to make sure the mesh bead is in the universe
+    if not u.select_atoms(f"name {args.mesh_bead}"):
+        sys.stderr.write(
+            f"WARNING: No atoms found for selection 'name {args.mesh_bead}'. Please check your selection and try again."
+        )
+        sys.exit()
+
+    debug = False
+    if args.verbosity:
+        debug = True
+
+    main(
+        u,
+        prop_dict,
+        neighborhood_cutoff=args.neighborhood_cutoff,
+        deep_defect_cutoff=args.deep_defect_cutoff,
+        mesh_size=args.mesh_size,
+        output_path=Path(args.output_path),
+        frame_interval=args.frame_interval,
+        prefix=args.prefix,
+        normal_cutoff=args.normal_cutoff,
+        debug=debug,
+    )
