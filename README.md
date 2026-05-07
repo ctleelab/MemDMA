@@ -13,7 +13,6 @@
 │   ├──output/                      # output of all tests 
 │      ├──defect_analysis/          # output of the defect_analysis code  
 │      ├──defect_mapping/           # output of the defect_mapping code  
-│         ├──test_data/             # contains output of defect_mapping code to run testing of defect_analysis code
 │   ├── .gro                        # .gro file for test cases of buckled and flat membranes 
 │   ├── .xtc                        # .xtc file for test cases of buckled and flat membranes 
 │
@@ -52,7 +51,6 @@ pixi r test-defect-mapping-flat
 pixi r test-defect-mapping-strain2
 pixi r test-curvature 
 pixi r test-radii-calculation 
-pixi r test-defect-analysis
  ```
 
 Exit pixi environment
