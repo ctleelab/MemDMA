@@ -7,10 +7,13 @@
 │── main/                           # where main MemDMA code lives                    
 │   ├──trajectory_prep/             # preparing the simulation files for mapping and analysis
 │  
-│── input/                          #where your add your trajectory files (.gro and .xtc) that will be analyzed               
+│── input/                          # where your add your trajectory files (.gro and .xtc) that will be analyzed               
 │
 │── tests/                          # Folder where all test cases and their outputs live 
-│   ├──output/                      # output of all test analysis
+│   ├──output/                      # output of all tests 
+│      ├──defect_analysis/          # output of the defect_analysis code  
+│      ├──defect_mapping/           # output of the defect_mapping code  
+│         ├──test_data/             # contains output of defect_mapping code to run testing of defect_analysis code
 │   ├── .gro                        # .gro file for test cases of buckled and flat membranes 
 │   ├── .xtc                        # .xtc file for test cases of buckled and flat membranes 
 │
@@ -45,8 +48,11 @@ pixi shell
 
 Test cases
 ```bash
-pixi r flat-test
-pixi r strain2-test
+pixi r test-defect-mapping-flat 
+pixi r test-defect-mapping-strain2
+pixi r test-curvature 
+pixi r test-radii-calculation 
+pixi r test-defect-analysis
  ```
 
 Exit pixi environment
@@ -114,14 +120,17 @@ Output
 3) A .npy array of shape, Xshape, and Yshape
 
 ## Defect Analysis
-Takes the data from the defect mapping and creates visualizations for the lower and upper leaflet independently. 
+Takes the data from the defect mapping and creates visualizations for the lower and upper leaflet independently. You must choose which leaflet you are analyzing, and denote it with the -l flag.
+
 1) A plot of height vs defect probability for all defect types (i.e shallow, deep, all)
 2) A plot of defect size probability.
 3) A plot of defect coverage across the simulation.
-4) .csv file for the average defect coverage and average defect size. 
+4) A plot of the defect map that represents the average defect coverage of the simulation.
+5) .csv file for the average defect coverage and average defect size. 
+
 
 ```bash
-defect-analysis-filename = "python main/aggregate_map_defects_plt.py -input output/defect_mapping/your_file_name -output output/defect_analysis/your_file_name -l your_file_name"
+defect-analysis-filename = "python main/aggregate_map_defects_plt.py -i output/defect_mapping/your_file_name -o output/defect_analysis/your_file_name -l leaflet -s your_file_name"
 ```
 
 Then execute the following in the terminal 

@@ -107,7 +107,7 @@ def main(
     deep_defect_cutoff: float = 1,
     mesh_size: float = 1,
     normal_cutoff: float = 3,
-    interval: int = 5,
+    frame_interval: int = 5,
     output_path: Path = Path("."),
     prefix: str = "output",
     debug=False,
@@ -150,7 +150,7 @@ def main(
         x_range_adj[0] : x_range_adj[1] : mesh_size,
         y_range_adj[0] : y_range_adj[1] : mesh_size,
     ]
-    num_frames = u.trajectory.n_frames // interval + 1
+    num_frames = u.trajectory.n_frames // frame_interval + 1
 
     nx, ny = X.shape
     quad_x = nx - 1
@@ -169,7 +169,7 @@ def main(
     vertices_per_frame_lower = np.empty((num_frames, len(X.ravel()), 3))
 
     index_of_frame = 0
-    for ts in tqdm(u.trajectory[::interval], position=0, desc="Processing frames"):
+    for ts in tqdm(u.trajectory[::frame_interval], position=0, desc="Processing frames"):
 
         print("dimensions", u.trajectory.ts.dimensions)
         # print("Start: meshing")
@@ -600,6 +600,15 @@ if __name__ == "__main__":
         help="sets the size of the normal smearing cutoff for grids in angstrom.",
     )
 
+    parser.add_argument(
+        "--interval",
+        action="store",
+        dest="frame_interval",
+        default=1,
+        type=float,
+        help="How many frames to skip when processing the trajectory for defect analysis. Default is 1.",
+    )
+
     args = parser.parse_args()
 
     if len(sys.argv) == 1:
@@ -646,6 +655,7 @@ if __name__ == "__main__":
         deep_defect_cutoff=args.deep_defect_cutoff,
         mesh_size=args.mesh_size,
         output_path=Path(args.output_path),
+        frame_interval=args.frame_interval,
         prefix=args.prefix,
         normal_cutoff=args.normal_cutoff,
         debug=debug,

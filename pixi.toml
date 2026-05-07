@@ -8,12 +8,13 @@ preview = ["pixi-build"]                          # Activate beta pixi-build fea
 
 [tasks]
 
-#test case 
-flat-test = "python main/defect_mapping.py -i tests/DOPC_flat.gro -t tests/DOPC_flat.xtc -mb PO4 -o tests/output/defect_mapping/flat_test"
-strain2-test = "python main/defect_mapping.py -i tests/DOPC_buckled.gro -t tests/DOPC_buckled.xtc -mb PO4  -o tests/output/test_buckled"
-curvature-test = "python main/curvature.py -gro tests/DOPC_buckled.gro -xtc tests/DOPC_buckled.xtc  -s test_curvature  -out tests/output/test_curvature"
-radii-calculation-test = "python main/radii_calculation.py DOPC PO4 6.45 n "
-flat-test-defect-analysis = "python main/aggregate_map_defects_plt.py -i tests/output/defect_mapping/flat_test  -o tests/output/defect_analysis/flat_test -s flat_test"
+#test cases
+test-defect-mapping-flat = "python main/defect_mapping.py -i tests/DOPC_flat.gro -t tests/DOPC_flat.xtc -mb PO4 -o tests/output/defect_mapping/flat_test"
+test-defect-mapping-strain2 = "python main/defect_mapping.py -i tests/DOPC_buckled.gro -t tests/DOPC_buckled.xtc -mb PO4  -o tests/output/test_buckled"
+test-curvature = "python main/curvature.py -gro tests/DOPC_buckled.gro -xtc tests/DOPC_buckled.xtc  -s test_curvature  -out tests/output/test_curvature"
+test-radii-calculation = "python main/radii_calculation.py DOPC PO4 6.45 n "
+test-defect-analysis = "python main/defect_analysis.py -i tests/output/defect_mapping/test_data  -o tests/output/defect_analysis/test_data -l upper -s test_data"
+
 
 
 #code for running your files
@@ -22,7 +23,7 @@ center-membrane-filename =  "python main/trajectory_prep/center_membrane.py inpu
 radii-calculation = "python main/radii_calculation.py lipid_name atom_type sigma_value polarity "
 curvature-analysis-filename = "python main/curvature.py -gro input/your_file_name.gro -xtc input/your_file_name.xtc -s your_file_name -out output/curvature_analysis/your_file_name"
 defect-mapping-filename = " python main/defect_mapping.py -i input/your_file_name.gro -t input/your_file_name.xtc -o output/defect_mapping/your_file_name"
-defect-analysis-filename = "python main/aggregate_map_defects_plt.py -input output/defect_mapping/your_file_name -output output/defect_analysis/your_file_name -l your_file_name"
+defect-analysis-filename = "python main/aggregate_map_defects_plt.py -i output/defect_mapping/your_file_name -o output/defect_analysis/your_file_name -l leaflet -s your_file_name"
 
 
 dopc-strain2-trajectory-ext1800-cutoff = "main/defect_mapping.py -i input/extended-data-v2/DOPC-strain.2-production7.9-stripped-centered.gro -t input/extended-data-v2/DOPC-strain.2-production7.9-stripped-centered.xtc -o DOPC-strain.2-production-stripped-centered-ext1800-cutoff"

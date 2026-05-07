@@ -23,7 +23,6 @@ asyn-simulations/
 VMD/
 *.lock
 *.npz
-PackMem_original/testing
 applied-shape/
 curvature-data-upper/
 circle-fit/
@@ -32,6 +31,8 @@ extended-data/
 extended-data-newcutoff/
 output/
 input/
-tests/output
+tests/output/defect_analysis/
+tests/output/defect_mapping/flat_test
+tests/output/test_curvature/
 main/run_radii_calculation.py
 misc_scripts/
