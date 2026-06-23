@@ -1,0 +1,12 @@
+; id 	type 	resnr 	residu 	atom 	cgnr 	charge    (mass)
+   1     Q5   1  DOPA  PO4   1 	-1.0
+   2   SN4a   1  DOPA  GL1   2 	0
+   3   SN4a   1  DOPA  GL2   3 	0
+   4     C1   1  DOPA  C1A   4 	0
+   5    C4h   1  DOPA  D2A   5 	0
+   6     C1   1  DOPA  C3A   6 	0
+   7     C1   1  DOPA  C4A   7 	0
+   8     C1   1  DOPA  C1B   8 	0
+   9    C4h   1  DOPA  D2B   9 	0
+  10     C1   1  DOPA  C3B  10 	0
+  11     C1   1  DOPA  C4B  11 	0

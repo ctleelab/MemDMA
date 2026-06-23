@@ -70,6 +70,7 @@ If your lipids are not in the list they must be added. To do so, complete the fo
   ```bash
     Q1    Q1  1 4.700000e-01    3.980000e+00
   ```
+  The sigma value is the 4th column, 4.700000e-01 (nm).
 2) Then run the following: 
   ``` bash  
   pixi r radii-calculation 

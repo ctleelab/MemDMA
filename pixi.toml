@@ -23,7 +23,7 @@ center-membrane-filename =  "python main/trajectory_prep/center_membrane.py inpu
 radii-calculation = "python main/radii_calculation.py lipid_name atom_type sigma_value polarity "
 curvature-analysis-filename = "python main/curvature.py -gro input/your_file_name.gro -xtc input/your_file_name.xtc -s your_file_name -out output/curvature_analysis/your_file_name"
 defect-mapping-filename = " python main/defect_mapping.py -i input/your_file_name.gro -t input/your_file_name.xtc -o output/defect_mapping/your_file_name"
-defect-analysis-filename = "python main/aggregate_map_defects_plt.py -i output/defect_mapping/your_file_name -o output/defect_analysis/your_file_name -l leaflet -s your_file_name"
+defect-analysis-filename = "python main/defect_analysis.py -i output/defect_mapping/DOPC-DOPS-flat-production-stripped-ext1800-cutoff -o output/defect_analysis/DOPC-DOPS-flat-production-stripped-ext1800-cutoff -l upper -s DOPC-DOPS-flat-production-stripped-ext1800-cutoff"
 
 
 dopc-strain2-trajectory-ext1800-cutoff = "main/defect_mapping.py -i input/extended-data-v2/DOPC-strain.2-production7.9-stripped-centered.gro -t input/extended-data-v2/DOPC-strain.2-production7.9-stripped-centered.xtc -o DOPC-strain.2-production-stripped-centered-ext1800-cutoff"
