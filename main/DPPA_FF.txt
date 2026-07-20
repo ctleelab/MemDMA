@@ -1,0 +1,12 @@
+; id 	type 	resnr 	residu 	atom 	cgnr 	charge    (mass)
+   1     Q5   1  DPPA  PO4   1 	-1.0
+   2   SN4a   1  DPPA  GL1   2 	0
+   3   SN4a   1  DPPA  GL2   3 	0
+   4    SC1   1  DPPA  C1A   4 	0
+   5     C1   1  DPPA  C2A   5 	0
+   6     C1   1  DPPA  C3A   6 	0
+   7     C1   1  DPPA  C4A   7 	0
+   8    SC1   1  DPPA  C1B   8 	0
+   9     C1   1  DPPA  C2B   9 	0
+  10     C1   1  DPPA  C3B  10 	0
+  11     C1   1  DPPA  C4B  11 	0
