@@ -604,7 +604,7 @@ if __name__ == "__main__":
         "--interval",
         action="store",
         dest="frame_interval",
-        default=1,
+        default=5,
         type=float,
         help="How many frames to skip when processing the trajectory for defect analysis. Default is 1.",
     )
