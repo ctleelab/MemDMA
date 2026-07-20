@@ -48,7 +48,10 @@ def parse_self_sigmas(itp_file):
 
 if __name__ == "__main__":
     script_dir = os.path.dirname(os.path.abspath(__file__))
-    ff_file = sys.argv[1] if len(sys.argv) > 1 else os.path.join(script_dir, "DPPS_FF.txt")
+    if len(sys.argv) < 2:
+        print(f"Usage: {sys.argv[0]} <ff_file> [itp_file]", file=sys.stderr)
+        sys.exit(1)
+    ff_file = sys.argv[1]
     itp_file = (
         sys.argv[2]
         if len(sys.argv) > 2
